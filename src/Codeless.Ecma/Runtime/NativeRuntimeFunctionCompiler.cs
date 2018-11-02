@@ -121,7 +121,7 @@ namespace Codeless.Ecma.Runtime {
       }
       if (tailArray) {
         if (k >= pArgsLength) {
-          yield return Expression.Field(null, typeof(EcmaValue), "EmptyArray");
+          yield return Expression.MakeMemberAccess(null, typeof(EcmaValue).GetField("EmptyArray", BindingFlags.Static | BindingFlags.Public));
         } else {
           yield return GetTailArray(k);
         }

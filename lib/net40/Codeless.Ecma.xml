@@ -1,0 +1,137 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Codeless.Ecma</name>
+    </assembly>
+    <members>
+        <member name="T:Codeless.Ecma.EcmaValue">
+            <summary>
+            Represents a dynamic value in pipe executions to mimic behaviors to values in ECMAScript.
+            </summary>
+        </member>
+        <member name="F:Codeless.Ecma.EcmaValue.Undefined">
+            <summary>
+            Represents an undefined value. It is similar to *undefined* in ECMAScript which could be returned when accessing an undefined property.
+            </summary>
+        </member>
+        <member name="P:Codeless.Ecma.EcmaValue.Item(Codeless.Ecma.EcmaPropertyKey)">
+            <summary>
+            Gets value of the specified property from the object.
+            </summary>
+            <param name="index">Property name.</param>
+            <returns>Value associated with the property name, -or- <see cref="F:Codeless.Ecma.EcmaValue.Undefined"/> if property does not exist.</returns>
+        </member>
+        <member name="P:Codeless.Ecma.EcmaValue.Type">
+            <summary>
+            Gets the type of value represented by the <see cref="T:Codeless.Ecma.EcmaValue"/> instance.
+            </summary>
+        </member>
+        <member name="T:Codeless.Ecma.EcmaRegExp">
+            <summary>
+            Represents a ECMAScript-like regular expression object.
+            </summary>
+        </member>
+        <member name="P:Codeless.Ecma.EcmaRegExp.Global">
+            <summary>
+            Indicates that the regular expression should be tested against all possible matches in a string.
+            </summary>
+        </member>
+        <member name="P:Codeless.Ecma.EcmaRegExp.Multiline">
+            <summary>
+            Indicates that a multiline input string should be treated as multiple lines. 
+            In such case "^" and "$" change from matching at only the start or end of the entire string to the start or end of any line within the string.
+            </summary>
+        </member>
+        <member name="P:Codeless.Ecma.EcmaRegExp.IgnoreCase">
+            <summary>
+            Indicates that case should be ignored while attempting a match in a string.
+            </summary>
+        </member>
+        <member name="M:Codeless.Ecma.EcmaRegExp.Test(System.String)">
+            <summary>
+            Tests whether there is any occurences in the specified string that matches the pattern.
+            </summary>
+            <param name="input">A string to test against.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,Codeless.Ecma.EcmaRegexMatchEvaluator)">
+            <summary>
+            Replaces occurences of substrings that matches the pattern by the value returned from the invocation of pipe function argument.
+            </summary>
+            <param name="input">Input string.</param>
+            <param name="replacement">A pipe function argument.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,System.Text.RegularExpressions.MatchEvaluator)">
+            <summary>
+            Replaces occurences of substrings that matches the pattern by the value returned from the invocation of native method.
+            </summary>
+            <param name="input">Input string.</param>
+            <param name="replacement">A delegate escapulating a method that returns replacement string for the specifc occurence.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,System.String)">
+            <summary>
+            Replaces occurences of substrings that matches the pattern by the specified replacement.
+            </summary>
+            <param name="input">Input string.</param>
+            <param name="replacement">Replacement string.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Codeless.Ecma.EcmaRegExp.TryParse(System.String,Codeless.Ecma.EcmaRegExp@)">
+            <summary>
+            Parses the given string into an instance of the <see cref="T:Codeless.Ecma.EcmaRegExp"/> class if the string represents a valid ECMAScript-compatible regular expression.
+            </summary>
+            <param name="str">A string representing a valid ECMAScript-compatible regular expression.</param>
+            <param name="re">A reference to a variable that the parsed regular expression object is set to.</param>
+            <returns>Returns *true* if the given string represents a valid ECMAScript-compatible regular expression; or *false* otherwise.</returns>
+        </member>
+        <member name="T:System.Collections.Generic.IReadOnlyDictionary`2">
+            <summary>
+            Represents a generic read-only collection of key/value pairs.
+            </summary>
+            <typeparam name="TKey">The type of keys in the read-only dictionary.</typeparam>
+            <typeparam name="TValue">The type of values in the read-only dictionary.</typeparam>
+        </member>
+        <member name="M:System.Collections.Generic.IReadOnlyDictionary`2.ContainsKey(`0)">
+            <summary>
+            Determines whether the read-only dictionary contains an element that has the specified key.
+            </summary>
+            <param name="key">The key to locate.</param>
+            <returns>*true* if the read-only dictionary contains an element that has the specified key; otherwise, *false*.</returns>
+        </member>
+        <member name="M:System.Collections.Generic.IReadOnlyDictionary`2.TryGetValue(`0,`1@)">
+            <summary>
+            Gets the value that is associated with the specified key.
+            </summary>
+            <param name="key">The key to locate.</param>
+            <param name="value">When this method returns, the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter. This parameter is passed uninitialized.</param>
+            <returns>*true* if the object that implements the <see cref="T:System.Collections.Generic.IReadOnlyDictionary`2"/> interface contains an element that has the specified key; otherwise, *false*.</returns>
+        </member>
+        <member name="P:System.Collections.Generic.IReadOnlyDictionary`2.Keys">
+            <summary>
+            Gets an enumerable collection that contains the keys in the read-only dictionary.
+            </summary>
+            <remarks>
+            The order of the keys in the enumerable collection is unspecified, but the implementation must guarantee that the keys 
+            are in the same order as the corresponding values in the enumerable collection that is returned by the <see cref="P:System.Collections.Generic.IReadOnlyDictionary`2.Values"/> property.
+            </remarks>
+        </member>
+        <member name="P:System.Collections.Generic.IReadOnlyDictionary`2.Item(`0)">
+            <summary>
+            Gets the element that has the specified key in the read-only dictionary.
+            </summary>
+            <param name="key">The key to locate.</param>
+            <returns>The element that has the specified key in the read-only dictionary.</returns>
+        </member>
+        <member name="P:System.Collections.Generic.IReadOnlyDictionary`2.Values">
+            <summary>
+            Gets an enumerable collection that contains the values in the read-only dictionary.
+            </summary>
+            <remarks>
+            The order of the values in the enumerable collection is unspecified, but the implementation must guarantee that the values 
+            are in the same order as the corresponding keys in the enumerable collection that is returned by the <see cref="P:System.Collections.Generic.IReadOnlyDictionary`2.Keys"/> property.
+            </remarks>
+        </member>
+    </members>
+</doc>

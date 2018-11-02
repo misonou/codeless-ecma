@@ -43,7 +43,7 @@ namespace Codeless.Ecma {
 
     private void SerializeJsonObject(JsonWriter writer, Stack<RuntimeObject> stack, RuntimeObject value) {
       bool hasEntries = false;
-      string prependString = String.Join("", stack.Select(v => indentString));
+      string prependString = String.Join("", stack.Select(v => indentString).ToArray());
 
       if (stack.Contains(value)) {
         throw new EcmaTypeErrorException("Cyclical");
@@ -88,7 +88,7 @@ namespace Codeless.Ecma {
       if (stack.Contains(value)) {
         throw new EcmaTypeErrorException("Cyclical");
       }
-      string prependString = String.Join("", stack.Select(v => indentString));
+      string prependString = String.Join("", stack.Select(v => indentString).ToArray());
       stack.Push(value);
       writer.WriteStartArray();
 

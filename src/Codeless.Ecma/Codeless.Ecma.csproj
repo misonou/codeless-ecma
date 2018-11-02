@@ -227,15 +227,15 @@
   </Target>
   -->
   <Target Name="AfterBuild" Condition="'$(Configuration)|$(Platform)' == 'Release-Net35|AnyCPU'">
-    <Copy SourceFiles="..\bin\net35\Codeless.Data.dll" DestinationFolder="..\..\lib\net35" ContinueOnError="false" />
-    <Copy SourceFiles="..\bin\net35\Codeless.Data.xml" DestinationFolder="..\..\lib\net35" ContinueOnError="false" />
+    <Copy SourceFiles="..\bin\net35\Codeless.Ecma.dll" DestinationFolder="..\..\lib\net35" ContinueOnError="false" />
+    <Copy SourceFiles="..\bin\net35\Codeless.Ecma.xml" DestinationFolder="..\..\lib\net35" ContinueOnError="false" />
   </Target>
   <Target Name="AfterBuild" Condition="'$(Configuration)|$(Platform)' == 'Release-Net40|AnyCPU'">
-    <Copy SourceFiles="..\bin\net40\Codeless.Data.dll" DestinationFolder="..\..\lib\net40" ContinueOnError="false" />
-    <Copy SourceFiles="..\bin\net40\Codeless.Data.xml" DestinationFolder="..\..\lib\net40" ContinueOnError="false" />
+    <Copy SourceFiles="..\bin\net40\Codeless.Ecma.dll" DestinationFolder="..\..\lib\net40" ContinueOnError="false" />
+    <Copy SourceFiles="..\bin\net40\Codeless.Ecma.xml" DestinationFolder="..\..\lib\net40" ContinueOnError="false" />
   </Target>
   <Target Name="AfterBuild" Condition="'$(Configuration)|$(Platform)' == 'Release-Net45|AnyCPU'">
-    <Copy SourceFiles="..\bin\net45\Codeless.Data.dll" DestinationFolder="..\..\lib\net45" ContinueOnError="false" />
-    <Copy SourceFiles="..\bin\net45\Codeless.Data.xml" DestinationFolder="..\..\lib\net45" ContinueOnError="false" />
+    <Copy SourceFiles="..\bin\net45\Codeless.Ecma.dll" DestinationFolder="..\..\lib\net45" ContinueOnError="false" />
+    <Copy SourceFiles="..\bin\net45\Codeless.Ecma.xml" DestinationFolder="..\..\lib\net45" ContinueOnError="false" />
   </Target>
 </Project>
