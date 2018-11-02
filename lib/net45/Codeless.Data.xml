@@ -1,0 +1,419 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Codeless.Data</name>
+    </assembly>
+    <members>
+        <member name="T:Codeless.Data.EvaluateOptions">
+            <summary>
+            Specifies the behavior of template evaluation.
+            </summary>
+        </member>
+        <member name="M:Codeless.Data.EvaluateOptions.#ctor">
+            <summary>
+            Instantiates an instance of the <see cref="T:Codeless.Data.EvaluateOptions"/> with default options.
+            </summary>
+        </member>
+        <member name="P:Codeless.Data.EvaluateOptions.Globals">
+            <summary>
+            Gets the collection of global values that is passed to the template evaluation.
+            </summary>
+        </member>
+        <member name="T:Codeless.Data.EcmaScriptRegex">
+            <summary>
+            Represents a ECMAScript-like regular expression object.
+            </summary>
+        </member>
+        <member name="P:Codeless.Data.EcmaScriptRegex.Global">
+            <summary>
+            Indicates that the regular expression should be tested against all possible matches in a string.
+            </summary>
+        </member>
+        <member name="P:Codeless.Data.EcmaScriptRegex.Multiline">
+            <summary>
+            Indicates that a multiline input string should be treated as multiple lines. 
+            In such case "^" and "$" change from matching at only the start or end of the entire string to the start or end of any line within the string.
+            </summary>
+        </member>
+        <member name="P:Codeless.Data.EcmaScriptRegex.IgnoreCase">
+            <summary>
+            Indicates that case should be ignored while attempting a match in a string.
+            </summary>
+        </member>
+        <member name="M:Codeless.Data.EcmaScriptRegex.Test(System.String)">
+            <summary>
+            Tests whether there is any occurences in the specified string that matches the pattern.
+            </summary>
+            <param name="input">A string to test against.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Codeless.Data.EcmaScriptRegex.Replace(System.String,Codeless.Data.PipeLambda)">
+            <summary>
+            Replaces occurences of substrings that matches the pattern by the value returned from the invocation of pipe function argument.
+            </summary>
+            <param name="input">Input string.</param>
+            <param name="replacement">A pipe function argument.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Codeless.Data.EcmaScriptRegex.Replace(System.String,System.Text.RegularExpressions.MatchEvaluator)">
+            <summary>
+            Replaces occurences of substrings that matches the pattern by the value returned from the invocation of native method.
+            </summary>
+            <param name="input">Input string.</param>
+            <param name="replacement">A delegate escapulating a method that returns replacement string for the specifc occurence.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Codeless.Data.EcmaScriptRegex.Replace(System.String,System.String)">
+            <summary>
+            Replaces occurences of substrings that matches the pattern by the specified replacement.
+            </summary>
+            <param name="input">Input string.</param>
+            <param name="replacement">Replacement string.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Codeless.Data.EcmaScriptRegex.TryParse(System.String,Codeless.Data.EcmaScriptRegex@)">
+            <summary>
+            Parses the given string into an instance of the <see cref="T:Codeless.Data.EcmaScriptRegex"/> class if the string represents a valid ECMAScript-compatible regular expression.
+            </summary>
+            <param name="str">A string representing a valid ECMAScript-compatible regular expression.</param>
+            <param name="re">A reference to a variable that the parsed regular expression object is set to.</param>
+            <returns>Returns *true* if the given string represents a valid ECMAScript-compatible regular expression; or *false* otherwise.</returns>
+        </member>
+        <member name="T:Codeless.Data.PipeFunction">
+            <summary>
+            An abstract class representing a pipe function that can be invoked with a given pipe context.
+            </summary>
+        </member>
+        <member name="T:Codeless.Data.PipeFunction.Variadic">
+            <summary>
+            Encapsulates a native method that takes arbitrary number of arguments or function arguments from pipe.
+            </summary>
+            <param name="context">Pipe context.</param>
+            <returns>Result of the pipe function.</returns>
+        </member>
+        <member name="T:Codeless.Data.PipeFunction.Func0">
+            <summary>
+            Encapsulates a native method that takes no arguments from pipe.
+            </summary>
+            <param name="value">Piped value from object path or previous pipe function.</param>
+            <returns>Result of the pipe function.</returns>
+        </member>
+        <member name="T:Codeless.Data.PipeFunction.Func1">
+            <summary>
+            Encapsulates a native method that takes one argument from pipe.
+            </summary>
+            <param name="value">Piped value from object path or previous pipe function.</param>
+            <param name="arg1">First argument from pipe.</param>
+            <returns>Result of the pipe function.</returns>
+        </member>
+        <member name="T:Codeless.Data.PipeFunction.Func2">
+            <summary>
+            Encapsulates a native method that takes two arguments from pipe.
+            </summary>
+            <param name="value">Piped value from object path or previous pipe function.</param>
+            <param name="arg1">First argument from pipe.</param>
+            <param name="arg2">Second argument from pipe.</param>
+            <returns>Result of the pipe function.</returns>
+        </member>
+        <member name="T:Codeless.Data.PipeFunction.Func3">
+            <summary>
+            Encapsulates a native method that takes three arguments from pipe.
+            </summary>
+            <param name="value">Piped value from object path or previous pipe function.</param>
+            <param name="arg1">First argument from pipe.</param>
+            <param name="arg2">Second argument from pipe.</param>
+            <param name="arg3">Third argument from pipe.</param>
+            <returns>Result of the pipe function.</returns>
+        </member>
+        <member name="T:Codeless.Data.PipeFunction.Func4">
+            <summary>
+            Encapsulates a native method that takes three arguments from pipe.
+            </summary>
+            <param name="value">Piped value from object path or previous pipe function.</param>
+            <param name="arg1">First argument from pipe.</param>
+            <param name="arg2">Second argument from pipe.</param>
+            <param name="arg3">Third argument from pipe.</param>
+            <param name="arg4">Forth argument from pipe.</param>
+            <returns>Result of the pipe function.</returns>
+        </member>
+        <member name="T:Codeless.Data.PipeFunction.Func5">
+            <summary>
+            Encapsulates a native method that takes three arguments from pipe.
+            </summary>
+            <param name="value">Piped value from object path or previous pipe function.</param>
+            <param name="arg1">First argument from pipe.</param>
+            <param name="arg2">Second argument from pipe.</param>
+            <param name="arg3">Third argument from pipe.</param>
+            <param name="arg4">Forth argument from pipe.</param>
+            <param name="arg5">Fifth argument from pipe.</param>
+            <returns>Result of the pipe function.</returns>
+        </member>
+        <member name="M:Codeless.Data.PipeFunction.Invoke(Codeless.Data.PipeContext)">
+            <summary>
+            Invokes the pipe function with the specified context.
+            </summary>
+            <param name="context">Pipe context.</param>
+            <returns>Result of the pipe function.</returns>
+        </member>
+        <member name="M:Codeless.Data.PipeFunction.Create(Codeless.Data.PipeFunction.Variadic)">
+            <summary>
+            Creates a pipe function that takes arbitrary number of arguments or function arguments.
+            </summary>
+            <param name="fn">A delegate that encapsulates a method that match the signature of <see cref="T:Codeless.Data.PipeFunction.Variadic"/>.</param>
+            <returns>The constructed pipe function that can be invoked with a given pipe context.</returns>
+        </member>
+        <member name="M:Codeless.Data.PipeFunction.Create(Codeless.Data.PipeFunction.Func0)">
+            <summary>
+            Creates a pipe function that takes no arguments from pipe.
+            </summary>
+            <param name="fn">A delegate that encapsulates a method that match the signature of <see cref="T:Codeless.Data.PipeFunction.Func0"/>.</param>
+            <returns>The constructed pipe function that can be invoked with a given pipe context.</returns>
+        </member>
+        <member name="M:Codeless.Data.PipeFunction.Create(Codeless.Data.PipeFunction.Func1)">
+            <summary>
+            Creates a pipe function that takes one argument from pipe.
+            </summary>
+            <param name="fn">A delegate that encapsulates a method that match the signature of <see cref="T:Codeless.Data.PipeFunction.Func1"/>.</param>
+            <returns>The constructed pipe function that can be invoked with a given pipe context.</returns>
+        </member>
+        <member name="M:Codeless.Data.PipeFunction.Create(Codeless.Data.PipeFunction.Func2)">
+            <summary>
+            Creates a pipe function that takes two arguments from pipe.
+            </summary>
+            <param name="fn">A delegate that encapsulates a method that match the signature of <see cref="T:Codeless.Data.PipeFunction.Func2"/>.</param>
+            <returns>The constructed pipe function that can be invoked with a given pipe context.</returns>
+        </member>
+        <member name="M:Codeless.Data.PipeFunction.Create(Codeless.Data.PipeFunction.Func3)">
+            <summary>
+            Creates a pipe function that takes three arguments from pipe.
+            </summary>
+            <param name="fn">A delegate that encapsulates a method that match the signature of <see cref="T:Codeless.Data.PipeFunction.Func3"/>.</param>
+            <returns>The constructed pipe function that can be invoked with a given pipe context.</returns>
+        </member>
+        <member name="M:Codeless.Data.PipeFunction.Create(Codeless.Data.PipeFunction.Func4)">
+            <summary>
+            Creates a pipe function that takes four arguments from pipe.
+            </summary>
+            <param name="fn">A delegate that encapsulates a method that match the signature of <see cref="T:Codeless.Data.PipeFunction.Func4"/>.</param>
+            <returns>The constructed pipe function that can be invoked with a given pipe context.</returns>
+        </member>
+        <member name="M:Codeless.Data.PipeFunction.Create(Codeless.Data.PipeFunction.Func5)">
+            <summary>
+            Creates a pipe function that takes five arguments from pipe.
+            </summary>
+            <param name="fn">A delegate that encapsulates a method that match the signature of <see cref="T:Codeless.Data.PipeFunction.Func5"/>.</param>
+            <returns>The constructed pipe function that can be invoked with a given pipe context.</returns>
+        </member>
+        <member name="M:Codeless.Data.PipeFunction.Create(System.Reflection.MethodInfo)">
+            <summary>
+            Creates a pipe function.
+            </summary>
+            <param name="fn">A <see cref="T:System.Reflection.MethodInfo"/> instance representing a named or anonymous method.</param>
+            <returns>The constructed pipe function that can be invoked with a given pipe context.</returns>
+        </member>
+        <member name="M:Codeless.Data.PipeFunction.Create(System.String)">
+            <summary>
+            Creates a pipe function that evaluates the specified template on the piped value.
+            </summary>
+            <param name="template">A string that represents a valid waterpipe template.</param>
+            <returns>The constructed pipe function that can be invoked with a given pipe context.</returns>
+        </member>
+        <member name="T:Codeless.Data.PipeLambda">
+            <summary>
+            Represents a function argument on a pipe expression.
+            </summary>
+        </member>
+        <member name="T:Codeless.Data.PipeValue">
+            <summary>
+            Represents a dynamic value in pipe executions to mimic behaviors to values in ECMAScript.
+            </summary>
+        </member>
+        <member name="F:Codeless.Data.PipeValue.Null">
+            <summary>
+            Represents a null value. It is equivalent to *null* in C# and similar to *null* in ECMAScript.
+            </summary>
+        </member>
+        <member name="F:Codeless.Data.PipeValue.Undefined">
+            <summary>
+            Represents an undefined value. It is similar to *undefined* in ECMAScript which could be returned when accessing an undefined property.
+            </summary>
+        </member>
+        <member name="M:Codeless.Data.PipeValue.#ctor(System.Object)">
+            <summary>
+            Instantiate an instance of the <see cref="T:Codeless.Data.PipeValue"/> class with the specified native value.
+            </summary>
+            <param name="value">A native object.</param>
+        </member>
+        <member name="P:Codeless.Data.PipeValue.Item(System.String)">
+            <summary>
+            Gets value of the specified property from the object.
+            </summary>
+            <param name="index">Property name.</param>
+            <returns>Value associated with the property name, -or- <see cref="F:Codeless.Data.PipeValue.Undefined"/> if property does not exist.</returns>
+        </member>
+        <member name="P:Codeless.Data.PipeValue.Type">
+            <summary>
+            Gets the type of value represented by the <see cref="T:Codeless.Data.PipeValue"/> instance.
+            </summary>
+        </member>
+        <member name="T:Codeless.Data.PipeGlobal">
+            <summary>
+            Represents a collection of global values accessible regardless of the current context in the evaluation stack.
+            </summary>
+        </member>
+        <member name="M:Codeless.Data.PipeGlobal.#ctor">
+            <summary>
+            Instantiate the <see cref="T:Codeless.Data.PipeGlobal"/> class.
+            </summary>
+        </member>
+        <member name="M:Codeless.Data.PipeGlobal.#ctor(System.Collections.IDictionary)">
+            <summary>
+            Instantiate the <see cref="T:Codeless.Data.PipeGlobal"/> class initialized with given entries.
+            Dictionary keys are converted to string values through <see cref="T:Codeless.Data.PipeValue"/> string conversion.
+            If two distinct keys give the same string representation, exception will be thrown.
+            </summary>
+            <param name="ht"></param>
+        </member>
+        <member name="M:Codeless.Data.PipeGlobal.#ctor(Codeless.Data.PipeGlobal)">
+            <summary>
+            Instantiate the <see cref="T:Codeless.Data.PipeGlobal"/> class inheriting entries in another <see cref="T:Codeless.Data.PipeGlobal"/> instance.
+            This newly created instance will expose the inherited entries but not modifying them.
+            Setting value with the same key that appears in the parent <see cref="T:Codeless.Data.PipeGlobal"/>instance will mask that entry with the new value.
+            </summary>
+            <param name="parent"></param>
+        </member>
+        <member name="P:Codeless.Data.PipeGlobal.Item(System.String)">
+            <summary>
+            Gets or sets value associated with the given key.
+            If the given key is not present in the dictionary, <see cref="F:Codeless.Data.PipeValue.Undefined"/> is returned.
+            </summary>
+            <param name="key"></param>
+            <returns></returns>
+        </member>
+        <member name="P:Codeless.Data.PipeGlobal.Count">
+            <summary>
+            Gets the number of entries contained including inherited entries if any.
+            </summary>
+        </member>
+        <member name="T:Codeless.Data.PipeFunctionResolver">
+            <summary>
+            Encapsulates a method that resolves unknown pipe function based on the specified name.
+            </summary>
+            <param name="name">The name of pipe function.</param>
+            <param name="next">A delegate that when called the next resolver delegate is returned.</param>
+            <returns>Resolved pipe function based on the specified name.</returns>
+        </member>
+        <member name="T:Codeless.Data.GetNextPipeFunctionResolverDelegate">
+            <summary>
+            Encapsulates a method that when called the next resolver delegate is returned.
+            </summary>
+            <returns>A delegate encapsulating a method that resolves unknown pipe function based on the specified name.</returns>
+        </member>
+        <member name="T:Codeless.Data.Waterpipe">
+            <summary>
+            Provides methods to use with waterpipe template.
+            </summary>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.Evaluate(System.String,System.Object)">
+            <summary>
+            Evaluates the template against the specified value.
+            </summary>
+            <param name="template">A string that represents a valid waterpipe template.</param>
+            <param name="value">An object defining the root context.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.Evaluate(System.String,System.Object,Codeless.Data.EvaluateOptions)">
+            <summary>
+            Evaluates the template against the specified value and options.
+            </summary>
+            <param name="template">A string that represents a valid waterpipe template.</param>
+            <param name="value">An object defining the root context.</param>
+            <param name="options">Options that alter rendering behaviors.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.EvaluateAsXml(System.String,System.Object)">
+            <summary>
+            Evaluates the template against the specified value.
+            </summary>
+            <param name="template">A string that represents a valid waterpipe template.</param>
+            <param name="value">An object defining the root context.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.EvaluateAsXml(System.String,System.Object,Codeless.Data.EvaluateOptions)">
+            <summary>
+            Evaluates the template against the specified value and options.
+            </summary>
+            <param name="template">A string that represents a valid waterpipe template.</param>
+            <param name="value">An object defining the root context.</param>
+            <param name="options">Options that alter rendering behaviors.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.RegisterFunctionResolver(Codeless.Data.PipeFunctionResolver)">
+            <summary>
+            Registers a pipe function resolvers that handles unknown pipe functions.
+            </summary>
+            <param name="resolver"></param>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.RegisterFunction(System.String,System.String)">
+            <summary>
+            Registers a pipe function that run the specified template with the specified name.
+            </summary>
+            <param name="name">A string specifying the name of the pipe function.</param>
+            <param name="template">A string that represents a valid waterpipe template.</param>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.RegisterFunction(System.String,Codeless.Data.PipeFunction.Variadic)">
+            <summary>
+            Registers a pipe function that takes arbitrary number of arguments or function arguments from pipe with the specified name.
+            </summary>
+            <param name="name">A string specifying the name of the pipe function.</param>
+            <param name="fn">A delegate encapsulating the native method.</param>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.RegisterFunction(System.String,Codeless.Data.PipeFunction.Func0)">
+            <summary>
+            Registers a pipe function that takes no arguments from pipe with the specified name.
+            </summary>
+            <param name="name">A string specifying the name of the pipe function.</param>
+            <param name="fn">A delegate encapsulating the native method.</param>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.RegisterFunction(System.String,Codeless.Data.PipeFunction.Func1)">
+            <summary>
+            Registers a pipe function that takes one arguments from pipe with the specified name.
+            </summary>
+            <param name="name">A string specifying the name of the pipe function.</param>
+            <param name="fn">A delegate encapsulating the native method.</param>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.RegisterFunction(System.String,Codeless.Data.PipeFunction.Func2)">
+            <summary>
+            Registers a pipe function that takes two arguments from pipe with the specified name.
+            </summary>
+            <param name="name">A string specifying the name of the pipe function.</param>
+            <param name="fn">A delegate encapsulating the native method.</param>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.RegisterFunction(System.String,Codeless.Data.PipeFunction.Func3)">
+            <summary>
+            Registers a pipe function that takes three arguments from pipe with the specified name.
+            </summary>
+            <param name="name">A string specifying the name of the pipe function.</param>
+            <param name="fn">A delegate encapsulating the native method.</param>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.RegisterFunction(System.String,Codeless.Data.PipeFunction.Func4)">
+            <summary>
+            Registers a pipe function that takes four arguments from pipe with the specified name.
+            </summary>
+            <param name="name">A string specifying the name of the pipe function.</param>
+            <param name="fn">A delegate encapsulating the native method.</param>
+        </member>
+        <member name="M:Codeless.Data.Waterpipe.RegisterFunction(System.String,Codeless.Data.PipeFunction.Func5)">
+            <summary>
+            Registers a pipe function that takes five arguments from pipe with the specified name.
+            </summary>
+            <param name="name">A string specifying the name of the pipe function.</param>
+            <param name="fn">A delegate encapsulating the native method.</param>
+        </member>
+        <member name="T:Codeless.Data.WaterpipeException">
+            <summary>
+            Represents errors that occur during evaluation of the template.
+            </summary>
+        </member>
+    </members>
+</doc>
