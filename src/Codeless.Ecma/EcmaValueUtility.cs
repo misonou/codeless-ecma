@@ -1,92 +1,68 @@
-﻿using Codeless.Ecma.Native;
+﻿using Codeless.Ecma.Primitives;
 using Codeless.Ecma.Runtime;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Codeless.Ecma {
-  internal class EcmaValueUtility {
-    private static readonly ConcurrentDictionary<Type, IEcmaValueBinder> binderTypes = new ConcurrentDictionary<Type, IEcmaValueBinder>(new Dictionary<Type, IEcmaValueBinder> {
-      #region Entries for known types
-      { typeof(bool), NativeBooleanBinder.Default },
-      { typeof(byte), NativeInt32Binder.Default },
-      { typeof(sbyte), NativeInt32Binder.Default },
-      { typeof(char), NativeInt32Binder.Default },
-      { typeof(short), NativeInt32Binder.Default },
-      { typeof(ushort), NativeInt32Binder.Default },
-      { typeof(int), NativeInt32Binder.Default },
-      { typeof(uint), NativeInt64Binder.Default },
-      { typeof(long), NativeInt64Binder.Default },
-      { typeof(ulong), NativeDoubleBinder.Default },
-      { typeof(float), NativeDoubleBinder.Default },
-      { typeof(double), NativeDoubleBinder.Default },
-      { typeof(string), NativeStringBinder.Default },
-      { typeof(Symbol), SymbolBinder.Default },
-      { typeof(DateTime), NativeDateTimeBinder.Default },
-      { typeof(EcmaTimestamp), EcmaTimestampBinder.Default },
-      { typeof(RuntimeObject), RuntimeObjectBinder.Default },
-      { typeof(WellKnownSymbol), WellKnownSymbolBinder.Default },
-      { typeof(WellKnownPropertyName), WellKnownPropertyNameBinder.Default },
-      #endregion
-    });
+  public static class EcmaValueUtility {
+    public static T GetUnderlyingObject<T>(this EcmaValue thisValue) {
+      if (thisValue.Type != EcmaValueType.Object) {
+        throw new EcmaTypeErrorException(InternalString.Error.NotObject);
+      }
+      if (thisValue.GetUnderlyingObject() is T value) {
+        return value;
+      }
+      throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
+    }
 
-    public static bool IsIntrinsicPrimitiveValue(EcmaValue thisArg, EcmaValueType type) {
-      if (thisArg.Type == type) {
+    public static bool IsIntrinsicPrimitiveValue(this EcmaValue thisValue, EcmaValueType type) {
+      if (thisValue.Type == type) {
         return true;
       }
-      if (thisArg.Type == EcmaValueType.Object) {
-        IEcmaIntrinsicObject obj = thisArg.GetUnderlyingObject() as IEcmaIntrinsicObject;
-        if (obj != null && obj.IntrinsicValue.Type == type) {
-          return true;
-        }
+      if (thisValue.Type == EcmaValueType.Object) {
+        return thisValue.GetUnderlyingObject() is IntrinsicObject obj && obj.IntrinsicValue.Type == type;
       }
       return false;
     }
 
-    public static EcmaValue GetIntrinsicPrimitiveValue(EcmaValue thisArg, EcmaValueType type) {
-      if (thisArg.Type == type) {
-        return thisArg;
+    public static EcmaValue GetIntrinsicPrimitiveValue(this EcmaValue thisValue, EcmaValueType type) {
+      if (thisValue.Type == type) {
+        return thisValue;
       }
-      if (thisArg.Type == EcmaValueType.Object) {
-        IEcmaIntrinsicObject obj = thisArg.GetUnderlyingObject() as IEcmaIntrinsicObject;
-        if (obj != null && obj.IntrinsicValue.Type == type) {
+      if (thisValue.Type == EcmaValueType.Object) {
+        if (thisValue.GetUnderlyingObject() is IntrinsicObject obj && obj.IntrinsicValue.Type == type) {
           return obj.IntrinsicValue;
         }
       }
       throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
     }
 
-    public static T GetIntrinsicValue<T>(EcmaValue thisArg) {
-      if (thisArg.Type == EcmaValueType.Object) {
-        IEcmaIntrinsicObject obj = thisArg.GetUnderlyingObject() as IEcmaIntrinsicObject;
-        if (obj != null) {
-          try {
-            return (T)obj.IntrinsicValue.GetUnderlyingObject();
-          } catch (InvalidCastException) { }
-        }
+    [EcmaSpecification("CreateListFromArrayLike", EcmaSpecificationKind.AbstractOperations)]
+    public static EcmaValue[] CreateListFromArrayLike(EcmaValue value) {
+      Guard.ArgumentIsObject(value);
+      long len = value["length"].ToLength();
+      EcmaValue[] arr = new EcmaValue[len];
+      for (long i = 0; i < len; i++) {
+        arr[i] = value[i];
       }
-      throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
+      return arr;
     }
 
-    public static void SetIntrinsicValue<T>(EcmaValue thisArg, T value) {
-      if (thisArg.Type == EcmaValueType.Object) {
-        IEcmaIntrinsicObject obj = thisArg.GetUnderlyingObject() as IEcmaIntrinsicObject;
-        if (obj != null) {
-          try {
-            if (obj.IntrinsicValue.GetUnderlyingObject() is T) {
-              obj.IntrinsicValue = new EcmaValue(value);
-              return;
-            }
-          } catch (InvalidCastException) { }
-        }
+    [EcmaSpecification("ToInteger", EcmaSpecificationKind.AbstractOperations)]
+    public static int ToInt32Checked(this EcmaValue thisValue) {
+      thisValue = thisValue.ToNumber();
+      if (thisValue.IsNaN) {
+        return 0;
       }
-      throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
-
+      if (thisValue.IsFinite) {
+        return thisValue.ToInt32();
+      }
+      throw new EcmaRangeErrorException(InternalString.Error.InfinityToInteger);
     }
 
     public static object ConvertToUnknownType(EcmaValue value, Type conversionType) {
@@ -105,6 +81,13 @@ namespace Codeless.Ecma {
       if (value.Type == typeof(EcmaValue)) {
         return value;
       }
+      if (value.Type == typeof(void)) {
+#if NET35
+        return Expression.Call(((Func<Action, EcmaValue>)InvokeAction).Method, Expression.Lambda<Action>(value));
+#else
+        return Expression.Block(value, Expression.Constant(EcmaValue.Undefined));
+#endif
+      }
       ConstructorInfo ci = typeof(EcmaValue).GetConstructors().FirstOrDefault(v => v.GetParameters()[0].ParameterType.IsAssignableFrom(value.Type)) ??
          typeof(EcmaValue).GetConstructors().FirstOrDefault(v => v.GetParameters()[0].ParameterType == typeof(object));
       return Expression.New(ci, value);
@@ -113,8 +96,11 @@ namespace Codeless.Ecma {
     public static Expression ConvertFromEcmaValueExpression(Expression value, Type conversionType) {
       Guard.ArgumentNotNull(value, "value");
       Guard.ArgumentNotNull(conversionType, "conversionType");
-      if (conversionType.IsInterface) {
-        return Expression.Convert(Expression.Call(typeof(EcmaValueUtility), "GetUnderlyingObjectOfInterface", Type.EmptyTypes, value), conversionType);
+      if (conversionType == value.Type) {
+        return value;
+      }
+      if (conversionType.IsAssignableFrom(value.Type)) {
+        return Expression.Convert(value, conversionType);
       }
       switch (Type.GetTypeCode(conversionType)) {
         case TypeCode.Boolean:
@@ -147,69 +133,125 @@ namespace Codeless.Ecma {
       if (conversionType == typeof(EcmaValue)) {
         return value;
       }
+      if (conversionType == typeof(EcmaValue?)) {
+        return Expression.Call(conversionType, "op_implicit", Type.EmptyTypes, value);
+      }
       if (conversionType == typeof(RuntimeObject)) {
-        return Expression.Call(value, "ToRuntimeObject", Type.EmptyTypes);
+        return Expression.Call(value, "ToObject", Type.EmptyTypes);
       }
       return Expression.Convert(Expression.Call(typeof(EcmaValueUtility), "ConvertToUnknownType", Type.EmptyTypes, value, Expression.Constant(conversionType)), conversionType);
     }
 
-    public static IEcmaValueBinder GetBinder(object target) {
-      Guard.ArgumentNotNull(target, "target");
-      Type type = target.GetType();
-      if (type.IsEnum) {
-        return GetBinderForType(type);
+    [EcmaSpecification("StringNumericLiteral", EcmaSpecificationKind.RuntimeSemantics)]
+    public static EcmaValue ParseStringNumericLiteral(string inputString) {
+      Guard.ArgumentNotNull(inputString, "inputString");
+      inputString = inputString.Trim();
+      if (inputString.Length == 0) {
+        return 0;
       }
-      switch (System.Type.GetTypeCode(type)) {
-        case TypeCode.Boolean:
-          return NativeBooleanBinder.Default;
-        case TypeCode.Byte:
-        case TypeCode.SByte:
-        case TypeCode.Char:
-        case TypeCode.Int16:
-        case TypeCode.Int32:
-        case TypeCode.UInt16:
-          return NativeInt32Binder.Default;
-        case TypeCode.Int64:
-        case TypeCode.UInt32:
-          return NativeInt64Binder.Default;
-        case TypeCode.UInt64:
-        case TypeCode.Single:
-        case TypeCode.Double:
-          return NativeDoubleBinder.Default;
-        case TypeCode.DateTime:
-          return NativeDateTimeBinder.Default;
+      if (inputString.Length > 2 && inputString[0] == '0') {
+        switch (inputString[1]) {
+          case 'x':
+          case 'X':
+            return ParseIntInternal(inputString.Substring(2), 16, false);
+          case 'o':
+          case 'O':
+            return ParseIntInternal(inputString.Substring(2), 8, false);
+          case 'b':
+          case 'B':
+            return ParseIntInternal(inputString.Substring(2), 2, false);
+        }
       }
-      if (type.IsValueType) {
-        IEcmaValueBinder b = GetBinderForType(type);
-        target = new IntrinsicObject(new EcmaValue(b.ToHandle(target), b), WellKnownObject.ObjectPrototype);
-      }
-      return ObjectReferenceBinder.GetBinder(target);
+      return ParseFloatInternal(inputString, false);
     }
 
-    public static IEcmaValueBinder GetBinderForType(Type type) {
-      Guard.ArgumentNotNull(type, "type");
-      return binderTypes.GetOrAdd(type, t => {
-        if (t.IsEnum) {
-          return (IEcmaValueBinder)Activator.CreateInstance(typeof(NativeEnumBinder<>).MakeGenericType(t));
+    internal static EcmaValue ParseIntInternal(string inputString, int radix, bool allowTrail) {
+      Guard.ArgumentNotNull(inputString, "inputString");
+      inputString = inputString.Trim();
+      int len = inputString.Length;
+      if (len == 0) {
+        return EcmaValue.NaN;
+      }
+      int charIndex = 0;
+      int sign = 1;
+      if (inputString[0] == '-') {
+        sign = -1;
+        charIndex = 1;
+      } else if (inputString[0] == '+') {
+        charIndex = 1;
+      }
+      if (charIndex == len) {
+        return EcmaValue.NaN;
+      }
+      if ((radix == 16 || radix == 0) && len > charIndex + 1) {
+        if (inputString[charIndex] == '0' && (inputString[charIndex + 1] == 'x' || inputString[charIndex + 1] == 'X')) {
+          charIndex += 2;
+          radix = 16;
         }
-        if (t.IsSubclassOf(typeof(RuntimeObject))) {
-          return RuntimeObjectBinder.Default;
+      }
+      if (radix == 0) {
+        radix = 10;
+      }
+      if (radix < 2 || radix > 36) {
+        return EcmaValue.NaN;
+      }
+      int maxDigit = '0' + Math.Min(radix - 1, 9);
+      int maxAlphaL = 'a' + (radix - 11);
+      int maxAlphaC = 'A' + (radix - 11);
+      double m = 0;
+      int i = charIndex;
+      for (; i < len; i++) {
+        char ch = inputString[i];
+        if (ch >= '0' && ch <= maxDigit) {
+          m = m * radix + (ch - '0');
+          continue;
         }
-        if (t.GetInterface(typeof(IDictionary<,>).FullName) != null) {
-          Type i = t.GetInterface(typeof(IDictionary<,>).FullName);
-          return (IEcmaValueBinder)Activator.CreateInstance(typeof(NativeDictionaryBinder<,>).MakeGenericType(i.GetGenericArguments()), t);
+        if (ch >= 'a' && ch <= maxAlphaL) {
+          m = m * radix + (ch - 'a' + 10);
+          continue;
         }
-        if (t.GetInterface(typeof(IDictionary).FullName) != null) {
-          return new NativeDictionaryBinder(t);
+        if (ch >= 'A' && ch <= maxAlphaC) {
+          m = m * radix + (ch - 'A' + 10);
+          continue;
         }
-        if (t.GetInterface(typeof(IList).FullName) != null) {
-          return new NativeListBinder(t);
+        if (!allowTrail) {
+          return EcmaValue.NaN;
         }
-        if (t.GetInterface(typeof(ICollection).FullName) != null) {
-          return new NativeCollectionBinder(t);
-        }
-        return new ReflectedObjectBinder(t);
-      });
+        break;
+      }
+      if (i == charIndex) {
+        return EcmaValue.NaN;
+      }
+      if (m == 0 && sign == -1) {
+        return EcmaValue.NegativeZero;
+      }
+      if (m < Int32.MaxValue) {
+        return (int)m * sign;
+      }
+      if (m < Int64.MaxValue) {
+        return (long)m * sign;
+      }
+      return m * sign;
     }
+
+    internal static EcmaValue ParseFloatInternal(string inputString, bool allowTrail) {
+      Guard.ArgumentNotNull(inputString, "inputString");
+      inputString = inputString.Trim();
+      if (allowTrail ? inputString.IndexOf("Infinity") == 0 : inputString == "Infinity") {
+        return EcmaValue.Infinity;
+      }
+      if (allowTrail ? inputString.IndexOf("-Infinity") == 0 : inputString == "-Infinity") {
+        return EcmaValue.NegativeInfinity;
+      }
+      Match m = Regex.Match(inputString, "^[+-]?(\\d+\\.?\\d*|\\.\\d+)([eE][+-]?\\d+)?");
+      return m.Success && (allowTrail || m.Length == inputString.Length) ? Double.Parse(m.Value) : EcmaValue.NaN;
+    }
+
+#if NET35
+    private static EcmaValue InvokeAction(Action action) {
+      action();
+      return default;
+    }
+#endif
   }
 }

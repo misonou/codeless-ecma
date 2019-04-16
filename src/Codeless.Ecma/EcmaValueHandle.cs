@@ -7,6 +7,7 @@ using System.Text;
 
 namespace Codeless.Ecma {
   [Serializable]
+  [DebuggerStepThrough]
   [DebuggerDisplay("{Value}")]
   public struct EcmaValueHandle : IEquatable<EcmaValueHandle> {
     public readonly long Value;
@@ -27,8 +28,8 @@ namespace Codeless.Ecma {
       return Value == other.Value;
     }
 
-    public override bool Equals(object other) {
-      return other is EcmaValueHandle && Value == ((EcmaValueHandle)other).Value;
+    public override bool Equals(object obj) {
+      return obj is EcmaValueHandle && Value == ((EcmaValueHandle)obj).Value;
     }
 
     public override int GetHashCode() {

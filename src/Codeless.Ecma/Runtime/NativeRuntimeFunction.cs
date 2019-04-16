@@ -15,20 +15,30 @@ namespace Codeless.Ecma.Runtime {
 
   internal class NativeRuntimeFunction : RuntimeFunction {
     private readonly NativeRuntimeFunctionConstraint constraint;
+    private readonly WellKnownObject defaultProto = WellKnownObject.ObjectPrototype;
+    private readonly Type runtimeObjectType;
     private readonly MethodInfo method;
     private RuntimeFunctionDelegate fn;
 
     public NativeRuntimeFunction(string name, MethodInfo method) {
+      Guard.ArgumentNotNull(method, "method");
       this.method = method;
-      DefineOwnPropertyNoChecked(WellKnownPropertyName.Length, new EcmaPropertyDescriptor(GetFuncLength(method), EcmaPropertyAttributes.None));
-      DefineOwnPropertyNoChecked(WellKnownPropertyName.Name, new EcmaPropertyDescriptor(name, EcmaPropertyAttributes.Configurable));
-      DefineOwnPropertyNoChecked(WellKnownPropertyName.Arguments, new EcmaPropertyDescriptor(EcmaValue.Undefined, EcmaPropertyAttributes.None));
-      DefineOwnPropertyNoChecked(WellKnownPropertyName.Caller, new EcmaPropertyDescriptor(EcmaValue.Undefined, EcmaPropertyAttributes.None));
+      InitProperty(name, GetFuncLength(method));
 
-      IntrinsicConstructorAttribute attribute;
-      if (method.HasAttribute(out attribute)) {
+      if (method.HasAttribute(out IntrinsicConstructorAttribute attribute)) {
         constraint = attribute.Constraint;
+        runtimeObjectType = attribute.ObjectType;
+        if (method.DeclaringType.HasAttribute(out IntrinsicObjectAttribute a1)) {
+          defaultProto = RuntimeRealm.GetPrototypeOf(a1.ObjectType);
+        }
+      } else {
+        constraint = NativeRuntimeFunctionConstraint.DenyConstruct;
       }
+      runtimeObjectType = runtimeObjectType ?? typeof(EcmaObject);
+    }
+
+    public override bool IsConstructor {
+      get { return constraint != NativeRuntimeFunctionConstraint.DenyConstruct; }
     }
 
     public override EcmaValue Call(EcmaValue thisValue, params EcmaValue[] arguments) {
@@ -36,23 +46,27 @@ namespace Codeless.Ecma.Runtime {
         return base.Construct(this, arguments);
       }
       if (constraint == NativeRuntimeFunctionConstraint.DenyCall) {
-        throw new EcmaTypeErrorException("");
+        throw new EcmaTypeErrorException(InternalString.Error.MustCallAsConstructor);
       }
       return base.Call(thisValue, arguments);
     }
 
-    public override EcmaValue Construct(EcmaValue newTarget, params EcmaValue[] arguments) {
+    public override EcmaValue Construct(RuntimeObject newTarget, params EcmaValue[] arguments) {
       if (constraint == NativeRuntimeFunctionConstraint.DenyConstruct) {
-        throw new EcmaTypeErrorException("");
+        throw new EcmaTypeErrorException(InternalString.Error.NotConstructor);
       }
       return base.Construct(newTarget, arguments);
     }
 
-    public override RuntimeFunctionDelegate GetDelegate() {
+    protected internal override RuntimeFunctionDelegate GetDelegate() {
       if (fn == null) {
         fn = NativeRuntimeFunctionCompiler.Compile(method);
       }
       return fn;
+    }
+
+    protected override RuntimeObject ConstructThisValue(RuntimeObject newTarget) {
+      return (RuntimeObject)typeof(RuntimeObject).GetMethod("CreateFromConstructor").MakeGenericMethod(runtimeObjectType).Invoke(null, new object[] { defaultProto, newTarget });
     }
 
     private static int GetFuncLength(MethodInfo m) {

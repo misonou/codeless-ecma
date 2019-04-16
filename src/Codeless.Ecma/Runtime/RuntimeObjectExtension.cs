@@ -13,13 +13,23 @@ namespace Codeless.Ecma.Runtime {
       return obj.Set(propertyKey, value, obj);
     }
 
+    public static EcmaValue Construct(this RuntimeObject obj, params EcmaValue[] arguments) {
+      return obj.Construct(obj, arguments);
+    }
+
     [EcmaSpecification("GetMethod", EcmaSpecificationKind.AbstractOperations)]
-    public static EcmaValue GetMethod(this RuntimeObject obj, EcmaPropertyKey propertyKey) {
+    public static RuntimeFunction GetMethod(this RuntimeObject obj, EcmaPropertyKey propertyKey) {
       EcmaValue value = obj.Get(propertyKey, obj);
-      if (value.IsCallable) {
-        return value;
-      }
-      return default(EcmaValue);
+      return value.ToObject() as RuntimeFunction;
+    }
+
+    [EcmaSpecification("GetIterator", EcmaSpecificationKind.AbstractOperations)]
+    public static EcmaIteratorEnumerator GetIterator(this RuntimeObject obj) {
+      // TODO: GetIterator
+      RuntimeObject method = obj.GetMethod(Symbol.Iterator);
+      EcmaValue iterator = method.Call(obj);
+      Guard.ArgumentIsObject(iterator);
+      return new EcmaIteratorEnumerator(iterator);
     }
 
     [EcmaSpecification("CreateDataProperty", EcmaSpecificationKind.AbstractOperations)]
@@ -54,6 +64,55 @@ namespace Codeless.Ecma.Runtime {
         throw new EcmaTypeErrorException(InternalString.Error.DeletePropertyThrow);
       }
       return true;
+    }
+
+    public static RuntimeObjectIntegrityLevel TestIntegrityLevelFast(this RuntimeObject obj) {
+      RuntimeObject o = obj as RuntimeObject;
+      return o != null ? o.IntegrityLevel : obj.TestIntegrityLevel();
+    }
+
+    [EcmaSpecification("TestIntegrityLevel", EcmaSpecificationKind.AbstractOperations)]
+    public static RuntimeObjectIntegrityLevel TestIntegrityLevel(this RuntimeObject obj) {
+      if (obj.IsExtensible) {
+        return RuntimeObjectIntegrityLevel.Default;
+      }
+      foreach (EcmaPropertyKey key in obj.OwnPropertyKeys) {
+        EcmaPropertyDescriptor desc = obj.GetOwnProperty(key);
+        if (desc.Configurable != false) {
+          return RuntimeObjectIntegrityLevel.ExtensionPrevented;
+        }
+        if (desc.IsDataDescriptor && desc.Writable != false) {
+          return RuntimeObjectIntegrityLevel.Sealed;
+        }
+      }
+      return RuntimeObjectIntegrityLevel.Frozen;
+    }
+
+    [EcmaSpecification("SetIntegrityLevel", EcmaSpecificationKind.AbstractOperations)]
+    public static bool SetIntegrityLevel(this RuntimeObject obj, RuntimeObjectIntegrityLevel level) {
+      if (!obj.PreventExtensions()) {
+        return false;
+      }
+      if (obj.TestIntegrityLevelFast() < level) {
+        switch (level) {
+          case RuntimeObjectIntegrityLevel.Sealed:
+            foreach (EcmaPropertyKey key in obj.OwnPropertyKeys) {
+              obj.DefinePropertyOrThrow(key, new EcmaPropertyDescriptor { Configurable = false });
+            }
+            break;
+          case RuntimeObjectIntegrityLevel.Frozen:
+            foreach (EcmaPropertyKey key in obj.OwnPropertyKeys) {
+              EcmaPropertyDescriptor desc = obj.GetOwnProperty(key);
+              obj.DefinePropertyOrThrow(key, new EcmaPropertyDescriptor { Writable = desc.IsDataDescriptor ? (bool?)false : null, Configurable = false });
+            }
+            break;
+        }
+      }
+      return true;
+    }
+
+    public static bool IsWellknownObject(this RuntimeObject obj, WellKnownObject type) {
+      return obj == RuntimeRealm.GetRuntimeObject(type);
     }
 
     public static IEnumerable<EcmaPropertyKey> GetEnumerableOwnPropertyKeys(this RuntimeObject obj) {

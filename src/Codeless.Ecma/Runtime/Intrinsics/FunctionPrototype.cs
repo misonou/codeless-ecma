@@ -9,13 +9,12 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
   internal static class FunctionPrototype {
     [IntrinsicMember]
     public static EcmaValue Apply([This] RuntimeFunction fn, EcmaValue thisValue, EcmaValue args) {
-      // check arguments as array
-      return fn.Call(thisValue, args);
+      return fn.Call(thisValue, EcmaValueUtility.CreateListFromArrayLike(args));
     }
 
     [IntrinsicMember]
-    public static EcmaValue Bind([This] RuntimeFunction fn, EcmaValue thisArg, params EcmaValue[] args) {
-      return new BoundRuntimeFunction(fn, thisArg, args);
+    public static EcmaValue Bind([This] RuntimeFunction fn, EcmaValue thisValue, params EcmaValue[] args) {
+      return new BoundRuntimeFunction(fn, thisValue, args);
     }
 
     [IntrinsicMember]

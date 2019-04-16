@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma {
-  public struct EcmaPropertyEntry : IEcmaValueConvertible {
+  public struct EcmaPropertyEntry {
     public EcmaPropertyEntry(EcmaPropertyKey key, EcmaValue value) {
       Key = key;
       Value = value;

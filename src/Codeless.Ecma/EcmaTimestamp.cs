@@ -53,6 +53,10 @@ namespace Codeless.Ecma {
       this.timestamp = (timestamp < MinTime || timestamp > MaxTime) ? Int64.MinValue : timestamp;
     }
 
+    public EcmaTimestamp(DateTime dt) {
+      this.timestamp = FromNativeDateTime(dt).timestamp;
+    }
+
     public static int TimezoneOffset {
       get { return tz; }
     }
@@ -127,19 +131,19 @@ namespace Codeless.Ecma {
       return String.Format(TimeFormat, h, n, s, tz / msPerHour, (tz % msPerHour) / msPerMinute, TimeZoneInfo.Local.StandardName);
     }
 
-    public static DateTime ToNativeDateTime(long timestamp, DateTimeKind kind) {
-      DateTime d = UnixEpochUtc.AddMilliseconds(timestamp);
+    public DateTime ToNativeDateTime(DateTimeKind kind = DateTimeKind.Local) {
+      DateTime d = UnixEpochUtc.AddMilliseconds(Value);
       if (kind == DateTimeKind.Local) {
         return d.ToLocalTime();
       }
       return d;
     }
 
-    public static long FromNativeDateTime(DateTime d) {
+    public static EcmaTimestamp FromNativeDateTime(DateTime d) {
       if (d.Kind == DateTimeKind.Utc) {
-        return Convert.ToInt64((d - UnixEpochUtc).TotalMilliseconds);
+        return new EcmaTimestamp(Convert.ToInt64((d - UnixEpochUtc).TotalMilliseconds));
       }
-      return Convert.ToInt64((d.ToUniversalTime() - UnixEpochUtc).TotalMilliseconds);
+      return new EcmaTimestamp(Convert.ToInt64((d.ToUniversalTime() - UnixEpochUtc).TotalMilliseconds));
     }
 
     public static long GetTimestamp(long timestamp, int start, params long[] args) {

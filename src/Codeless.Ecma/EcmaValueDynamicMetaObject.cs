@@ -104,6 +104,12 @@ namespace Codeless.Ecma {
       return ReturnDynamicMetaObject(binder, expr);
     }
 
+    public override DynamicMetaObject BindCreateInstance(CreateInstanceBinder binder, DynamicMetaObject[] args) {
+      Expression expr = CallEcmaValueMethod("Construct",
+        Expression.NewArrayInit(typeof(EcmaValue), args.Select(GetConvertToEcmaValueExpression)));
+      return ReturnDynamicMetaObject(binder, expr);
+    }
+
     private Expression CallEcmaValueMethod(string name, params Expression[] args) {
       return Expression.Call(Expression.Convert(Expression, typeof(EcmaValue)), name, Type.EmptyTypes, args);
     }

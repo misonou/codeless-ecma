@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Codeless.Ecma.Native;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     public static RuntimeObject CreateError(RuntimeObject constructor, EcmaValue message, WellKnownObject defaultProto, Exception ex) {
       RuntimeObject err = new IntrinsicObject(new EcmaValue(ex), defaultProto, constructor);
-      if (message != EcmaValue.Undefined) {
+      if (message != default) {
         err.DefinePropertyOrThrow(WellKnownPropertyName.Message, new EcmaPropertyDescriptor(message.ToString(), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
       }
       return err;

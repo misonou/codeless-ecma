@@ -1,4 +1,5 @@
 ﻿using Codeless.Ecma.Native;
+using Codeless.Ecma.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,39 +7,8 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma {
-  public enum WellKnownPropertyName {
-    Length = 1,
-    Name,
-    Arguments,
-    Caller,
-    Constructor,
-    Prototype,
-    ToString,
-    ValueOf,
-    Configurable,
-    Enumerable,
-    Writable,
-    Value,
-    Get,
-    Set,
-    GetPrototypeOf,
-    SetPrototypeOf,
-    IsExtensible,
-    PreventExtensions,
-    GetOwnPropertyDescriptor,
-    DefineProperty,
-    Has,
-    DeleteProperty,
-    OwnKeys,
-    Apply,
-    Construct,
-    LastIndex,
-    Message,
-    ToJson
-  }
-
   [DebuggerStepThrough]
-  public struct EcmaPropertyKey : IEquatable<EcmaPropertyKey>, IEcmaValueConvertible {
+  public struct EcmaPropertyKey : IEquatable<EcmaPropertyKey> {
     private EcmaValue value;
 
     public EcmaPropertyKey(WellKnownPropertyName value)
@@ -53,7 +23,6 @@ namespace Codeless.Ecma {
     public EcmaPropertyKey(string value)
       : this() {
       uint number;
-      EcmaValueHandle handle;
       if (UInt32.TryParse(value, out number) && number < UInt32.MaxValue) {
         this.value = number;
       } else {
@@ -155,6 +124,14 @@ namespace Codeless.Ecma {
       return value.ToString();
     }
 
+    public static bool operator ==(EcmaPropertyKey x, EcmaPropertyKey y) {
+      return x.Equals(y);
+    }
+
+    public static bool operator !=(EcmaPropertyKey x, EcmaPropertyKey y) {
+      return !x.Equals(y);
+    }
+
     public static implicit operator EcmaPropertyKey(WellKnownPropertyName value) {
       return new EcmaPropertyKey(value);
     }
@@ -177,16 +154,6 @@ namespace Codeless.Ecma {
 
     public static implicit operator EcmaPropertyKey(long index) {
       return new EcmaPropertyKey(index);
-    }
-
-    private static bool IsWellKnownPropertyName(string name, out EcmaValueHandle value) {
-      try {
-        value = WellKnownPropertyNameBinder.Default.ToHandle(name);
-        return true;
-      } catch {
-        value = default(EcmaValueHandle);
-        return false;
-      }
     }
   }
 }

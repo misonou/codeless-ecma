@@ -8,7 +8,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (args.Length == 1 && args[0].Type == EcmaValueType.Number) {
         uint length = args[0].ToUInt32();
         if (args[0] != length) {
-          throw new EcmaRangeErrorException("");
+          throw new EcmaRangeErrorException(InternalString.Error.InvalidArrayLength);
         }
         return new EcmaArray(length, constructor);
       }
@@ -16,8 +16,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     }
 
     [IntrinsicMember(WellKnownSymbol.Species, Getter = true)]
-    public static EcmaValue Species([This] EcmaValue thisArg) {
-      return thisArg;
+    public static EcmaValue Species([This] EcmaValue thisValue) {
+      return thisValue;
     }
 
     [IntrinsicMember]

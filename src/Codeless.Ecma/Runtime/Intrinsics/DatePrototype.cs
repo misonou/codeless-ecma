@@ -9,116 +9,116 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
   internal static class DatePrototype {
     [IntrinsicMember]
     public static EcmaValue GetTime([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.Value;
     }
 
     [IntrinsicMember]
     public static EcmaValue GetDate([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.Value;
     }
 
     [IntrinsicMember]
     public static EcmaValue GetDay([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponent(EcmaDateComponent.WeekDay);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetFullYear([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponent(EcmaDateComponent.Year);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetHours([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponent(EcmaDateComponent.Hours);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetMilliseconds([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponent(EcmaDateComponent.Milliseconds);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetMinutes([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponent(EcmaDateComponent.Minutes);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetMonth([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponent(EcmaDateComponent.Month);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetSeconds([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponent(EcmaDateComponent.Seconds);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetTimezoneOffset([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : EcmaTimestamp.TimezoneOffset;
     }
 
     [IntrinsicMember]
     public static EcmaValue GetUTCDate([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : EcmaTimestamp.TimezoneOffset;
     }
 
     [IntrinsicMember]
     public static EcmaValue GetUTCDay([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponentUtc(EcmaDateComponent.Date);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetUTCFullYear([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponentUtc(EcmaDateComponent.Year);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetUTCHours([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponentUtc(EcmaDateComponent.Hours);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetUTCMilliseconds([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponentUtc(EcmaDateComponent.Milliseconds);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetUTCMinutes([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponentUtc(EcmaDateComponent.Minutes);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetUTCMonth([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponentUtc(EcmaDateComponent.Month);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetUTCSeconds([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.GetComponentUtc(EcmaDateComponent.Seconds);
     }
 
     [IntrinsicMember]
     public static EcmaValue SetTime([This] EcmaValue value, EcmaValue time) {
       EcmaTimestamp dt = time.IsFinite ? new EcmaTimestamp(time.ToInt64()) : EcmaTimestamp.Invalid;
-      EcmaValueUtility.SetIntrinsicValue(value, dt);
+      value.GetUnderlyingObject<EcmaDate>().Timestamp = dt;
       return dt.IsValid ? EcmaValue.NaN : dt.Value;
     }
 
@@ -194,61 +194,61 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static EcmaValue ValueOf([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? EcmaValue.NaN : dt.Value;
     }
 
     [IntrinsicMember]
     public static string ToString([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return dt.ToString(DateTimeFormatInfo.InvariantInfo);
     }
 
     [IntrinsicMember]
     public static string ToISOString([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return dt.ToISOString();
     }
 
     [IntrinsicMember]
     public static string ToUTCString([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return dt.ToUTCString(DateTimeFormatInfo.InvariantInfo);
     }
 
     [IntrinsicMember]
     public static string ToDateString([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return dt.ToDateString(DateTimeFormatInfo.InvariantInfo);
     }
 
     [IntrinsicMember]
     public static string ToTimeString([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return dt.ToTimeString(DateTimeFormatInfo.InvariantInfo);
     }
 
     [IntrinsicMember]
     public static string ToLocaleString([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return dt.ToString(DateTimeFormatInfo.CurrentInfo);
     }
 
     [IntrinsicMember]
     public static string ToLocaleDateString([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return dt.ToDateString(DateTimeFormatInfo.CurrentInfo);
     }
 
     [IntrinsicMember]
     public static string ToLocaleTimeString([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return dt.ToTimeString(DateTimeFormatInfo.CurrentInfo);
     }
 
     [IntrinsicMember]
     public static EcmaValue ToJSON([This] EcmaValue value) {
-      EcmaTimestamp dt = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+      EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? null : dt.ToISOString();
     }
 
@@ -272,7 +272,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         }
       }
       if (i == checkedValues.Length) {
-        EcmaTimestamp current = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+        EcmaTimestamp current = value.GetUnderlyingObject<EcmaDate>().Timestamp;
         if (!current.IsValid && start == EcmaDateComponent.Year) {
           current = EcmaTimestamp.LocalEpoch;
         }
@@ -280,7 +280,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
           result = (EcmaTimestamp)EcmaTimestamp.GetTimestamp(current.Value, (int)start, checkedValues);
         }
       }
-      EcmaValueUtility.SetIntrinsicValue(value, result);
+      value.GetUnderlyingObject<EcmaDate>().Timestamp = result;
       return result.Value;
     }
 
@@ -294,7 +294,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         }
       }
       if (i == checkedValues.Length) {
-        EcmaTimestamp current = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value);
+        EcmaTimestamp current = value.GetUnderlyingObject<EcmaDate>().Timestamp;
         if (!current.IsValid && start == EcmaDateComponent.Year) {
           current = EcmaTimestamp.LocalEpoch;
         }
@@ -302,7 +302,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
           result = (EcmaTimestamp)EcmaTimestamp.GetTimestampUtc(current.Value, (int)start, checkedValues);
         }
       }
-      EcmaValueUtility.SetIntrinsicValue(value, result);
+      value.GetUnderlyingObject<EcmaDate>().Timestamp = result;
       return result.Value;
     }
   }

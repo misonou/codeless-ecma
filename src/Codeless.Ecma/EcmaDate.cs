@@ -7,14 +7,16 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma {
-  public class EcmaDate : RuntimeObject, IEcmaIntrinsicObject {
+  public class EcmaDate : RuntimeObject {
     private EcmaTimestamp timestamp;
 
     public EcmaDate()
       : this(DateTime.UtcNow) { }
 
     public EcmaDate(DateTime dt)
-      : this(EcmaTimestamp.FromNativeDateTime(dt)) { }
+      : base(WellKnownObject.DatePrototype) {
+      this.timestamp = new EcmaTimestamp(dt);
+    }
 
     public EcmaDate(long timestamp)
       : base(WellKnownObject.DatePrototype) {
@@ -24,6 +26,16 @@ namespace Codeless.Ecma {
     public EcmaDate(long timestamp, RuntimeObject constructor)
       : base(WellKnownObject.DatePrototype, constructor) {
       this.timestamp = new EcmaTimestamp(timestamp);
+    }
+
+    public DateTime Value {
+      get { return timestamp.ToNativeDateTime(DateTimeKind.Local); }
+      set { timestamp = new EcmaTimestamp(value); }
+    }
+
+    internal EcmaTimestamp Timestamp {
+      get { return timestamp; }
+      set { timestamp = value; }
     }
 
     public long GetTime() {
@@ -289,11 +301,6 @@ namespace Codeless.Ecma {
     private long SetComponentsUtc(EcmaDateComponent start, params long[] args) {
       timestamp = (EcmaTimestamp)EcmaTimestamp.GetTimestampUtc(timestamp.Value, (int)start, args);
       return timestamp.Value;
-    }
-
-    EcmaValue IEcmaIntrinsicObject.IntrinsicValue {
-      get { return EcmaTimestampBinder.Default.CreateValue(timestamp); }
-      set { timestamp = EcmaValueUtility.GetIntrinsicValue<EcmaTimestamp>(value); }
     }
   }
 }

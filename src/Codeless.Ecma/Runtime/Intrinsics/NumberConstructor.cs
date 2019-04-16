@@ -7,12 +7,13 @@ using System.Text;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.NumberConstructor)]
   internal static class NumberConstructor {
-    [IntrinsicConstructor]
-    public static EcmaValue Number([NewTarget] RuntimeObject constructor, EcmaValue value) {
+    [IntrinsicConstructor(ObjectType = typeof(IntrinsicObject))]
+    public static EcmaValue Number([NewTarget] RuntimeObject constructor, [This] EcmaValue thisValue, EcmaValue value) {
       if (constructor == null) {
         return value.ToNumber();
       }
-      return new IntrinsicObject(value.ToNumber(), WellKnownObject.NumberPrototype, constructor);
+      ((IntrinsicObject)thisValue.ToObject()).IntrinsicValue = value.ToNumber();
+      return thisValue;
     }
 
     [IntrinsicMember("EPSILON", EcmaPropertyAttributes.None)]
@@ -51,7 +52,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static bool IsNaN(EcmaValue value) {
-      return EcmaGlobal.IsNaN(value);
+      return value.IsNaN;
     }
 
     [IntrinsicMember]
@@ -64,16 +65,14 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return false;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(Global = true)]
     public static EcmaValue ParseFloat(EcmaValue value) {
-      double longValue;
-      return Double.TryParse(value.ToString(), out longValue) ? longValue : EcmaValue.NaN;
+      return Global.ParseFloat(value);
     }
 
-    [IntrinsicMember]
-    public static EcmaValue ParseInt(EcmaValue value) {
-      long longValue;
-      return Int64.TryParse(value.ToString(), out longValue) ? longValue : EcmaValue.NaN;
+    [IntrinsicMember(Global = true)]
+    public static EcmaValue ParseInt(EcmaValue value, EcmaValue radix) {
+      return Global.ParseInt(value, radix);
     }
   }
 }

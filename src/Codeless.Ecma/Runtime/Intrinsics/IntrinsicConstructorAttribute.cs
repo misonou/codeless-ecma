@@ -14,5 +14,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     }
 
     public NativeRuntimeFunctionConstraint Constraint { get; private set; }
+    public Type ObjectType { get; set; }
+    public string Name { get; set; }
   }
 }

@@ -13,9 +13,9 @@ namespace Codeless.Ecma {
     Configurable = 4
   }
 
-  public class EcmaPropertyDescriptor : IEcmaValueConvertible {
+  public class EcmaPropertyDescriptor {
     public EcmaPropertyDescriptor()
-      : this(default(EcmaValue), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Enumerable | EcmaPropertyAttributes.Configurable) { }
+      : this(EcmaValue.Undefined, EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Enumerable | EcmaPropertyAttributes.Configurable) { }
 
     public EcmaPropertyDescriptor(EcmaValue data)
       : this(data, EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Enumerable | EcmaPropertyAttributes.Configurable) { }
@@ -71,9 +71,7 @@ namespace Codeless.Ecma {
     [EcmaSpecification("ToPropertyDescriptor", EcmaSpecificationKind.AbstractOperations)]
     [EcmaSpecification("CompletePropertyDescriptor", EcmaSpecificationKind.AbstractOperations)]
     public static EcmaPropertyDescriptor FromValue(EcmaValue value) {
-      if (value.Type != EcmaValueType.Object) {
-        throw new EcmaTypeErrorException("");
-      }
+      Guard.ArgumentIsObject(value);
       EcmaPropertyDescriptor result = new EcmaPropertyDescriptor();
       if (value.HasProperty(WellKnownPropertyName.Enumerable)) {
         result.Enumerable = (bool)value[WellKnownPropertyName.Enumerable];
@@ -91,21 +89,21 @@ namespace Codeless.Ecma {
       }
       if (value.HasProperty(WellKnownPropertyName.Get)) {
         EcmaValue getter = value[WellKnownPropertyName.Get];
-        if (!getter.IsCallable && getter.Type == EcmaValueType.Undefined) {
-          throw new EcmaTypeErrorException("");
+        if (!getter.IsCallable && getter.Type != EcmaValueType.Undefined) {
+          throw new EcmaTypeErrorException(InternalString.Error.SetterMustBeFunction);
         }
         result.Get = getter;
       }
       if (value.HasProperty(WellKnownPropertyName.Set)) {
         EcmaValue setter = value[WellKnownPropertyName.Set];
-        if (!setter.IsCallable && setter.Type == EcmaValueType.Undefined) {
-          throw new EcmaTypeErrorException("");
+        if (!setter.IsCallable && setter.Type != EcmaValueType.Undefined) {
+          throw new EcmaTypeErrorException(InternalString.Error.GetterMustBeFunction);
         }
         result.Set = setter;
       }
       if (result.Get.IsCallable || result.Set.IsCallable) {
         if (result.IsDataDescriptor) {
-          throw new EcmaTypeErrorException("");
+          throw new EcmaTypeErrorException(InternalString.Error.InvalidDescriptor);
         }
         result.IsAccessorDescriptor = true;
       }
@@ -155,6 +153,14 @@ namespace Codeless.Ecma {
       EcmaPropertyDescriptor n = (EcmaPropertyDescriptor)descriptor.MemberwiseClone();
       n.Configurable = descriptor.Configurable.GetValueOrDefault(current.Configurable.GetValueOrDefault());
       n.Writable = descriptor.Writable.GetValueOrDefault(current.Writable.GetValueOrDefault());
+      if (n.IsAccessorDescriptor) {
+        if (n.Get == default) {
+          n.Get = current.Get;
+        }
+        if (n.Set == default) {
+          n.Set = current.Set;
+        }
+      }
       descriptor = n;
       return true;
     }

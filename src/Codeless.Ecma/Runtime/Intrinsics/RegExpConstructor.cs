@@ -7,123 +7,123 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Codeless.Ecma.Runtime.Intrinsics {
-  [IntrinsicObject(WellKnownObject.RegExp)]
+  [IntrinsicObject(WellKnownObject.RegExpConstructor)]
   internal static class RegExpConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct)]
-    public static EcmaValue RegExp(EcmaValue pattern, EcmaValue flags) {
-      EcmaRegExp re;
-      if (EcmaRegExp.TryParse(String.Concat("/", pattern, "/", flags), out re)) {
-        return new EcmaValue(re);
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct, ObjectType = typeof(EcmaRegExp))]
+    public static EcmaValue RegExp([This] EcmaValue thisValue, EcmaValue pattern, EcmaValue flags) {
+      if (EcmaRegExp.TryParse(String.Concat("/", pattern, "/", flags), out EcmaRegExp re)) {
+        thisValue.GetUnderlyingObject<EcmaRegExp>().Init(re);
+        return thisValue;
       }
       throw new EcmaSyntaxErrorException("Invalid regular expression");
     }
 
     [IntrinsicMember(WellKnownSymbol.Species, Getter = true)]
-    public static EcmaValue Species([This] EcmaValue thisArg) {
-      return thisArg;
+    public static EcmaValue Species([This] EcmaValue thisValue) {
+      return thisValue;
     }
 
     [IntrinsicMember(Getter = true)]
-    public static EcmaValue LastMatch([This] EcmaValue thisArg) {
-      MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisArg.ToRuntimeObject()));
+    public static EcmaValue LastMatch([This] EcmaValue thisValue) {
+      MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisValue));
       if (cur != null) {
         return cur.LastValue;
       }
-      return EcmaValue.Undefined;
+      return default;
     }
 
     [IntrinsicMember(Getter = true)]
-    public static EcmaValue Input([This] EcmaValue thisArg) {
-      MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisArg.ToRuntimeObject()));
+    public static EcmaValue Input([This] EcmaValue thisValue) {
+      MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisValue));
       if (cur != null) {
         return cur.Input;
       }
-      return EcmaValue.Undefined;
+      return default;
     }
 
     [IntrinsicMember(Getter = true)]
-    public static EcmaValue LastParen([This] EcmaValue thisArg) {
-      MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisArg.ToRuntimeObject()));
+    public static EcmaValue LastParen([This] EcmaValue thisValue) {
+      MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisValue));
       if (cur != null) {
         return cur.LastParen;
       }
-      return EcmaValue.Undefined;
+      return default;
     }
 
     [IntrinsicMember(Getter = true)]
-    public static EcmaValue LeftContext([This] EcmaValue thisArg) {
-      MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisArg.ToRuntimeObject()));
+    public static EcmaValue LeftContext([This] EcmaValue thisValue) {
+      MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisValue));
       if (cur != null) {
         return cur.LeftContext;
       }
-      return EcmaValue.Undefined;
+      return default;
     }
 
     [IntrinsicMember(Getter = true)]
-    public static EcmaValue RightContext([This] EcmaValue thisArg) {
-      MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisArg.ToRuntimeObject()));
+    public static EcmaValue RightContext([This] EcmaValue thisValue) {
+      MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisValue));
       if (cur != null) {
         return cur.RightContext;
       }
-      return EcmaValue.Undefined;
+      return default;
     }
 
     [IntrinsicMember("$_", Getter = true)]
-    public static EcmaValue MatchInput([This] EcmaValue thisArg) {
-      return Input(thisArg);
+    public static EcmaValue MatchInput([This] EcmaValue thisValue) {
+      return Input(thisValue);
     }
 
     [IntrinsicMember("$1", Getter = true)]
-    public static EcmaValue MatchParen1([This] EcmaValue thisArg) {
-      return MatchParen(thisArg, 1);
+    public static EcmaValue MatchParen1([This] EcmaValue thisValue) {
+      return MatchParen(thisValue, 1);
     }
 
     [IntrinsicMember("$2", Getter = true)]
-    public static EcmaValue MatchParen2([This] EcmaValue thisArg) {
-      return MatchParen(thisArg, 2);
+    public static EcmaValue MatchParen2([This] EcmaValue thisValue) {
+      return MatchParen(thisValue, 2);
     }
 
     [IntrinsicMember("$3", Getter = true)]
-    public static EcmaValue MatchParen3([This] EcmaValue thisArg) {
-      return MatchParen(thisArg, 3);
+    public static EcmaValue MatchParen3([This] EcmaValue thisValue) {
+      return MatchParen(thisValue, 3);
     }
 
     [IntrinsicMember("$4", Getter = true)]
-    public static EcmaValue MatchParen4([This] EcmaValue thisArg) {
-      return MatchParen(thisArg, 4);
+    public static EcmaValue MatchParen4([This] EcmaValue thisValue) {
+      return MatchParen(thisValue, 4);
     }
 
     [IntrinsicMember("$5", Getter = true)]
-    public static EcmaValue MatchParen5([This] EcmaValue thisArg) {
-      return MatchParen(thisArg, 5);
+    public static EcmaValue MatchParen5([This] EcmaValue thisValue) {
+      return MatchParen(thisValue, 5);
     }
 
     [IntrinsicMember("$6", Getter = true)]
-    public static EcmaValue MatchParen6([This] EcmaValue thisArg) {
-      return MatchParen(thisArg, 6);
+    public static EcmaValue MatchParen6([This] EcmaValue thisValue) {
+      return MatchParen(thisValue, 6);
     }
 
     [IntrinsicMember("$7", Getter = true)]
-    public static EcmaValue MatchParen7([This] EcmaValue thisArg) {
-      return MatchParen(thisArg, 7);
+    public static EcmaValue MatchParen7([This] EcmaValue thisValue) {
+      return MatchParen(thisValue, 7);
     }
 
     [IntrinsicMember("$8", Getter = true)]
-    public static EcmaValue MatchParen8([This] EcmaValue thisArg) {
-      return MatchParen(thisArg, 8);
+    public static EcmaValue MatchParen8([This] EcmaValue thisValue) {
+      return MatchParen(thisValue, 8);
     }
 
     [IntrinsicMember("$9", Getter = true)]
-    public static EcmaValue MatchParen9([This] EcmaValue thisArg) {
-      return MatchParen(thisArg, 9);
+    public static EcmaValue MatchParen9([This] EcmaValue thisValue) {
+      return MatchParen(thisValue, 9);
     }
 
-    private static EcmaValue MatchParen(EcmaValue thisArg, int index) {
-      MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisArg.ToRuntimeObject()));
+    private static EcmaValue MatchParen(EcmaValue thisValue, int index) {
+      MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisValue));
       if (cur != null) {
         return cur.MatchedValues.ElementAtOrDefault(index);
       }
-      return EcmaValue.Undefined;
+      return default;
     }
 
     private static MatchInfo CheckAndPopulate(RuntimeRealm realm) {

@@ -12,6 +12,10 @@ namespace Codeless.Ecma {
     private readonly EcmaValue replacer;
     private readonly IList<string> propertyList;
 
+    public EcmaValueJsonConverter(string indentString) {
+      this.indentString = indentString;
+    }
+
     public EcmaValueJsonConverter(string indentString, EcmaValue replacer) {
       this.indentString = indentString;
       this.replacer = replacer;
@@ -27,7 +31,7 @@ namespace Codeless.Ecma {
     }
 
     public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
-      throw new NotImplementedException();
+      throw new NotSupportedException();
     }
 
     public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
@@ -46,7 +50,7 @@ namespace Codeless.Ecma {
       string prependString = String.Join("", stack.Select(v => indentString).ToArray());
 
       if (stack.Contains(value)) {
-        throw new EcmaTypeErrorException("Cyclical");
+        throw new EcmaTypeErrorException(InternalString.Error.CircularJsonObject);
       }
       stack.Push(value);
       writer.WriteStartObject();
@@ -57,8 +61,6 @@ namespace Codeless.Ecma {
       } else {
         entries.AddRange(value.GetEnumerableOwnProperties());
       }
-
-
       foreach (EcmaPropertyEntry e in entries) {
         EcmaValue v = TransformValue(value, e.Key, e.Value);
         if (v.Type != EcmaValueType.Undefined) {
@@ -69,7 +71,6 @@ namespace Codeless.Ecma {
             writer.WriteRaw(indentString);
           }
           writer.WritePropertyName(e.Key.ToString());
-          writer.WriteRaw(":");
           if (indentString != String.Empty) {
             writer.WriteRaw(" ");
           }
@@ -86,7 +87,7 @@ namespace Codeless.Ecma {
 
     private void SerializeJsonArray(JsonWriter writer, Stack<RuntimeObject> stack, RuntimeObject value) {
       if (stack.Contains(value)) {
-        throw new EcmaTypeErrorException("Cyclical");
+        throw new EcmaTypeErrorException(InternalString.Error.CircularJsonObject);
       }
       string prependString = String.Join("", stack.Select(v => indentString).ToArray());
       stack.Push(value);
@@ -94,9 +95,6 @@ namespace Codeless.Ecma {
 
       long length = value.Get(WellKnownPropertyName.Length).ToLength();
       for (long i = 0; i < length; i++) {
-        if (i > 0) {
-          writer.WriteRaw(",");
-        }
         if (indentString != String.Empty) {
           writer.WriteRaw(Environment.NewLine);
           writer.WriteRaw(prependString);
@@ -138,9 +136,9 @@ namespace Codeless.Ecma {
         case EcmaValueType.Object:
           if (!value.IsCallable) {
             if (EcmaArray.IsArray(value)) {
-              SerializeJsonArray(writer, stack, value.ToRuntimeObject());
+              SerializeJsonArray(writer, stack, value.ToObject());
             } else {
-              SerializeJsonObject(writer, stack, value.ToRuntimeObject());
+              SerializeJsonObject(writer, stack, value.ToObject());
             }
           }
           break;
@@ -158,11 +156,11 @@ namespace Codeless.Ecma {
         value = replacer.Call(holder, property.ToValue(), value);
       }
       if (value.Type == EcmaValueType.Object) {
-        if (EcmaValueUtility.IsIntrinsicPrimitiveValue(value, EcmaValueType.Number)) {
+        if (value.IsIntrinsicPrimitiveValue(EcmaValueType.Number)) {
           value = value.ToNumber();
-        } else if (EcmaValueUtility.IsIntrinsicPrimitiveValue(value, EcmaValueType.String)) {
+        } else if (value.IsIntrinsicPrimitiveValue(EcmaValueType.String)) {
           value = value.ToString();
-        } else if (EcmaValueUtility.IsIntrinsicPrimitiveValue(value, EcmaValueType.Boolean)) {
+        } else if (value.IsIntrinsicPrimitiveValue(EcmaValueType.Boolean)) {
           value = value.ToBoolean();
         }
       }

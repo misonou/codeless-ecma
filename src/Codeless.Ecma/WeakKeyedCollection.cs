@@ -46,6 +46,10 @@ namespace Codeless.Ecma {
       return null;
     }
 
+    public bool TryRemove(object key) {
+      return dictionary.TryRemove(new WeakKeyedItem(key), out WeakKeyedItem _);
+    }
+
     public T GetOrAdd<T>(T item) where T : WeakKeyedItem {
       if (item.Target == item) {
         return item;
@@ -55,7 +59,10 @@ namespace Codeless.Ecma {
 
     private static void OnDomainUnload(object sender, EventArgs e) {
       finalExit = true;
+#if NET35
+#else
       GC.CancelFullGCNotification();
+#endif
     }
 
     private static void RemoveFreedObjects() {

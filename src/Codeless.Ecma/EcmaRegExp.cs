@@ -16,18 +16,18 @@ namespace Codeless.Ecma {
   /// </summary>
   public class EcmaRegExp : RuntimeObject {
     private static readonly ConcurrentDictionary<string, EcmaRegExp> cache = new ConcurrentDictionary<string, EcmaRegExp>();
-    private readonly Regex nativeRegexp;
+    private Regex nativeRegexp;
 
     private EcmaRegExp(Regex nativeRegexp, bool global)
       : base(WellKnownObject.RegExpPrototype) {
       this.nativeRegexp = nativeRegexp;
       this.Global = global;
+      DefineOwnPropertyNoChecked(WellKnownPropertyName.LastIndex, new EcmaPropertyDescriptor(0, EcmaPropertyAttributes.Writable));
     }
 
     private EcmaRegExp(EcmaRegExp source)
       : base(WellKnownObject.RegExpPrototype) {
-      this.nativeRegexp = source.nativeRegexp;
-      this.Global = source.Global;
+      Init(source);
       DefineOwnPropertyNoChecked(WellKnownPropertyName.LastIndex, new EcmaPropertyDescriptor(0, EcmaPropertyAttributes.Writable));
     }
 
@@ -38,7 +38,7 @@ namespace Codeless.Ecma {
     /// <summary>
     /// Indicates that the regular expression should be tested against all possible matches in a string.
     /// </summary>
-    public bool Global { get; }
+    public bool Global { get; private set; }
 
     /// <summary>
     /// Indicates that a multiline input string should be treated as multiple lines. 
@@ -63,9 +63,16 @@ namespace Codeless.Ecma {
       get { return false; }
     }
 
+    public int LastIndex { get; private set; }
+
     public string LastInput { get; private set; }
 
     public Match LastMatch { get; private set; }
+
+    internal void Init(EcmaRegExp re) {
+      nativeRegexp = re.nativeRegexp;
+      this.Global = re.Global;
+    }
 
     /// <summary>
     /// Tests whether there is any occurences in the specified string that matches the pattern.
@@ -73,18 +80,14 @@ namespace Codeless.Ecma {
     /// <param name="input">A string to test against.</param>
     /// <returns></returns>
     public bool Test(string input) {
-      Match m = nativeRegexp.Match(input);
-      this.Realm.Properties[typeof(EcmaRegExp)] = this;
-      this.LastInput = input;
-      this.LastMatch = m;
+      Match m = nativeRegexp.Match(input, this.LastIndex);
+      SetLastResult(input, m);
       return m.Success;
     }
 
-    public Match Execute(string input, int index) {
-      Match m = nativeRegexp.Match(input);
-      this.Realm.Properties[typeof(EcmaRegExp)] = this;
-      this.LastInput = input;
-      this.LastMatch = m;
+    public Match Execute(string input) {
+      Match m = nativeRegexp.Match(input, this.LastIndex);
+      SetLastResult(input, m);
       return m;
     }
 
@@ -157,6 +160,14 @@ namespace Codeless.Ecma {
       }
       re = null;
       return false;
+    }
+
+    private void SetLastResult(string input, Match result) {
+      this.Realm.Properties[typeof(EcmaRegExp)] = this;
+      this.LastInput = input;
+      this.LastMatch = result;
+      this.LastIndex = this.Global ? result.Index + result.Length : 0;
+      this.Set("lastIndex", this.LastIndex);
     }
 
     private class MatchEvaluatorClass {

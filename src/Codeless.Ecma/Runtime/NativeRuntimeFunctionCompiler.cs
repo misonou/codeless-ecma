@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Codeless.Ecma.Native;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -12,7 +13,7 @@ namespace Codeless.Ecma.Runtime {
     private static readonly Expression pThisArg = Expression.Property(pRecord, "ThisValue");
     private static readonly Expression pNewTarget = Expression.Property(pRecord, "NewTarget");
     private static readonly MethodInfo mSliceArguments = ((Func<EcmaValue[], int, EcmaValue[]>)SliceArguments).Method;
-    private static readonly MethodInfo mGetUnderlyingObject = ((Func<EcmaValue, Type, object>)GetUnderlyingObject).Method;
+    private static readonly MethodInfo mGetUnderlyingObject = typeof(EcmaValueUtility).GetMethod("GetUnderlyingObject", BindingFlags.Static | BindingFlags.Public);
 
     private readonly MethodInfo method;
     private readonly ParameterInfo[] parameters;
@@ -35,11 +36,11 @@ namespace Codeless.Ecma.Runtime {
             continue;
           }
         }
-      }
-      if (Attribute.IsDefined(parameters[parameters.Length - 1], typeof(ParamArrayAttribute))) {
-        this.tailArray = true;
-        if (parameters.Length <= 2 && posNew + posThis == parameters.Length - 3) {
-          this.tailArrayOnly = true;
+        if (Attribute.IsDefined(parameters[parameters.Length - 1], typeof(ParamArrayAttribute))) {
+          this.tailArray = true;
+          if (parameters.Length <= 2 && posNew + posThis == parameters.Length - 3) {
+            this.tailArrayOnly = true;
+          }
         }
       }
     }
@@ -81,7 +82,11 @@ namespace Codeless.Ecma.Runtime {
       if (method.IsStatic) {
         return Expression.Call(method, args.ToArray());
       }
-      return Expression.Call(Expression.Convert(Expression.Call(mGetUnderlyingObject, pThisArg, Expression.Constant(method.DeclaringType)), method.DeclaringType), method, args);
+      if (method.DeclaringType.IsSubclassOf(typeof(RuntimeObject))) {
+        return Expression.Call(Expression.Call(mGetUnderlyingObject.MakeGenericMethod(method.DeclaringType), pThisArg), method, args);
+      }
+      Expression nativeObj = Expression.Property(Expression.Call(mGetUnderlyingObject.MakeGenericMethod(typeof(INativeObjectWrapper)), pThisArg), "Target");
+      return Expression.Call(Expression.Convert(nativeObj, method.DeclaringType), method, args);
     }
 
     private Expression GetArgumentFromArray(int argsIndex, int nativeParameterIndex) {
@@ -114,7 +119,7 @@ namespace Codeless.Ecma.Runtime {
         } else if (i == posThis) {
           yield return EcmaValueUtility.ConvertFromEcmaValueExpression(pThisArg, parameters[i].ParameterType);
         } else if (k >= pArgsLength) {
-          yield return Expression.Constant(EcmaValue.Undefined);
+          yield return GetDefaultExpression(parameters[i].ParameterType);
         } else {
           yield return GetArgumentFromArray(k++, i);
         }
@@ -139,7 +144,7 @@ namespace Codeless.Ecma.Runtime {
           yield return Expression.Condition(
             Expression.GreaterThan(Expression.Property(pArgs, "Length"), Expression.Constant(i)),
             EcmaValueUtility.ConvertFromEcmaValueExpression(Expression.ArrayIndex(pArgs, Expression.Constant(k++)), parameters[i].ParameterType),
-            Expression.Constant(EcmaValue.Undefined));
+            GetDefaultExpression(parameters[i].ParameterType));
         }
       }
       if (tailArray) {
@@ -160,12 +165,31 @@ namespace Codeless.Ecma.Runtime {
       return dst;
     }
 
-    private static object GetUnderlyingObject(EcmaValue value, Type requiredType) {
-      object obj = value.GetUnderlyingObject();
-      if (obj == null || (obj.GetType() != requiredType && !obj.GetType().IsSubclassOf(requiredType))) {
-        throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
-      }
-      return obj;
+    private static Expression GetDefaultExpression(Type type) {
+#if NET35
+      return Expression.Constant(GetDefaultValue(type));
+#else
+      return Expression.Default(type);
+#endif
     }
+
+#if NET35
+    private static object GetDefaultValue(Type type) {
+      if (type == null || !type.IsValueType || type == typeof(void)) {
+        return null;
+      }
+      if (type.ContainsGenericParameters) {
+        throw new ArgumentException("Type <" + type + "> is a generic value type", "type");
+      }
+      if (type.IsPrimitive || !type.IsNotPublic) {
+        try {
+          return Activator.CreateInstance(type);
+        } catch (Exception ex) {
+          throw new ArgumentException("Type <" + type + "> does not contain public parameterless constructor", "type", ex);
+        }
+      }
+      throw new ArgumentException("The supplied value type <" + type + "> is not a publicly-visible type, so the default value cannot be retrieved");
+    }
+#endif
   }
 }

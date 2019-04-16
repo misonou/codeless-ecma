@@ -5,8 +5,11 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma.Runtime {
-  internal class IntrinsicObject : RuntimeObject, IEcmaIntrinsicObject, IInspectorMetaProvider {
+  internal class IntrinsicObject : RuntimeObject, IInspectorMetaProvider {
     private EcmaValue value;
+
+    public IntrinsicObject()
+      : base(WellKnownObject.ObjectPrototype) { }
 
     public IntrinsicObject(EcmaValue value, WellKnownObject defaultProto)
       : base(defaultProto) {
@@ -24,7 +27,7 @@ namespace Codeless.Ecma.Runtime {
     }
 
     void IInspectorMetaProvider.FillInInspectorMetaObject(InspectorMetaObject meta) {
-      meta.EnumerableProperties.Add(new InspectorMetaObjectEntry("[[PrimitiveData]]", value));
+      meta.EnumerableProperties.Add("[[PrimitiveData]]", value);
     }
   }
 }

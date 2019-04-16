@@ -14,14 +14,12 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public const string Name = "Error";
 
     [IntrinsicMember]
-    public static string ToString([This] EcmaValue thisArg) {
-      if (thisArg.Type != EcmaValueType.Object) {
-        throw new EcmaTypeErrorException("");
-      }
-      EcmaValue name = thisArg["name"];
-      EcmaValue msg = thisArg["msg"];
-      string strName = (name == EcmaValue.Undefined) ? Name : name.ToString();
-      string strMsg = (msg == EcmaValue.Undefined) ? String.Empty : msg.ToString();
+    public static string ToString([This] EcmaValue thisValue) {
+      Guard.ArgumentIsObject(thisValue);
+      EcmaValue name = thisValue["name"];
+      EcmaValue msg = thisValue["msg"];
+      string strName = (name == default) ? Name : name.ToString();
+      string strMsg = (msg == default) ? String.Empty : msg.ToString();
       if (strName == "") {
         return strMsg;
       }

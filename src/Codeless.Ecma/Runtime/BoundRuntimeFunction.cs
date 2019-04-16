@@ -10,13 +10,16 @@ namespace Codeless.Ecma.Runtime {
     private readonly RuntimeFunction boundFunction;
     private readonly EcmaValue boundThis;
 
-    public BoundRuntimeFunction(RuntimeFunction fn, EcmaValue thisArg, params EcmaValue[] args) {
+    public BoundRuntimeFunction(RuntimeFunction fn, EcmaValue thisValue, params EcmaValue[] args) {
+      Guard.ArgumentNotNull(fn, "fn");
+      Guard.ArgumentNotNull(args, "args");
       this.boundFunction = fn;
-      this.boundThis = thisArg;
+      this.boundThis = thisValue;
       this.boundArgs = args;
     }
 
     public override EcmaValue Call(EcmaValue thisValue, params EcmaValue[] arguments) {
+      Guard.ArgumentNotNull(arguments, "arguments");
       EcmaValue[] args;
       if (arguments.Length == 0) {
         args = boundArgs;
@@ -28,12 +31,12 @@ namespace Codeless.Ecma.Runtime {
       return base.Call(boundThis, args);
     }
 
-    public override EcmaValue Construct(EcmaValue newTarget, params EcmaValue[] arguments) {
-      return base.Construct(newTarget, arguments);
+    protected internal override RuntimeFunctionDelegate GetDelegate() {
+      return boundFunction.GetDelegate();
     }
 
-    public override RuntimeFunctionDelegate GetDelegate() {
-      return boundFunction.GetDelegate();
+    protected override RuntimeObject ConstructThisValue(RuntimeObject newTarget) {
+      throw new InvalidOperationException();
     }
   }
 }

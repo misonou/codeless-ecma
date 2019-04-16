@@ -34,3 +34,9 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: InternalsVisibleTo("Codeless.Ecma.UnitTest, PublicKey=" +
+  "00240000048000009400000006020000002400005253413100040000010001009b03f4934d4301" +
+  "8a14552067083f6aaea202cc8c0421e3fa276e6b4d95992499e13b807987b0d1dc696dfb55a5cb" +
+  "2515077095805cd29ef87485702ec9fcc164430a449a9caf83cdfc81100fdc4e0462e33f0ad62f" +
+  "52049cdf744d0bc39bde6253d595e52c8d095b842090d3eae22b520047835839b4181402f6dfaf" +
+  "c69d78c9")]

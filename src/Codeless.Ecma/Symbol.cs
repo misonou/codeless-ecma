@@ -20,7 +20,9 @@ namespace Codeless.Ecma {
     Unscopables,
     Species,
     ToPrimitive,
-    ToStringTag
+    ToStringTag,
+    AsyncIterator,
+    MatchAll
   }
 
   [IntrinsicObject(WellKnownObject.SymbolConstructor)]
@@ -32,6 +34,8 @@ namespace Codeless.Ecma {
     public static readonly Symbol Iterator = new Symbol("iterator", WellKnownSymbol.Iterator);
     [IntrinsicMember(EcmaPropertyAttributes.None)]
     public static readonly Symbol Match = new Symbol("match", WellKnownSymbol.Match);
+    [IntrinsicMember(EcmaPropertyAttributes.None)]
+    public static readonly Symbol MatchAll = new Symbol("matchAll", WellKnownSymbol.MatchAll);
     [IntrinsicMember(EcmaPropertyAttributes.None)]
     public static readonly Symbol Replace = new Symbol("replace", WellKnownSymbol.Replace);
     [IntrinsicMember(EcmaPropertyAttributes.None)]
@@ -50,6 +54,8 @@ namespace Codeless.Ecma {
     public static readonly Symbol ToPrimitive = new Symbol("toPrimitive", WellKnownSymbol.ToPrimitive);
     [IntrinsicMember(EcmaPropertyAttributes.None)]
     public static readonly Symbol ToStringTag = new Symbol("toStringTag", WellKnownSymbol.ToStringTag);
+    [IntrinsicMember(EcmaPropertyAttributes.None)]
+    public static readonly Symbol AsyncIterator = new Symbol("asyncIterator", WellKnownSymbol.AsyncIterator);
 
     static Symbol() {
       enumDict = typeof(Symbol).GetFields(BindingFlags.Static | BindingFlags.Public).Select(v => (Symbol)v.GetValue(null)).OrderBy(v => v.SymbolType).ToArray();

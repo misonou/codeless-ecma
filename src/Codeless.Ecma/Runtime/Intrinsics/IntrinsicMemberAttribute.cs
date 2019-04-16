@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma.Runtime.Intrinsics {
-  [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field)]
+  [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = true)]
   public class IntrinsicMemberAttribute : Attribute {
     public IntrinsicMemberAttribute() {
       this.FunctionLength = -1;
@@ -43,5 +43,6 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public int FunctionLength { get; set; }
     public bool Getter { get; set; }
     public bool Setter { get; set; }
+    public bool Global { get; set; }
   }
 }

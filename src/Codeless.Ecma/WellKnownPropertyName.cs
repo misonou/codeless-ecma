@@ -1,0 +1,32 @@
+﻿namespace Codeless.Ecma {
+  public enum WellKnownPropertyName {
+    Length = 1,
+    Name,
+    Arguments,
+    Caller,
+    Constructor,
+    Prototype,
+    ToString,
+    ValueOf,
+    Configurable,
+    Enumerable,
+    Writable,
+    Value,
+    Get,
+    Set,
+    GetPrototypeOf,
+    SetPrototypeOf,
+    IsExtensible,
+    PreventExtensions,
+    GetOwnPropertyDescriptor,
+    DefineProperty,
+    Has,
+    DeleteProperty,
+    OwnKeys,
+    Apply,
+    Construct,
+    LastIndex,
+    Message,
+    ToJson
+  }
+}

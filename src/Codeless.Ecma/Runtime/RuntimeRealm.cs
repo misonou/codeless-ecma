@@ -1,4 +1,5 @@
-﻿using Codeless.Ecma.Runtime.Intrinsics;
+﻿using Codeless.Ecma.Native;
+using Codeless.Ecma.Runtime.Intrinsics;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,6 +8,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Codeless.Ecma.Runtime {
   public class RuntimeRealm : IDisposable {
@@ -18,6 +20,8 @@ namespace Codeless.Ecma.Runtime {
     private readonly WeakKeyedCollection dictionary = new WeakKeyedCollection();
     private readonly Hashtable ht = new Hashtable();
     private readonly RuntimeRealm previous;
+    private readonly List<Action> queuedJobs = new List<Action>();
+    private readonly int threadId = Thread.CurrentThread.ManagedThreadId;
     private bool disposed;
 
     static RuntimeRealm() {
@@ -43,6 +47,8 @@ namespace Codeless.Ecma.Runtime {
       }
     }
 
+    public EventHandler<Exception> ExceptionThrown = delegate { };
+
     public bool Disposed {
       get { return disposed; }
     }
@@ -65,65 +71,103 @@ namespace Codeless.Ecma.Runtime {
       }
     }
 
-    public static RuntimeRealm GetRealm(RuntimeObject obj) {
-      Guard.ArgumentNotNull(obj, "obj");
-      return obj.Realm;
+    public static RuntimeRealm GetRealm(EcmaValue obj) {
+      if (obj.Type == EcmaValueType.Object) {
+        return obj.ToObject().Realm;
+      }
+      return RuntimeRealm.Current;
     }
 
-    public static RuntimeObject GetRuntimeObject(object target, bool createIfNotExist) {
+    public static RuntimeObject GetRuntimeObject(object target) {
       if (target == null) {
         return null;
       }
-      if (target is EcmaValue) {
-        target = ((EcmaValue)target).GetUnderlyingObject();
+      if (target is EcmaValue value) {
+        target = value.GetUnderlyingObject();
       }
-      if (target.GetType().IsValueType) {
-        throw new ArgumentException();
+      if (target is RuntimeObject runtimeObject) {
+        return runtimeObject;
       }
-      if (createIfNotExist) {
-        RuntimeObject newO = RuntimeObject.CreateForNativeObject(target);
-        RuntimeObject cur = Current.dictionary.GetOrAdd(newO);
-        return cur;
-      }
-      return Current.dictionary.TryGet<RuntimeObject>(target);
+      return Current.dictionary.GetOrAdd(NativeObject.Create(target));
     }
 
-    public static RuntimeObject GetWellKnownObject(WellKnownObject type) {
+    public static RuntimeObject GetRuntimeObject(WellKnownObject type) {
       if ((int)type < 1 || (int)type >= (int)WellKnownObject.MaxValue) {
         throw new ArgumentException();
       }
       return sharedIntrinsics[(int)type - 1];
     }
 
+    public void Enqueue(Action action) {
+      if (disposed) {
+        throw new InvalidOperationException("Realm has been disposed");
+      }
+      queuedJobs.Add(action);
+    }
+
+    public void RunQueuedJobs() {
+      if (Thread.CurrentThread.ManagedThreadId != threadId) {
+        throw new InvalidOperationException("Event loop must be executed in the same thread");
+      }
+      if (disposed) {
+        throw new InvalidOperationException("Realm has been disposed");
+      }
+      RuntimeRealm before = current;
+      current = this;
+      try {
+        List<Action> actions = new List<Action>(queuedJobs);
+        queuedJobs.Clear();
+        foreach (Action action in actions) {
+          if (!disposed) {
+            try {
+              action();
+            } catch (Exception ex) {
+              ExceptionThrown.Invoke(this, ex);
+            }
+          }
+        }
+      } finally {
+        current = before;
+      }
+    }
+
     public void Dispose() {
       if (!disposed) {
         current = previous;
+        queuedJobs.Clear();
         disposed = true;
       }
     }
 
-    private static WellKnownObject GetPrototypeOf(WellKnownObject type) {
+    public static WellKnownObject GetPrototypeOf(WellKnownObject type) {
       switch (type) {
         case WellKnownObject.ArrayConstructor:
         case WellKnownObject.BooleanConstructor:
         case WellKnownObject.DateConstructor:
         case WellKnownObject.ErrorConstructor:
         case WellKnownObject.FunctionConstructor:
-        case WellKnownObject.Map:
+        case WellKnownObject.MapConstructor:
         case WellKnownObject.NumberConstructor:
         case WellKnownObject.ObjectConstructor:
-        case WellKnownObject.RegExp:
-        case WellKnownObject.Set:
+        case WellKnownObject.RegExpConstructor:
+        case WellKnownObject.SetConstructor:
         case WellKnownObject.StringConstructor:
         case WellKnownObject.SymbolConstructor:
-        case WellKnownObject.WeakMap:
-        case WellKnownObject.WeakSet:
+        case WellKnownObject.WeakMapConstructor:
+        case WellKnownObject.WeakSetConstructor:
         case WellKnownObject.EvalError:
         case WellKnownObject.RangeError:
         case WellKnownObject.ReferenceError:
         case WellKnownObject.SyntaxError:
         case WellKnownObject.TypeError:
         case WellKnownObject.UriError:
+        case WellKnownObject.PromiseConstructor:
+        case WellKnownObject.Uint8Array:
+        case WellKnownObject.Uint8ClampedArray:
+        case WellKnownObject.Uint16Array:
+        case WellKnownObject.Uint32Array:
+        case WellKnownObject.DataView:
+        case WellKnownObject.SharedArrayBuffer:
           return (WellKnownObject)((int)type + 1);
         case WellKnownObject.EvalErrorPrototype:
         case WellKnownObject.RangeErrorPrototype:
@@ -132,6 +176,10 @@ namespace Codeless.Ecma.Runtime {
         case WellKnownObject.UriErrorPrototype:
         case WellKnownObject.TypeErrorPrototype:
           return WellKnownObject.ErrorPrototype;
+        case WellKnownObject.ArrayIteratorPrototype:
+        case WellKnownObject.MapIteratorPrototype:
+        case WellKnownObject.SetIteratorPrototype:
+          return WellKnownObject.IteratorPrototype;
         case WellKnownObject.ObjectPrototype:
           return 0;
       }
@@ -142,10 +190,22 @@ namespace Codeless.Ecma.Runtime {
       int index = (int)type - 1;
       RuntimeObject obj = sharedIntrinsics[index];
       if (obj == null) {
-        if (type == WellKnownObject.ObjectPrototype) {
-          obj = RuntimeObject.Create((RuntimeObject)null);
-        } else {
-          obj = new RuntimeObject(GetPrototypeOf(type));
+        switch (type) {
+          case WellKnownObject.ObjectPrototype:
+            obj = RuntimeObject.Create(null);
+            break;
+          case WellKnownObject.NumberPrototype:
+            obj = new IntrinsicObject(0, WellKnownObject.ObjectPrototype);
+            break;
+          case WellKnownObject.StringPrototype:
+            obj = new IntrinsicObject("", WellKnownObject.ObjectPrototype);
+            break;
+          case WellKnownObject.BooleanPrototype:
+            obj = new IntrinsicObject(false, WellKnownObject.ObjectPrototype);
+            break;
+          default:
+            obj = new RuntimeObject(GetPrototypeOf(type));
+            break;
         }
         sharedIntrinsics[index] = obj;
       }
@@ -166,48 +226,64 @@ namespace Codeless.Ecma.Runtime {
           WellKnownObject typeProto = GetPrototypeOf(typeAttr.ObjectType);
           if (typeAttr.Global) {
             RuntimeObject global = EnsureWellKnownObject(WellKnownObject.Global);
-            global.DefineOwnProperty(typeAttr.Name, new EcmaPropertyDescriptor(new EcmaValue(EnsureWellKnownObject(typeAttr.ObjectType)), EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
+            global.DefineOwnProperty(typeAttr.Name ?? t.Name, new EcmaPropertyDescriptor(new EcmaValue(EnsureWellKnownObject(typeAttr.ObjectType)), EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
           }
           foreach (MemberInfo member in t.GetMembers()) {
             IntrinsicConstructorAttribute ctorAttr;
             if (member.HasAttribute(out ctorAttr)) {
-              DefineIntrinsicConstructor(typeAttr.ObjectType, member.Name, (MethodInfo)member, GetPrototypeOf(typeAttr.ObjectType));
-              continue;
-            }
-            IntrinsicMemberAttribute propAttr;
-            if (member.HasAttribute(out propAttr)) {
-              EcmaPropertyKey name;
-              if (propAttr.Symbol != 0) {
-                name = new EcmaPropertyKey(propAttr.Symbol);
-              } else {
-                name = new EcmaPropertyKey(propAttr.Name ?? Regex.Replace(member.Name, "^[A-Z](?=[a-z])", v => v.Value.ToLower()));
-              }
-              switch (member.MemberType) {
-                case MemberTypes.Method:
-                  RuntimeObject fn;
-                  if (propAttr.Getter) {
-                    fn = DefineIntrinsicAccessorProperty(typeAttr.ObjectType, name, (MethodInfo)member, propAttr.Attributes, true);
-                  } else if (propAttr.Setter) {
-                    fn = DefineIntrinsicAccessorProperty(typeAttr.ObjectType, name, (MethodInfo)member, propAttr.Attributes, false);
-                  } else if (((MethodInfo)member).IsStatic) {
-                    fn = DefineIntrinsicFunction(typeAttr.ObjectType, name, (MethodInfo)member);
-                  } else {
-                    fn = DefineIntrinsicFunction(typeProto, name, (MethodInfo)member);
-                  }
+              string ctorName = ctorAttr.Name ?? member.Name;
+              NativeRuntimeFunction fn = new NativeRuntimeFunction(ctorName, (MethodInfo)member);
+              definedObj.Add(fn);
+              DefineIntrinsicConstructor(typeAttr.ObjectType, ctorName, fn, GetPrototypeOf(typeAttr.ObjectType));
+            } else {
+              object[] propAttrs = member.GetCustomAttributes(typeof(IntrinsicMemberAttribute), false);
+              if (propAttrs.Length > 0) {
+                NativeRuntimeFunction fn = null;
+                if (member.MemberType == MemberTypes.Method) {
+                  IntrinsicMemberAttribute propAttr = (IntrinsicMemberAttribute)propAttrs[0];
+                  EcmaPropertyKey name = GetNameFromMember(propAttr, member);
+                  string runtimeName = (propAttr.Getter ? "get " : propAttr.Setter ? "set " : "") + (name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name);
+                  fn = new NativeRuntimeFunction(runtimeName, (MethodInfo)member);
                   definedObj.Add(fn);
-                  break;
-                case MemberTypes.Property:
-                  DefineIntrinsicDataProperty(typeAttr.ObjectType, name, new EcmaValue(((PropertyInfo)member).GetValue(null, null)), propAttr.Attributes);
-                  break;
-                case MemberTypes.Field:
-                  DefineIntrinsicDataProperty(typeAttr.ObjectType, name, new EcmaValue(((FieldInfo)member).GetValue(null)), propAttr.Attributes);
-                  break;
+                }
+                foreach (IntrinsicMemberAttribute propAttr in propAttrs) {
+                  EcmaPropertyKey name = GetNameFromMember(propAttr, member);
+                  switch (member.MemberType) {
+                    case MemberTypes.Method:
+                      if (propAttr.Getter) {
+                        DefineIntrinsicAccessorProperty(typeAttr.ObjectType, name, fn, propAttr.Attributes, true);
+                      } else if (propAttr.Setter) {
+                        DefineIntrinsicAccessorProperty(typeAttr.ObjectType, name, fn, propAttr.Attributes, false);
+                      } else if (((MethodInfo)member).IsStatic) {
+                        DefineIntrinsicFunction(typeAttr.ObjectType, name, fn);
+                        if (propAttr.Global) {
+                          DefineIntrinsicFunction(WellKnownObject.Global, name, fn);
+                        }
+                      } else {
+                        DefineIntrinsicFunction(typeProto, name, fn);
+                      }
+                      break;
+                    case MemberTypes.Property:
+                      DefineIntrinsicDataProperty(typeAttr.ObjectType, name, new EcmaValue(((PropertyInfo)member).GetValue(null, null)), propAttr.Attributes);
+                      break;
+                    case MemberTypes.Field:
+                      DefineIntrinsicDataProperty(typeAttr.ObjectType, name, new EcmaValue(((FieldInfo)member).GetValue(null)), propAttr.Attributes);
+                      break;
+                  }
+                }
               }
             }
           }
         }
       }
       return definedObj;
+    }
+
+    private static EcmaPropertyKey GetNameFromMember(IntrinsicMemberAttribute propAttr, MemberInfo member) {
+      if (propAttr.Symbol != 0) {
+        return new EcmaPropertyKey(propAttr.Symbol);
+      }
+      return new EcmaPropertyKey(propAttr.Name ?? Regex.Replace(member.Name, "^[A-Z](?=[a-z])", v => v.Value.ToLower()));
     }
 
     private static void DefineIntrinsicDataProperty(WellKnownObject type, EcmaPropertyKey name, EcmaValue value, EcmaPropertyAttributes state) {
@@ -221,9 +297,7 @@ namespace Codeless.Ecma.Runtime {
       }
     }
 
-    private static RuntimeObject DefineIntrinsicAccessorProperty(WellKnownObject type, EcmaPropertyKey name, MethodInfo method, EcmaPropertyAttributes state, bool isGetter) {
-      string runtimeName = (isGetter ? "get " : "set ") + (name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name);
-      RuntimeObject fn = new NativeRuntimeFunction(runtimeName, method);
+    private static void DefineIntrinsicAccessorProperty(WellKnownObject type, EcmaPropertyKey name, NativeRuntimeFunction fn, EcmaPropertyAttributes state, bool isGetter) {
       RuntimeObject obj = EnsureWellKnownObject(type);
       if (name.IsSymbol) {
         state &= ~EcmaPropertyAttributes.Enumerable;
@@ -233,34 +307,29 @@ namespace Codeless.Ecma.Runtime {
       } else {
         obj.DefineOwnProperty(name, new EcmaPropertyDescriptor(EcmaValue.Undefined, fn, state));
       }
-      return fn;
     }
 
-    private static RuntimeObject DefineIntrinsicFunction(WellKnownObject type, EcmaPropertyKey name, MethodInfo method) {
-      string runtimeName = name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name;
-      RuntimeObject fn = new NativeRuntimeFunction(runtimeName, method);
+    private static void DefineIntrinsicFunction(WellKnownObject type, EcmaPropertyKey name, NativeRuntimeFunction fn) {
       RuntimeObject obj = EnsureWellKnownObject(type);
       if (name.IsSymbol) {
         obj.DefineOwnProperty(name, new EcmaPropertyDescriptor(new EcmaValue(fn), EcmaPropertyAttributes.Configurable));
       } else {
         obj.CreateMethodProperty(name, new EcmaValue(fn));
       }
-      return fn;
     }
 
-    private static RuntimeObject DefineIntrinsicConstructor(WellKnownObject ctorType, EcmaPropertyKey name, MethodInfo mi, WellKnownObject fnProto) {
-      RuntimeObject ctor = DefineIntrinsicFunction(WellKnownObject.Global, name, mi);
-
-      RuntimeObject proto = EnsureWellKnownObject(fnProto);
-      proto.DefineOwnProperty("constructor", new EcmaPropertyDescriptor(new EcmaValue(ctor), EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
-      ctor.DefineOwnProperty("prototype", new EcmaPropertyDescriptor(new EcmaValue(proto), EcmaPropertyAttributes.None));
-
+    private static void DefineIntrinsicConstructor(WellKnownObject ctorType, EcmaPropertyKey name, NativeRuntimeFunction ctor, WellKnownObject fnProto) {
+      DefineIntrinsicFunction(WellKnownObject.Global, name, ctor);
+      if (fnProto != WellKnownObject.ObjectPrototype || ctorType == WellKnownObject.ObjectConstructor) {
+        RuntimeObject proto = EnsureWellKnownObject(fnProto);
+        proto.DefineOwnProperty("constructor", new EcmaPropertyDescriptor(new EcmaValue(ctor), EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
+        ctor.DefineOwnProperty("prototype", new EcmaPropertyDescriptor(new EcmaValue(proto), EcmaPropertyAttributes.None));
+      }
       RuntimeObject cur = EnsureWellKnownObject(ctorType);
       foreach (EcmaPropertyKey key in cur.OwnPropertyKeys) {
         ctor.DefineOwnProperty(key, cur.GetOwnProperty(key));
       }
       sharedIntrinsics[(int)ctorType - 1] = ctor;
-      return ctor;
     }
   }
 }

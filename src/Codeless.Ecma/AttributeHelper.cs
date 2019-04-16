@@ -16,5 +16,15 @@ namespace Codeless.Ecma {
       attribute = null;
       return false;
     }
+
+    public static bool HasAttribute<T>(this ParameterInfo member, out T attribute) where T : Attribute {
+      object[] arr = member.GetCustomAttributes(typeof(T), false);
+      if (arr.Length > 0) {
+        attribute = (T)arr[0];
+        return true;
+      }
+      attribute = null;
+      return false;
+    }
   }
 }

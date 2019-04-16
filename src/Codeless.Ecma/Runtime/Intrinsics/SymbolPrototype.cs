@@ -11,18 +11,18 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static string ToStringTag = InternalString.ObjectTag.Symbol;
 
     [IntrinsicMember(WellKnownSymbol.ToPrimitive)]
-    public static EcmaValue ToPrimitive([This] EcmaValue thisArg) {
-      return ValueOf(thisArg);
+    public static EcmaValue ToPrimitive([This] EcmaValue thisValue) {
+      return ValueOf(thisValue);
     }
 
     [IntrinsicMember]
-    public static EcmaValue ToString([This] EcmaValue thisArg) {
-      return ValueOf(thisArg).ToString();
+    public static EcmaValue ToString([This] EcmaValue thisValue) {
+      return ValueOf(thisValue).ToString();
     }
 
     [IntrinsicMember]
-    public static EcmaValue ValueOf([This] EcmaValue thisArg) {
-      return EcmaValueUtility.GetIntrinsicPrimitiveValue(thisArg, EcmaValueType.Symbol);
+    public static EcmaValue ValueOf([This] EcmaValue thisValue) {
+      return thisValue.GetIntrinsicPrimitiveValue(EcmaValueType.Symbol);
     }
   }
 }

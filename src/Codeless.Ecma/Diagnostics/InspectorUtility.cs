@@ -8,9 +8,9 @@ using System.Text;
 namespace Codeless.Ecma.Diagnostics {
   public static class InspectorUtility {
     public static string WriteValue(EcmaValue value) {
-      switch(value.Type) {
+      switch (value.Type) {
         case EcmaValueType.Object:
-          return WriteValue(value.ToRuntimeObject());
+          return WriteValue(value.ToObject());
         case EcmaValueType.String:
           return "\"" + value.ToString().Replace("\"", "\\\"") + "\"";
       }
@@ -18,35 +18,15 @@ namespace Codeless.Ecma.Diagnostics {
     }
 
     public static string WriteValue(RuntimeObject value) {
-      IEcmaIntrinsicObject t = value as IEcmaIntrinsicObject;
-      if (t != null) {
-        EcmaValue d = t.IntrinsicValue;
-        if (d.Type != EcmaValueType.Object) {
-          return WriteValue(t.IntrinsicValue);
-        }
+      if (value == null) {
+        return WriteValue(EcmaValue.Undefined);
+      }
+      if (value is IntrinsicObject t) {
+        return WriteValue(t.IntrinsicValue);
       }
       TextWriter writer = new StringWriter();
-      Serialize(writer, new EcmaValue(value), false);
+      Serialize(writer, value, false);
       return writer.ToString();
-    }
-
-    public static string GetObjectPrototypeTag(EcmaValue obj) {
-      return GetObjectPrototypeTag(obj.ToRuntimeObject());
-    }
-
-    public static string GetObjectPrototypeTag(RuntimeObject obj) {
-      if (obj.HasProperty(WellKnownSymbol.ToStringTag)) {
-        return (string)obj.Get(WellKnownSymbol.ToStringTag);
-      }
-      for (; obj != null; obj = obj.GetPrototypeOf()) {
-        if (obj.GetOwnProperty(WellKnownPropertyName.Constructor) != null) {
-          EcmaValue v = obj.Get(WellKnownPropertyName.Constructor);
-          if (v.IsCallable && v.HasProperty(WellKnownPropertyName.Name)) {
-            return (string)v[WellKnownPropertyName.Name];
-          }
-        }
-      }
-      return InternalString.ObjectTag.Object;
     }
 
     private static void Serialize(TextWriter writer, EcmaValue value, bool nested) {
@@ -59,9 +39,7 @@ namespace Codeless.Ecma.Diagnostics {
             } else {
               writer.Write("function " + value["name"] + "() { [native code] }");
             }
-          } else if (nested) {
-            writer.Write(GetObjectPrototypeTag(value));
-          } else if (value.IsArrayLike) {
+          } else if (EcmaArray.IsArray(value)) {
             writer.Write("[");
             foreach (EcmaPropertyEntry item in value.EnumerateEntries()) {
               if (++count > 1) {
@@ -75,17 +53,38 @@ namespace Codeless.Ecma.Diagnostics {
             }
             writer.Write("]");
           } else {
-            writer.Write(GetObjectPrototypeTag(value));
-            writer.Write(" {");
-            foreach (EcmaPropertyEntry item in value.EnumerateEntries()) {
-              if (++count > 1) {
-                writer.Write(", ");
-              }
-              writer.Write(item.Key.ToString());
-              writer.Write(": ");
-              Serialize(writer, item.Value, true);
+            EcmaValue ctor = value["constructor"];
+            if (!nested) {
+              try {
+                TextWriter writer2 = new StringWriter();
+                RuntimeObject obj = value.ToObject();
+                if (!ctor.IsNullOrUndefined) {
+                  writer2.Write(ctor["name"]);
+                  if (obj is EcmaMapBase collection) {
+                    writer2.Write("(");
+                    writer2.Write(collection.Size);
+                    writer2.Write(")");
+                  }
+                  writer2.Write(" ");
+                }
+                writer2.Write("{");
+                foreach (EcmaPropertyKey propertyKey in obj.OwnPropertyKeys) {
+                  EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(propertyKey);
+                  if (descriptor.IsDataDescriptor && descriptor.Enumerable.Value) {
+                    if (++count > 1) {
+                      writer2.Write(", ");
+                    }
+                    writer2.Write(propertyKey.ToString());
+                    writer2.Write(": ");
+                    Serialize(writer2, descriptor.Value, true);
+                  }
+                }
+                writer2.Write("}");
+                writer.Write(writer2.ToString());
+                break;
+              } catch { }
             }
-            writer.Write("}");
+            writer.Write(ctor.IsNullOrUndefined ? "Object" : ctor["name"]);
           }
           break;
         case EcmaValueType.String:

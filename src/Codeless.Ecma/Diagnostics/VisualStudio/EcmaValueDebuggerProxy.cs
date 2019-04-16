@@ -9,7 +9,7 @@ namespace Codeless.Ecma.Diagnostics.VisualStudio {
   internal class EcmaValueDebuggerProxy {
     public EcmaValueDebuggerProxy(EcmaValue value) {
       if (value.Type == EcmaValueType.Object) {
-        this.Root = new RuntimeObjectDebuggerProxy(value.ToRuntimeObject());
+        this.Root = new RuntimeObjectDebuggerProxy(value.ToObject());
       }
     }
 

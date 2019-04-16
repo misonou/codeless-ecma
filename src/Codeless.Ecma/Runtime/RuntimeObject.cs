@@ -3,82 +3,83 @@ using Codeless.Ecma.Diagnostics.VisualStudio;
 using Codeless.Ecma.Native;
 using Codeless.Ecma.Runtime.Intrinsics;
 using System;
-using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading;
 
 namespace Codeless.Ecma.Runtime {
+  public enum RuntimeObjectIntegrityLevel {
+    Default,
+    ExtensionPrevented,
+    Sealed,
+    Frozen
+  }
+
   [DebuggerTypeProxy(typeof(RuntimeObjectDebuggerProxy))]
   [DebuggerDisplay("{DebuggerDisplay,nq}")]
-  public partial class RuntimeObject : WeakKeyedItem {
+  public class RuntimeObject : WeakKeyedItem, IEcmaValueBinder {
+    private static readonly WellKnownPropertyName[] convertToPrimitiveMethodString = { WellKnownPropertyName.ToString, WellKnownPropertyName.ValueOf };
+    private static readonly WellKnownPropertyName[] convertToPrimitiveMethodNumber = { WellKnownPropertyName.ValueOf, WellKnownPropertyName.ToString };
+
     private readonly RuntimeRealm realm = RuntimeRealm.Current;
     private Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> dictionary;
     private EcmaPropertyKeyCollection keys;
-    private ObjectReferenceBinder prototype;
-    private bool extensionPrevented;
+    private RuntimeObject prototype;
+    private RuntimeObjectIntegrityLevel integrityLevel;
 
     public RuntimeObject(WellKnownObject defaultProto) {
-      this.prototype = ObjectReferenceBinder.GetBinder(RuntimeRealm.GetWellKnownObject(defaultProto));
+      ThrowIfRealmDisposed();
+      this.prototype = RuntimeRealm.GetRuntimeObject(defaultProto);
     }
+
+    public RuntimeObject(WellKnownObject defaultProto, RuntimeObject constructor) {
+      ThrowIfRealmDisposed();
+      this.prototype = GetPrototypeFromConstructor(constructor, defaultProto);
+    }
+
+    protected RuntimeObject(object target)
+      : base(target) {
+      ThrowIfRealmDisposed();
+    }
+
+    public virtual bool IsCallable => false;
+
+    public virtual bool IsConstructor => false;
+
+    public RuntimeObjectIntegrityLevel IntegrityLevel => integrityLevel;
+
+    public RuntimeRealm Realm => realm;
 
     [EcmaSpecification("OrdinaryCreateFromConstructor", EcmaSpecificationKind.AbstractOperations)]
-    public RuntimeObject(WellKnownObject defaultProto, RuntimeObject constructor) {
-      this.prototype = ObjectReferenceBinder.GetBinder(GetPrototypeFromConstructor(constructor, defaultProto));
-    }
-
-    private RuntimeObject() { }
-
-    private RuntimeObject(object target)
-      : base(target) { }
-
-    public static RuntimeObject CreateForNativeObject(object target) {
-      Guard.ArgumentNotNull(target, "target");
-      RuntimeObject obj = new RuntimeObject(target);
-      obj.prototype = ObjectReferenceBinder.GetBinder(RuntimeRealm.GetWellKnownObject(WellKnownObject.ObjectPrototype));
+    public static T CreateFromConstructor<T>(WellKnownObject defaultProto, RuntimeObject constructor) where T : RuntimeObject, new() {
+      T obj = new T();
+      obj.prototype = GetPrototypeFromConstructor(constructor, defaultProto);
       return obj;
     }
 
     [EcmaSpecification("ObjectCreate", EcmaSpecificationKind.AbstractOperations)]
     public static RuntimeObject Create(RuntimeObject proto) {
-      RuntimeObject obj = new RuntimeObject();
-      if (proto != null) {
-        obj.prototype = ObjectReferenceBinder.GetBinder(proto);
-      }
+      RuntimeObject obj = new EcmaObject();
+      obj.prototype = proto;
       return obj;
-    }
-
-    public static RuntimeObject Create(Exception ex) {
-      EcmaException ecmaException = ex as EcmaException;
-      if (ecmaException == null) {
-        //ecmaException = new EcmaException(ex.Message);
-      }
-      return ErrorConstructor.CreateError(ecmaException);
     }
 
     [EcmaSpecification("GetPrototypeFromConstructor", EcmaSpecificationKind.AbstractOperations)]
     public static RuntimeObject GetPrototypeFromConstructor(RuntimeObject constructor, WellKnownObject defaultProto) {
       Guard.ArgumentNotNull(constructor, "constructor");
       if (!constructor.IsCallable) {
-        throw new EcmaTypeErrorException("");
+        throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
       }
       EcmaValue proto = constructor.Get(WellKnownPropertyName.Prototype);
       if (proto.Type == EcmaValueType.Object) {
-        return proto.ToRuntimeObject();
+        return proto.ToObject();
       }
-      return RuntimeRealm.GetWellKnownObject(defaultProto);
-    }
-
-    public virtual bool IsCallable {
-      get { return false; }
+      return RuntimeRealm.GetRuntimeObject(defaultProto);
     }
 
     [EcmaSpecification("OrdinaryIsExtensible", EcmaSpecificationKind.InternalMethod)]
     public virtual bool IsExtensible {
-      get { return !extensionPrevented; }
+      get { return integrityLevel == RuntimeObjectIntegrityLevel.Default; }
     }
 
     [EcmaSpecification("OrdinaryOwnPropertyKeys", EcmaSpecificationKind.InternalMethod)]
@@ -91,39 +92,37 @@ namespace Codeless.Ecma.Runtime {
       }
     }
 
-    protected internal RuntimeRealm Realm {
-      get { return realm; }
-    }
-
     [EcmaSpecification("OrdinaryGetPrototypeOf", EcmaSpecificationKind.InternalMethod)]
     public virtual RuntimeObject GetPrototypeOf() {
-      return prototype == null ? null : prototype.RuntimeObject;
+      return prototype;
     }
 
     [EcmaSpecification("OrdinarySetPrototypeOf", EcmaSpecificationKind.InternalMethod)]
     public virtual bool SetPrototypeOf(RuntimeObject proto) {
       EcmaValue v = new EcmaValue(proto);
       if (v.Type != EcmaValueType.Null && v.Type != EcmaValueType.Object) {
-        throw new EcmaTypeErrorException(InternalString.Error.PrototypeNotObject);
+        throw new EcmaTypeErrorException(InternalString.Error.PrototypeMustBeObjectOrNull);
       }
-      if (prototype != null && EcmaValue.Equals(v, prototype.Value, EcmaValueComparison.SameValue)) {
+      if (prototype == proto) {
         return true;
       }
       if (!this.IsExtensible) {
-        return false;
+        throw new EcmaTypeErrorException(InternalString.Error.NotExtensible);
       }
       for (RuntimeObject p = proto; p != null; p = p.GetPrototypeOf()) {
         if (p == this) {
           return false;
         }
       }
-      prototype = ObjectReferenceBinder.GetBinder(proto);
+      prototype = proto;
       return true;
     }
 
     [EcmaSpecification("OrdinaryPreventExtensions", EcmaSpecificationKind.InternalMethod)]
     public virtual bool PreventExtensions() {
-      extensionPrevented = true;
+      if (integrityLevel == RuntimeObjectIntegrityLevel.Default) {
+        integrityLevel = RuntimeObjectIntegrityLevel.ExtensionPrevented;
+      }
       return true;
     }
 
@@ -155,10 +154,10 @@ namespace Codeless.Ecma.Runtime {
     public virtual EcmaValue Get(EcmaPropertyKey propertyKey, RuntimeObject receiver) {
       EcmaPropertyDescriptor descriptor = GetProperty(propertyKey);
       if (descriptor == null) {
-        return default(EcmaValue);
+        return default;
       }
       if (descriptor.IsAccessorDescriptor) {
-        return descriptor.Get ? descriptor.Get.Call(new EcmaValue(receiver)) : default(EcmaValue);
+        return descriptor.Get ? descriptor.Get.Call(new EcmaValue(receiver ?? this)) : default;
       }
       return descriptor.Value;
     }
@@ -170,9 +169,9 @@ namespace Codeless.Ecma.Runtime {
         return this.CreateDataProperty(propertyKey, value);
       }
       if (descriptor.IsAccessorDescriptor) {
-        EcmaValue thisArg = new EcmaValue(receiver);
-        if (descriptor.Set != EcmaValue.Undefined && thisArg.Type == EcmaValueType.Object) {
-          descriptor.Set.Call(thisArg, value);
+        EcmaValue thisValue = new EcmaValue(receiver ?? this);
+        if (descriptor.Set != default && thisValue.Type == EcmaValueType.Object) {
+          descriptor.Set.Call(thisValue, value);
           return true;
         }
         return false;
@@ -234,9 +233,9 @@ namespace Codeless.Ecma.Runtime {
         }
         EcmaValue proto = Get(WellKnownPropertyName.Prototype, this);
         if (proto.Type != EcmaValueType.Object) {
-          throw new EcmaTypeErrorException(InternalString.Error.PrototypeNotObject);
+          throw new EcmaTypeErrorException(InternalString.Error.PrototypeMustBeObjectOrNull);
         }
-        RuntimeObject protoObj = proto.ToRuntimeObject();
+        RuntimeObject protoObj = proto.ToObject();
         for (RuntimeObject p = obj.GetPrototypeOf(); p != null; p = p.GetPrototypeOf()) {
           if (p == protoObj) {
             return true;
@@ -246,14 +245,16 @@ namespace Codeless.Ecma.Runtime {
       return false;
     }
 
+    [EcmaSpecification("Call", EcmaSpecificationKind.InternalMethod)]
     public virtual EcmaValue Call(EcmaValue thisValue, params EcmaValue[] arguments) {
       throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
     }
 
-    public virtual EcmaValue Construct(EcmaValue newTarget, params EcmaValue[] arguments) {
+    [EcmaSpecification("Construct", EcmaSpecificationKind.InternalMethod)]
+    public virtual EcmaValue Construct(RuntimeObject newTarget, params EcmaValue[] arguments) {
       throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
     }
-    
+
     public virtual bool IsWellKnownMethodOverriden(string method) {
       return false;
     }
@@ -263,7 +264,15 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override string ToString() {
-      return "[object" + new EcmaValue(this).ToStringTag + "]";
+      return ObjectPrototype.ToString(new EcmaValue(this)).ToString();
+    }
+
+    public EcmaValue ToValue() {
+      return new EcmaValue(new EcmaValueHandle(GetHashCode()), this);
+    }
+
+    public static explicit operator RuntimeObject(WellKnownObject type) {
+      return RuntimeRealm.GetRuntimeObject(type);
     }
 
     protected void DefineOwnPropertyNoChecked(EcmaPropertyKey propertyKey, EcmaPropertyDescriptor descriptor) {
@@ -272,24 +281,163 @@ namespace Codeless.Ecma.Runtime {
         keys = new EcmaPropertyKeyCollection();
       }
       dictionary[propertyKey] = descriptor.Clone();
-      keys.Add(propertyKey);
-    }
-
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    private string DebuggerDisplay {
-      get { return InspectorUtility.WriteValue(this); }
+      if (!keys.Contains(propertyKey)) {
+        keys.Add(propertyKey);
+      }
+      if (descriptor.Configurable == false) {
+        integrityLevel = this.TestIntegrityLevel();
+      }
     }
 
     private EcmaPropertyDescriptor GetProperty(EcmaPropertyKey propertyKey) {
-      RuntimeObject cur = this;
-      while (cur != null) {
+      for (RuntimeObject cur = this; cur != null; cur = cur.GetPrototypeOf()) {
         EcmaPropertyDescriptor property = cur.GetOwnProperty(propertyKey);
         if (property != null) {
           return property.Clone();
         }
-        cur = cur.GetPrototypeOf();
       }
       return null;
     }
+
+    private EcmaValue ToPrimitive(EcmaPreferredPrimitiveType kind) {
+      EcmaValue result;
+      if (IsWellKnownSymbolOverriden(WellKnownSymbol.ToPrimitive)) {
+        if (TryConvertToPrimitive(Symbol.ToPrimitive, out result)) {
+          return result;
+        }
+        throw new EcmaTypeErrorException(InternalString.Error.NotConvertibleToPrimitive);
+      }
+      WellKnownPropertyName[] m = kind == EcmaPreferredPrimitiveType.String ? convertToPrimitiveMethodString : convertToPrimitiveMethodNumber;
+      if (TryConvertToPrimitive(m[0], out result) || TryConvertToPrimitive(m[1], out result)) {
+        return result;
+      }
+      throw new EcmaTypeErrorException(InternalString.Error.NotConvertibleToPrimitive);
+    }
+
+    private bool TryConvertToPrimitive(EcmaPropertyKey name, out EcmaValue result) {
+      RuntimeObject method = this.GetMethod(name);
+      if (method != null) {
+        result = method.Call(new EcmaValue(this));
+        return result.Type != EcmaValueType.Object;
+      }
+      result = default;
+      return false;
+    }
+
+    private void ThrowIfRealmDisposed() {
+      if (realm.Disposed) {
+        throw new ObjectDisposedException("realm");
+      }
+    }
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private string DebuggerDisplay {
+      get { return InspectorUtility.WriteValue((RuntimeObject)this); }
+    }
+
+    #region IEcmaValueBinder
+    object IEcmaValueBinder.FromHandle(EcmaValueHandle handle) {
+      return this;
+    }
+
+    EcmaValueHandle IEcmaValueBinder.ToHandle(object value) {
+      return new EcmaValueHandle(GetHashCode());
+    }
+
+    string IEcmaValueBinder.GetToStringTag(EcmaValueHandle handle) {
+      if (this.IsCallable) {
+        return InternalString.ObjectTag.Function;
+      }
+      if (this is IntrinsicObject t) {
+        return t.IntrinsicValue.ToStringTag;
+      }
+      EcmaValue customTag = Get(WellKnownSymbol.ToStringTag, null);
+      if (!customTag.IsNullOrUndefined) {
+        return customTag.ToString();
+      }
+      return InternalString.ObjectTag.Object;
+    }
+
+    EcmaValueType IEcmaValueBinder.GetValueType(EcmaValueHandle handle) {
+      return EcmaValueType.Object;
+    }
+
+    EcmaNumberType IEcmaValueBinder.GetNumberType(EcmaValueHandle handle) {
+      return EcmaNumberType.Invalid;
+    }
+
+    int IEcmaValueBinder.GetHashCode(EcmaValueHandle handle) {
+      return GetHashCode();
+    }
+
+    bool IEcmaValueBinder.IsExtensible(EcmaValueHandle handle) {
+      return this.IsExtensible;
+    }
+
+    bool IEcmaValueBinder.IsCallable(EcmaValueHandle handle) {
+      return this.IsCallable;
+    }
+
+    bool IEcmaValueBinder.ToBoolean(EcmaValueHandle handle) {
+      return true;
+    }
+
+    int IEcmaValueBinder.ToInt32(EcmaValueHandle handle) {
+      return ToPrimitive(EcmaPreferredPrimitiveType.Number).ToInt32();
+    }
+
+    long IEcmaValueBinder.ToInt64(EcmaValueHandle handle) {
+      return ToPrimitive(EcmaPreferredPrimitiveType.Number).ToInt64();
+    }
+
+    double IEcmaValueBinder.ToDouble(EcmaValueHandle handle) {
+      return ToPrimitive(EcmaPreferredPrimitiveType.Number).ToDouble();
+    }
+
+    string IEcmaValueBinder.ToString(EcmaValueHandle handle) {
+      return ToPrimitive(EcmaPreferredPrimitiveType.String).ToString();
+    }
+
+    EcmaValue IEcmaValueBinder.ToPrimitive(EcmaValueHandle handle, EcmaPreferredPrimitiveType preferredType) {
+      return ToPrimitive(preferredType);
+    }
+
+    EcmaValue IEcmaValueBinder.ToNumber(EcmaValueHandle handle) {
+      return ToPrimitive(EcmaPreferredPrimitiveType.Number).ToNumber();
+    }
+
+    RuntimeObject IEcmaValueBinder.ToRuntimeObject(EcmaValueHandle handle) {
+      return this;
+    }
+
+    bool IEcmaValueBinder.TryGet(EcmaValueHandle handle, EcmaPropertyKey name, out EcmaValue value) {
+      if (HasProperty(name)) {
+        value = Get(name, this);
+        return true;
+      }
+      value = default;
+      return false;
+    }
+
+    bool IEcmaValueBinder.TrySet(EcmaValueHandle handle, EcmaPropertyKey name, EcmaValue value) {
+      return Set(name, value, this);
+    }
+
+    EcmaValue IEcmaValueBinder.Call(EcmaValueHandle handle, EcmaValue thisValue, EcmaValue[] arguments) {
+      return Call(thisValue, arguments);
+    }
+
+    bool IEcmaValueBinder.HasProperty(EcmaValueHandle handle, EcmaPropertyKey name) {
+      return HasProperty(name);
+    }
+
+    bool IEcmaValueBinder.HasOwnProperty(EcmaValueHandle handle, EcmaPropertyKey name) {
+      return this.OwnPropertyKeys.Contains(name);
+    }
+
+    IEnumerable<EcmaPropertyKey> IEcmaValueBinder.GetEnumerableOwnProperties(EcmaValueHandle handle) {
+      return this.OwnPropertyKeys.Where(v => GetOwnProperty(v).Enumerable.Value);
+    }
+    #endregion
   }
 }

@@ -28,6 +28,7 @@
     <DefineConstants>TRACE;NET35</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Net40|AnyCPU'">
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
@@ -38,6 +39,7 @@
     <DefineConstants>TRACE;NET40;DYNAMIC</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Net45|AnyCPU'">
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
@@ -48,6 +50,7 @@
     <DefineConstants>TRACE;NET45;DYNAMIC</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net35|AnyCPU'">
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
@@ -58,7 +61,7 @@
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net40|AnyCPU'">
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
@@ -69,7 +72,7 @@
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net45|AnyCPU'">
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
@@ -80,11 +83,17 @@
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <LangVersion>7.1</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <LangVersion>7.1</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net35|AnyCPU' Or '$(Configuration)|$(Platform)' == 'Release-Net35|AnyCPU'">
-    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net35\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net35\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Threading, Version=1.0.2856.102, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -93,14 +102,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net40|AnyCPU' Or '$(Configuration)|$(Platform)' == 'Release-Net40|AnyCPU'">
-    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net40\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net40\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net45|AnyCPU' Or '$(Configuration)|$(Platform)' == 'Release-Net45|AnyCPU'">
-    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
@@ -135,27 +144,23 @@
     <Compile Include="Diagnostics\VisualStudio\EcmaValueDebuggerProxy.cs" />
     <Compile Include="EcmaValueDynamicMetaObject.cs" />
     <Compile Include="EcmaValueHandle.cs" />
-    <Compile Include="IEcmaValueConvertible.cs" />
     <Compile Include="InternalString.cs" />
-    <Compile Include="IReadOnlyDictionary.cs" />
-    <Compile Include="Map.cs" />
-    <Compile Include="Native\ArrayLikeObjectBinder.cs" />
     <Compile Include="EcmaPropertyDescriptor.cs" />
-    <Compile Include="Native\EcmaTimestampBinder.cs" />
-    <Compile Include="Native\NullBinder.cs" />
-    <Compile Include="Native\InternalDataBinder.cs" />
-    <Compile Include="Native\NativeDateTimeBinder.cs" />
-    <Compile Include="Native\PrimitiveBinder.cs" />
-    <Compile Include="Native\RuntimeObjectBinder.cs" />
-    <Compile Include="Native\WellKnownPropertyNameBinder.cs" />
-    <Compile Include="Native\WellKnownSymbolBinder.cs" />
+    <Compile Include="Native\INativeObjectWrapper.cs" />
+    <Compile Include="Native\ReflectedNativeObject.cs" />
+    <Compile Include="Primitives\NullBinder.cs" />
+    <Compile Include="Primitives\PrimitiveBinderWrapper.cs" />
+    <Compile Include="Primitives\PrimitiveBinder.cs" />
+    <Compile Include="Primitives\WellKnownPropertyNameBinder.cs" />
+    <Compile Include="Primitives\WellKnownSymbolBinder.cs" />
     <Compile Include="Runtime\BoundRuntimeFunction.cs" />
-    <Compile Include="IEcmaIntrinsicObject.cs" />
+    <Compile Include="Native\DelegateFunction.cs" />
     <Compile Include="Runtime\IEnvironmentRecord.cs" />
     <Compile Include="Runtime\ImmutablePrototypeObject.cs" />
     <Compile Include="Runtime\Intrinsics\ErrorConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\ErrorPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\IntrinsicConstructorAttribute.cs" />
+    <Compile Include="Runtime\Intrinsics\SetIteratorPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\RegExpConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\RegExpPrototype.cs" />
     <Compile Include="Runtime\NativeRuntimeFunction.cs" />
@@ -163,12 +168,12 @@
     <Compile Include="Runtime\Intrinsics\BooleanPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\DateConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\DatePrototype.cs" />
+    <Compile Include="Native\ReflectedNativeObjectPrototype.cs" />
     <Compile Include="Runtime\RuntimeFunction.cs" />
     <Compile Include="Runtime\NativeRuntimeFunctionCompiler.cs" />
     <Compile Include="Runtime\Intrinsics\FunctionConstructor.cs" />
     <Compile Include="Runtime\ThisAttribute.cs" />
     <Compile Include="Runtime\Intrinsics\FunctionPrototype.cs" />
-    <Compile Include="EcmaGlobal.cs" />
     <Compile Include="Runtime\RuntimeRealm.cs" />
     <Compile Include="Runtime\Intrinsics\NumberConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\NumberPrototype.cs" />
@@ -176,29 +181,20 @@
     <Compile Include="Runtime\RuntimeObjectExtension.cs" />
     <Compile Include="Json.cs" />
     <Compile Include="IEcmaValueBinder.cs" />
-    <Compile Include="Runtime\RuntimeObject.cs" />
-    <Compile Include="Native\NativeCollectionBinder.cs" />
-    <Compile Include="Native\NativeDictionaryBinder.cs" />
-    <Compile Include="Native\NativeDoubleBinder.cs" />
-    <Compile Include="Native\NativeEnumBinder.cs" />
-    <Compile Include="Native\NativeInt32Binder.cs" />
-    <Compile Include="Native\NativeInt64Binder.cs" />
-    <Compile Include="Native\NativeListBinder.cs" />
-    <Compile Include="Native\NativeBooleanBinder.cs" />
+    <Compile Include="Primitives\DoubleBinder.cs" />
+    <Compile Include="Primitives\EnumBinder.cs" />
+    <Compile Include="Primitives\Int32Binder.cs" />
+    <Compile Include="Primitives\Int64Binder.cs" />
+    <Compile Include="Primitives\BooleanBinder.cs" />
     <Compile Include="Guard.cs" />
     <Compile Include="EcmaRegExp.cs" />
     <Compile Include="EcmaValueJsonConverter.cs" />
     <Compile Include="EcmaPropertyKey.cs" />
-    <Compile Include="EcmaValue.cs" />
-    <Compile Include="Native\NativeStringBinder.cs" />
-    <Compile Include="Native\ReflectedObjectBinder.cs" />
-    <Compile Include="Native\UndefinedBinder.cs" />
-    <Compile Include="Native\ObjectBinder.cs" />
-    <Compile Include="Native\SymbolBinder.cs" />
+    <Compile Include="Primitives\StringBinder.cs" />
+    <Compile Include="Primitives\UndefinedBinder.cs" />
+    <Compile Include="Primitives\SymbolBinder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Native\ObjectReferenceBinder.cs" />
     <Compile Include="Runtime\Intrinsics\ObjectPrototype.cs" />
-    <Compile Include="Runtime\RuntimeObjectProxy.cs" />
     <Compile Include="Runtime\Intrinsics\StringConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\StringPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\SymbolConstructor.cs" />
@@ -208,12 +204,45 @@
     <Compile Include="Symbol.cs" />
     <Compile Include="WeakKeyedCollection.cs" />
     <Compile Include="WeakKeyedItem.cs" />
-    <Compile Include="WellKnownObject.cs" />
     <Compile Include="Runtime\RuntimeFunctionInvocation.cs" />
     <Compile Include="Runtime\Intrinsics\ArrayConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\ArrayPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\IntrinsicObjectAttribute.cs" />
     <Compile Include="Runtime\Intrinsics\IntrinsicMemberAttribute.cs" />
+    <Compile Include="Runtime\Intrinsics\IteratorPrototype.cs" />
+    <Compile Include="Runtime\Intrinsics\ArrayIteratorPrototype.cs" />
+    <Compile Include="Runtime\Intrinsics\MapPrototype.cs" />
+    <Compile Include="Runtime\Intrinsics\MapConstructor.cs" />
+    <Compile Include="Runtime\Intrinsics\WeakMapPrototype.cs" />
+    <Compile Include="Runtime\Intrinsics\WeakMapConstructor.cs" />
+    <Compile Include="Runtime\Intrinsics\SetPrototype.cs" />
+    <Compile Include="Runtime\Intrinsics\SetConstructor.cs" />
+    <Compile Include="Runtime\Intrinsics\WeakSetPrototype.cs" />
+    <Compile Include="Runtime\Intrinsics\WeakSetConstructor.cs" />
+    <Compile Include="EcmaMap.cs" />
+    <Compile Include="EcmaIteratorEnumerator.cs" />
+    <Compile Include="EcmaValueEqualityComparer.cs" />
+    <Compile Include="EcmaSet.cs" />
+    <Compile Include="EcmaWeakMap.cs" />
+    <Compile Include="EcmaWeakSet.cs" />
+    <Compile Include="EcmaIterator.cs" />
+    <Compile Include="Runtime\Intrinsics\MapIteratorPrototype.cs" />
+    <Compile Include="EcmaValueComparer.cs" />
+    <Compile Include="Runtime\RuntimeObjectProxy.cs" />
+    <Compile Include="EcmaMapBase.cs" />
+    <Compile Include="WellKnownPropertyName.cs" />
+    <Compile Include="WellKnownObject.cs" />
+    <Compile Include="Runtime\Intrinsics\Reflect.cs" />
+    <Compile Include="Runtime\Intrinsics\PromiseConstructor.cs" />
+    <Compile Include="Runtime\Intrinsics\PromisePrototype.cs" />
+    <Compile Include="Promise.cs" />
+    <Compile Include="Native\NativeArrayObject.cs" />
+    <Compile Include="Native\NativeDictionaryObject.cs" />
+    <Compile Include="Native\NativeObject.cs" />
+    <Compile Include="Runtime\RuntimeObject.cs" />
+    <Compile Include="EcmaValue.cs" />
+    <Compile Include="EcmaArrayEnumerator.cs" />
+    <Compile Include="Global.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="key.snk" />

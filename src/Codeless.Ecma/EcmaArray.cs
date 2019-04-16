@@ -1,4 +1,5 @@
-﻿using Codeless.Ecma.Runtime;
+﻿using Codeless.Ecma.Native;
+using Codeless.Ecma.Runtime;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -29,6 +30,7 @@ namespace Codeless.Ecma {
       : base(WellKnownObject.ArrayPrototype) {
       if (values.Any()) {
         list = new List<EcmaValue>(values);
+        length = (uint)list.Count;
       }
     }
 
@@ -36,18 +38,19 @@ namespace Codeless.Ecma {
       : base(WellKnownObject.ArrayPrototype, constructor) {
       if (values.Any()) {
         list = new List<EcmaValue>(values);
+        length = (uint)list.Count;
       }
     }
 
     public EcmaValue this[int index] {
       get {
         if (list == null || index < 0 || index >= list.Count) {
-          return EcmaValue.Undefined;
+          return default;
         }
         return list[index];
       }
       set {
-        // TODO: sparse
+        // TODO: EcmaArray[index]
         if (index >= 0) {
           if (list == null) {
             list = new List<EcmaValue>();
@@ -70,15 +73,11 @@ namespace Codeless.Ecma {
       if (value.Type != EcmaValueType.Object) {
         return false;
       }
-      RuntimeObject obj = value.ToRuntimeObject();
-      if (obj is EcmaArray) {
-        return true;
+      RuntimeObject obj = value.ToObject();
+      if (obj is RuntimeObjectProxy proxy) {
+        obj = proxy.ProxyTarget;
       }
-      RuntimeObjectProxy proxy = obj as RuntimeObjectProxy;
-      if (proxy != null) {
-        return proxy.ProxyTarget is EcmaArray;
-      }
-      return false;
+      return obj is EcmaArray || obj is NativeArrayObject;
     }
 
     public static EcmaArray Of(params EcmaValue[] elements) {
@@ -130,7 +129,7 @@ namespace Codeless.Ecma {
         if (list == null) {
           list = new List<EcmaValue>();
         }
-        // TODO: sparse array
+        // TODO: EcmaArray.Insert
         while (index > list.Count) {
           list.Add(EcmaValue.Undefined);
         }
@@ -152,19 +151,52 @@ namespace Codeless.Ecma {
       }
     }
 
-    public override EcmaPropertyDescriptor GetOwnProperty(EcmaPropertyKey propertyKey) {
+    public override IList<EcmaPropertyKey> OwnPropertyKeys {
+      get {
+        IEnumerable<EcmaPropertyKey> indexes = list != null ? Enumerable.Range(0, list.Count).Select(v => new EcmaPropertyKey(v)) : Enumerable.Empty<EcmaPropertyKey>();
+        return indexes.Concat(new[] { propertyLength }).Concat(base.OwnPropertyKeys).ToList();
+      }
+    }
+
+    public override EcmaValue Get(EcmaPropertyKey propertyKey, RuntimeObject receiver) {
+      if (propertyKey.IsArrayIndex && list != null && propertyKey.ArrayIndex < list.Count) {
+        return new EcmaValue(list[(int)propertyKey.ArrayIndex]);
+      }
+      if (propertyKey == WellKnownPropertyName.Length) {
+        return length;
+      }
+      return base.Get(propertyKey, receiver);
+    }
+
+    public override bool Delete(EcmaPropertyKey propertyKey) {
       if (propertyKey.IsArrayIndex) {
-        // TODO
+        return false;
       }
-      EcmaPropertyDescriptor descriptor = base.GetOwnProperty(propertyKey);
-      if (descriptor == null) {
-        return new EcmaPropertyDescriptor(length);
+      if (propertyKey == WellKnownPropertyName.Length) {
+        return false;
       }
-      return descriptor;
+      return base.Delete(propertyKey);
+    }
+
+    public override bool HasProperty(EcmaPropertyKey propertyKey) {
+      if (propertyKey.IsArrayIndex) {
+        return list != null && propertyKey.ArrayIndex < list.Count;
+      }
+      if (propertyKey == WellKnownPropertyName.Length) {
+        return true;
+      }
+      return base.HasProperty(propertyKey);
+    }
+
+    public override EcmaPropertyDescriptor GetOwnProperty(EcmaPropertyKey propertyKey) {
+      if (propertyKey.IsArrayIndex && list != null && propertyKey.ArrayIndex < list.Count) {
+        return new EcmaPropertyDescriptor(list[(int)propertyKey.ArrayIndex]);
+      }
+      return base.GetOwnProperty(propertyKey);
     }
 
     public override bool DefineOwnProperty(EcmaPropertyKey propertyKey, EcmaPropertyDescriptor descriptor) {
-      if (propertyLength.Equals(propertyKey)) {
+      if (propertyKey == WellKnownPropertyName.Length) {
         return SetLength(descriptor);
       }
       if (propertyKey.IsArrayIndex) {
@@ -183,13 +215,6 @@ namespace Codeless.Ecma {
       return base.DefineOwnProperty(propertyKey, descriptor);
     }
 
-    public override bool Delete(EcmaPropertyKey propertyKey) {
-      if (propertyKey.IsArrayIndex) {
-        return DeleteItem(propertyKey.ArrayIndex);
-      }
-      return base.Delete(propertyKey);
-    }
-
     [EcmaSpecification("ArraySetLength", EcmaSpecificationKind.AbstractOperations)]
     protected bool SetLength(EcmaPropertyDescriptor descriptor) {
       if (descriptor.IsAccessorDescriptor) {
@@ -197,7 +222,7 @@ namespace Codeless.Ecma {
       }
       uint newLength = descriptor.Value.ToUInt32();
       if (newLength != descriptor.Value.ToNumber()) {
-        throw new EcmaRangeErrorException("");
+        throw new EcmaRangeErrorException(InternalString.Error.InvalidArrayLength);
       }
       if (newLength >= length) {
         length = newLength;
@@ -219,10 +244,12 @@ namespace Codeless.Ecma {
     }
 
     protected bool SetItem(long v) {
+      // TODO: EcmaArray.SetItem
       throw new NotImplementedException();
     }
 
     protected bool DeleteItem(long v) {
+      // TODO: EcmaArray.DeleteItem
       throw new NotImplementedException();
     }
 

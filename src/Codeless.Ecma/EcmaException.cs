@@ -15,7 +15,7 @@ namespace Codeless.Ecma {
     UriError
   }
 
-  public abstract class EcmaException : Exception, IEcmaValueConvertible {
+  public abstract class EcmaException : Exception {
     internal EcmaException(string message)
       : base(message) { }
 
