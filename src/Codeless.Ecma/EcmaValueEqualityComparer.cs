@@ -4,7 +4,6 @@ namespace Codeless.Ecma {
   public class EcmaValueEqualityComparer : IEqualityComparer<EcmaValue> {
     public static EcmaValueEqualityComparer SameValue = new EcmaValueEqualityComparer(EcmaValueComparison.SameValue);
     public static EcmaValueEqualityComparer SameValueZero = new EcmaValueEqualityComparer(EcmaValueComparison.SameValueZero);
-    public static EcmaValueEqualityComparer SameValueNotNumber = new EcmaValueEqualityComparer(EcmaValueComparison.SameValueNotNumber);
     public static EcmaValueEqualityComparer Strict = new EcmaValueEqualityComparer(EcmaValueComparison.Strict);
     public static EcmaValueEqualityComparer Abstract = new EcmaValueEqualityComparer(EcmaValueComparison.Abstract);
 

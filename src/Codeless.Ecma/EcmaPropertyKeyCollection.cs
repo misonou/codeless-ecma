@@ -17,7 +17,7 @@ namespace Codeless.Ecma {
         base.InsertItem(index, item);
       } else if (item.IsArrayIndex) {
         int i = 0;
-        long v = item.ArrayIndex;
+        long v = item.ToArrayIndex();
         for (; i < v && i < stringStartKey; i++) ;
         base.InsertItem(i, item);
         stringStartKey++;

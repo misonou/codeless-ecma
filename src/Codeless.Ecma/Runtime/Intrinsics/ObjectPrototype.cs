@@ -9,11 +9,13 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
   internal static class ObjectPrototype {
     [IntrinsicMember]
     public static EcmaValue HasOwnProperty([This] EcmaValue thisValue, EcmaValue key) {
+      Guard.RequireObjectCoercible(thisValue);
       return thisValue.HasOwnProperty(EcmaPropertyKey.FromValue(key));
     }
 
     [IntrinsicMember]
     public static EcmaValue IsPrototypeOf([This] EcmaValue thisValue, EcmaValue obj) {
+      Guard.RequireObjectCoercible(thisValue);
       if (obj.Type != EcmaValueType.Object) {
         return false;
       }
@@ -28,14 +30,16 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static EcmaValue PropertyIsEnumerable([This] EcmaValue thisValue, EcmaValue key) {
+      Guard.RequireObjectCoercible(thisValue);
       EcmaPropertyKey pk = EcmaPropertyKey.FromValue(key);
       EcmaPropertyDescriptor pd = thisValue.ToObject().GetOwnProperty(pk);
-      return pd != null && pd.Enumerable.Value;
+      return pd != null && pd.Enumerable;
     }
 
     [IntrinsicMember]
     public static EcmaValue ToLocaleString([This] EcmaValue thisValue) {
-      return thisValue.ToString();
+      Guard.RequireObjectCoercible(thisValue);
+      return thisValue.Invoke("toString");
     }
 
     [IntrinsicMember]
@@ -45,39 +49,47 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static EcmaValue ValueOf([This] EcmaValue thisValue) {
-      return thisValue;
+      Guard.RequireObjectCoercible(thisValue);
+      return thisValue.ToObject();
     }
 
     [IntrinsicMember("__proto__", EcmaPropertyAttributes.Configurable, Getter = true)]
     public static EcmaValue GetPrototypeOf([This] EcmaValue thisValue) {
-      return new EcmaValue(thisValue.ToObject().GetPrototypeOf());
+      Guard.RequireObjectCoercible(thisValue);
+      RuntimeObject proto = thisValue.ToObject().GetPrototypeOf();
+      return proto == null ? EcmaValue.Null : proto;
     }
 
     [IntrinsicMember("__proto__", EcmaPropertyAttributes.Configurable, Setter = true)]
     public static EcmaValue SetPrototypeOf([This] EcmaValue thisValue, EcmaValue proto) {
+      Guard.RequireObjectCoercible(thisValue);
       return thisValue.ToObject().SetPrototypeOf(proto.ToObject());
     }
 
     [IntrinsicMember("__defineGetter__")]
     public static EcmaValue DefineGetter([This] EcmaValue thisValue, EcmaValue key, EcmaValue getter) {
-      return thisValue.ToObject().DefineOwnProperty(EcmaPropertyKey.FromValue(key), 
-         new EcmaPropertyDescriptor(getter, EcmaValue.Undefined, EcmaPropertyAttributes.Configurable| EcmaPropertyAttributes.Writable));
+      Guard.RequireObjectCoercible(thisValue);
+      return thisValue.ToObject().DefineOwnProperty(EcmaPropertyKey.FromValue(key),
+         new EcmaPropertyDescriptor { Get = getter });
     }
 
     [IntrinsicMember("__defineSetter__")]
     public static EcmaValue DefineSetter([This] EcmaValue thisValue, EcmaValue key, EcmaValue setter) {
+      Guard.RequireObjectCoercible(thisValue);
       return thisValue.ToObject().DefineOwnProperty(EcmaPropertyKey.FromValue(key),
-         new EcmaPropertyDescriptor(EcmaValue.Undefined, setter, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
+         new EcmaPropertyDescriptor { Set = setter });
     }
 
     [IntrinsicMember("__lookupGetter__")]
     public static EcmaValue LookupGetter([This] EcmaValue thisValue, EcmaValue key) {
+      Guard.RequireObjectCoercible(thisValue);
       EcmaPropertyDescriptor descriptor = thisValue.ToObject().GetOwnProperty(EcmaPropertyKey.FromValue(key));
       return descriptor.IsAccessorDescriptor ? descriptor.Get : default;
     }
 
     [IntrinsicMember("__lookupSetter__")]
     public static EcmaValue LookupSetter([This] EcmaValue thisValue, EcmaValue key) {
+      Guard.RequireObjectCoercible(thisValue);
       EcmaPropertyDescriptor descriptor = thisValue.ToObject().GetOwnProperty(EcmaPropertyKey.FromValue(key));
       return descriptor.IsAccessorDescriptor ? descriptor.Set : default;
     }

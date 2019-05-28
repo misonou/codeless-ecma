@@ -10,10 +10,11 @@ namespace Codeless.Ecma.Runtime {
   internal class NativeRuntimeFunctionCompiler {
     private static readonly ParameterExpression pRecord = Expression.Parameter(typeof(RuntimeFunctionInvocation), "record");
     private static readonly ParameterExpression pArgs = Expression.Parameter(typeof(EcmaValue[]), "args");
+    private static readonly ParameterExpression pTarget = Expression.Parameter(typeof(object), "target");
     private static readonly Expression pThisArg = Expression.Property(pRecord, "ThisValue");
     private static readonly Expression pNewTarget = Expression.Property(pRecord, "NewTarget");
     private static readonly MethodInfo mSliceArguments = ((Func<EcmaValue[], int, EcmaValue[]>)SliceArguments).Method;
-    private static readonly MethodInfo mGetUnderlyingObject = typeof(EcmaValueUtility).GetMethod("GetUnderlyingObject", BindingFlags.Static | BindingFlags.Public);
+    private static readonly MethodInfo mCastObject = typeof(NativeRuntimeFunctionCompiler).GetMethod("CastObject", BindingFlags.Static | BindingFlags.NonPublic);
 
     private readonly MethodInfo method;
     private readonly ParameterInfo[] parameters;
@@ -23,6 +24,7 @@ namespace Codeless.Ecma.Runtime {
     private readonly bool tailArray;
 
     private NativeRuntimeFunctionCompiler(MethodInfo method) {
+      Guard.ArgumentNotNull(method, "method");
       this.method = method;
       this.parameters = method.GetParameters();
       if (parameters.Length > 0) {
@@ -36,7 +38,7 @@ namespace Codeless.Ecma.Runtime {
             continue;
           }
         }
-        if (Attribute.IsDefined(parameters[parameters.Length - 1], typeof(ParamArrayAttribute))) {
+        if (parameters[parameters.Length - 1].ParameterType == typeof(EcmaValue[])) {
           this.tailArray = true;
           if (parameters.Length <= 2 && posNew + posThis == parameters.Length - 3) {
             this.tailArrayOnly = true;
@@ -48,7 +50,7 @@ namespace Codeless.Ecma.Runtime {
     public static RuntimeFunctionDelegate Compile(MethodInfo method) {
       NativeRuntimeFunctionCompiler compiler = new NativeRuntimeFunctionCompiler(method);
       Expression<RuntimeFunctionDelegate> lambda = Expression.Lambda<RuntimeFunctionDelegate>(
-        EcmaValueUtility.ConvertToEcmaValueExpression(compiler.GetExpression()), pRecord, pArgs);
+        EcmaValueUtility.ConvertToEcmaValueExpression(compiler.GetExpression()), pRecord, pArgs, pTarget);
       return lambda.Compile();
     }
 
@@ -82,11 +84,7 @@ namespace Codeless.Ecma.Runtime {
       if (method.IsStatic) {
         return Expression.Call(method, args.ToArray());
       }
-      if (method.DeclaringType.IsSubclassOf(typeof(RuntimeObject))) {
-        return Expression.Call(Expression.Call(mGetUnderlyingObject.MakeGenericMethod(method.DeclaringType), pThisArg), method, args);
-      }
-      Expression nativeObj = Expression.Property(Expression.Call(mGetUnderlyingObject.MakeGenericMethod(typeof(INativeObjectWrapper)), pThisArg), "Target");
-      return Expression.Call(Expression.Convert(nativeObj, method.DeclaringType), method, args);
+      return Expression.Call(Expression.Call(mCastObject.MakeGenericMethod(method.DeclaringType), pTarget), method, args);
     }
 
     private Expression GetArgumentFromArray(int argsIndex, int nativeParameterIndex) {
@@ -163,6 +161,16 @@ namespace Codeless.Ecma.Runtime {
       EcmaValue[] dst = new EcmaValue[src.Length - index];
       Array.Copy(src, index, dst, 0, dst.Length);
       return dst;
+    }
+
+    private static T CastObject<T>(object obj) {
+      if (obj is T typedObject) {
+        return typedObject;
+      }
+      if (obj is INativeObjectWrapper wrapper) {
+        return CastObject<T>(wrapper.Target);
+      }
+      throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
     }
 
     private static Expression GetDefaultExpression(Type type) {

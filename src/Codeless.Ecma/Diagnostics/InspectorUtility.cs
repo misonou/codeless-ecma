@@ -13,6 +13,11 @@ namespace Codeless.Ecma.Diagnostics {
           return WriteValue(value.ToObject());
         case EcmaValueType.String:
           return "\"" + value.ToString().Replace("\"", "\\\"") + "\"";
+        case EcmaValueType.Number:
+          if (value.Equals(EcmaValue.NegativeZero, EcmaValueComparison.SameValue)) {
+            return "-0";
+          }
+          break;
       }
       return value.ToString();
     }
@@ -21,8 +26,11 @@ namespace Codeless.Ecma.Diagnostics {
       if (value == null) {
         return WriteValue(EcmaValue.Undefined);
       }
-      if (value is IntrinsicObject t) {
-        return WriteValue(t.IntrinsicValue);
+      if (value is PrimitiveObject t) {
+        return WriteValue(t.PrimitiveValue);
+      }
+      if (value is EcmaRegExp || value is EcmaDate) {
+        return value.ToString();
       }
       TextWriter writer = new StringWriter();
       Serialize(writer, value, false);
@@ -32,7 +40,6 @@ namespace Codeless.Ecma.Diagnostics {
     private static void Serialize(TextWriter writer, EcmaValue value, bool nested) {
       switch (value.Type) {
         case EcmaValueType.Object:
-          int count = 0;
           if (value.IsCallable) {
             if (nested) {
               writer.Write("function");
@@ -40,20 +47,16 @@ namespace Codeless.Ecma.Diagnostics {
               writer.Write("function " + value["name"] + "() { [native code] }");
             }
           } else if (EcmaArray.IsArray(value)) {
-            writer.Write("[");
-            foreach (EcmaPropertyEntry item in value.EnumerateEntries()) {
-              if (++count > 1) {
-                writer.Write(", ");
-              }
-              if (!item.Key.IsArrayIndex) {
-                writer.Write(item.Key.ToString());
-                writer.Write(": ");
-              }
-              Serialize(writer, item.Value, true);
-            }
-            writer.Write("]");
+            SerializeAsArray(writer, value);
+          } else if (value.GetUnderlyingObject() is ArgumentList) {
+            writer.Write("Arguments ");
+            SerializeAsArray(writer, value);
           } else {
-            EcmaValue ctor = value["constructor"];
+            int count = 0;
+            EcmaValue ctor = default;
+            try {
+              ctor = value["constructor"];
+            } catch { }
             if (!nested) {
               try {
                 TextWriter writer2 = new StringWriter();
@@ -68,9 +71,9 @@ namespace Codeless.Ecma.Diagnostics {
                   writer2.Write(" ");
                 }
                 writer2.Write("{");
-                foreach (EcmaPropertyKey propertyKey in obj.OwnPropertyKeys) {
+                foreach (EcmaPropertyKey propertyKey in obj.GetOwnPropertyKeys()) {
                   EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(propertyKey);
-                  if (descriptor.IsDataDescriptor && descriptor.Enumerable.Value) {
+                  if (descriptor.IsDataDescriptor && descriptor.Enumerable) {
                     if (++count > 1) {
                       writer2.Write(", ");
                     }
@@ -87,12 +90,48 @@ namespace Codeless.Ecma.Diagnostics {
             writer.Write(ctor.IsNullOrUndefined ? "Object" : ctor["name"]);
           }
           break;
-        case EcmaValueType.String:
-          writer.Write("\"" + value.ToString().Replace("\"", "\\\"") + "\"");
-          break;
         default:
-          writer.Write(value.ToString());
+          writer.Write(WriteValue(value));
           break;
+      }
+    }
+
+    private static void SerializeAsArray(TextWriter writer, EcmaValue value) {
+      TextWriter writer2 = new StringWriter();
+      RuntimeObject obj = value.ToObject();
+      int count = 0;
+      try {
+        writer2.Write("[");
+        for (long i = 0, len = value["length"].ToLength(); i < len; i++) {
+          if (++count > 1) {
+            writer2.Write(", ");
+          }
+          EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(i);
+          if (descriptor == null) {
+            Serialize(writer2, EcmaValue.Undefined, true);
+          } else if (descriptor.IsAccessorDescriptor) {
+            writer2.Write("(...)");
+          } else {
+            Serialize(writer2, descriptor.Value, true);
+          }
+        }
+        foreach (EcmaPropertyKey propertyKey in obj.GetOwnPropertyKeys()) {
+          if (!propertyKey.IsArrayIndex) {
+            EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(propertyKey);
+            if (descriptor.IsDataDescriptor && descriptor.Enumerable) {
+              if (++count > 1) {
+                writer2.Write(", ");
+              }
+              writer2.Write(propertyKey.ToString());
+              writer2.Write(": ");
+              Serialize(writer2, descriptor.Value, true);
+            }
+          }
+        }
+        writer2.Write("]");
+        writer.Write(writer2.ToString());
+      } catch {
+        writer.Write("[...]");
       }
     }
   }

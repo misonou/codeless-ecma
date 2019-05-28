@@ -17,7 +17,7 @@ namespace Codeless.Ecma {
     public static readonly EcmaValueHandle NaN = new EcmaValueHandle(unchecked((long)0xFFF8000000000000));
     public static readonly EcmaValueHandle NegativeInfinity = new EcmaValueHandle(unchecked((long)0xFFF0000000000000));
     public static readonly EcmaValueHandle PositiveInfinity = new EcmaValueHandle(unchecked((long)0x7FF0000000000000));
-    public static readonly EcmaValueHandle PostiveZero = new EcmaValueHandle(BitConverter.DoubleToInt64Bits(0.0));
+    public static readonly EcmaValueHandle PositiveZero = new EcmaValueHandle(BitConverter.DoubleToInt64Bits(0.0));
     public static readonly EcmaValueHandle NegativeZero = new EcmaValueHandle(BitConverter.DoubleToInt64Bits(-0.0));
 
     public EcmaValueHandle(long value) {

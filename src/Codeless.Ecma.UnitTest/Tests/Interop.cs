@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System.Collections;
 using System.Collections.Generic;
+using static Codeless.Ecma.Global;
 using static Codeless.Ecma.UnitTest.Assert;
 
 namespace Codeless.Ecma.UnitTest.Tests {
@@ -55,7 +56,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       That(list["length"], Is.EqualTo(4));
       That(list.ToString(), Is.EqualTo("1,2,3,[object Object]"));
-      That(Json.Stringify(list), Is.EqualTo("[1,2,3,{}]"));
+      That(Global.Json.Invoke("stringify", list), Is.EqualTo("[1,2,3,{}]"));
     }
 
     [Test]
@@ -64,7 +65,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       ht["prop"] = 1;
 
       That(ht["prop"], Is.EqualTo(1));
-      That(Json.Stringify(ht), Is.EqualTo("{\"prop\":1}"));
+      That(Global.Json.Invoke("stringify", ht), Is.EqualTo("{\"prop\":1}"));
     }
   }
 }

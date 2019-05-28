@@ -21,7 +21,8 @@ namespace Codeless.Ecma.Native {
           string propertyName = attribute != null ? attribute.Name : property.Name;
           DefineOwnPropertyNoChecked(propertyName, new EcmaPropertyDescriptor(
             property.GetGetMethod() != null ? new NativeRuntimeFunction(propertyName, property.GetGetMethod()) : EcmaValue.Undefined,
-            property.GetSetMethod() != null ? new NativeRuntimeFunction(propertyName, property.GetSetMethod()) : EcmaValue.Undefined));
+            property.GetSetMethod() != null ? new NativeRuntimeFunction(propertyName, property.GetSetMethod()) : EcmaValue.Undefined,
+            EcmaPropertyAttributes.DefaultDataProperty));
         }
       }
       DefineOwnPropertyNoChecked(WellKnownPropertyName.Constructor, new EcmaPropertyDescriptor(new Constructor(type.Name), EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));

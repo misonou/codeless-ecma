@@ -21,12 +21,13 @@ namespace Codeless.Ecma {
     private static readonly int[] DaysToMonth365 = new int[] { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
     private static readonly int[] DaysToMonth366 = new int[] { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 };
     private static readonly int tz = (int)TimeZoneInfo.Local.BaseUtcOffset.TotalMilliseconds;
+    private static readonly int tzOffset = -tz / 60000;
 
     private const string DefaultFormat = "{0} {1} {2:D2} {3:D4} {4:D2}:{5:D2}:{6:D2} GMT{7:+00;-00}{8:D2} ({9})";
     private const string DateFormat = "{0} {1} {2:D2} {3:D4}";
-    private const string UTCFormat = "{0}, {2:D2} {1} {3:D4} {4:D2}:{5:D2}:{6:D2} GMT";
-    private const string ISOFormat = "{0:D4}-{1:D2}-{3:D2}T{4:D2}:{5:D2}:{6:D2}Z";
-    private const string ISOExtendFormat = "{0:+000000;-000000}-{1:D2}-{3:D2}T{4:D2}:{5:D2}:{6:D2}.{7:D3}Z";
+    private const string UTCFormat = "{0}, {2:D2} {1} {3:0000;-000} {4:D2}:{5:D2}:{6:D2} GMT";
+    private const string ISOFormat = "{0:D4}-{1:D2}-{2:D2}T{3:D2}:{4:D2}:{5:D2}.{6:D3}Z";
+    private const string ISOExtendFormat = "{0:+000000;-000000}-{1:D2}-{2:D2}T{3:D2}:{4:D2}:{5:D2}.{6:D3}Z";
     private const string TimeFormat = "{0:D2}:{1:D2}:{2:D2} GMT{3:+00;-00}{4:D2} ({5})";
 
     private const long MinTime = -8640000000000000;
@@ -45,7 +46,7 @@ namespace Codeless.Ecma {
     private const int DaysTo1970 = 719162;
 
     public static readonly EcmaTimestamp Invalid = new EcmaTimestamp(Int64.MinValue);
-    public static readonly EcmaTimestamp LocalEpoch = new EcmaTimestamp(tz);
+    public static readonly EcmaTimestamp LocalEpoch = new EcmaTimestamp(-tz);
 
     private readonly long timestamp;
 
@@ -58,7 +59,7 @@ namespace Codeless.Ecma {
     }
 
     public static int TimezoneOffset {
-      get { return tz; }
+      get { return tzOffset; }
     }
 
     public bool IsValid {
@@ -94,7 +95,7 @@ namespace Codeless.Ecma {
 
     public string ToISOString() {
       if (!IsValid) {
-        throw new EcmaRangeErrorException("Invalid time value");
+        throw new EcmaRangeErrorException(InternalString.Error.InvalidTimeValue);
       }
       int y = 0, m = 0, d = 0, h = 0, n = 0, s = 0, ms = 0;
       GetDateComponents(timestamp, 3, ref y, ref m, ref d);
@@ -152,33 +153,32 @@ namespace Codeless.Ecma {
 
     public static long GetTimestampUtc(long timestamp, int start, params long[] args) {
       long datePart, timePart;
+      int end = start + args.Length;
 
       long[] p = new long[7];
       Array.Copy(args, 0, p, start, args.Length);
 
       if (start >= 3) {
-        datePart = timestamp / msPerDay * msPerDay;
+        datePart = DivideFloor(timestamp, msPerDay) * msPerDay;
       } else {
         if (start > 2 || args.Length < 3) {
           int y = 0, m = 0, d = 0;
-          int part = start + args.Length - 3;
-          GetDateComponents(timestamp, part, ref y, ref m, ref d);
-          if (start > 0 || args.Length < 1) {
+          GetDateComponents(timestamp, 3, ref y, ref m, ref d);
+          if (start > 0 || end < 1) {
             p[0] = y;
           }
-          if (start > 1 || args.Length < 2) {
+          if (start > 1 || end < 2) {
             p[1] = m;
           }
-          if (start > 2 || args.Length < 3) {
+          if (start > 2 || end < 3) {
             p[2] = d;
           }
         }
         datePart = GetTimestampForDate(p[0], p[1], p[2]);
       }
 
-      int end = start + args.Length;
       if (end < 4) {
-        timePart = timestamp % msPerDay;
+        timePart = DivideFloorMod(timestamp, 1, msPerDay);
       } else {
         if (end < 7 || start > 3) {
           int h = 0, n = 0, s = 0, ms = 0;
@@ -211,42 +211,40 @@ namespace Codeless.Ecma {
 
     #region Helper methods
     private static long GetTimestampForDate(long y, long m, long d) {
-      y = y + m / 12;
-      m = m % 12;
+      long yd = DivideFloor(m, 12);
+      y = y + yd;
+      m = m - yd * 12;
 
       bool isLeapYear = (y % 4 == 0) && (y % 100 != 0 || y % 400 == 0);
       int[] arr = (isLeapYear ? DaysToMonth366 : DaysToMonth365);
-      long day = (365 * (y - 1970) * ((y - 1969) / 4) - ((y - 1901) / 100) + ((y - 1601) / 400)) + (arr[m] + d - 1);
+      long day = 365 * (y - 1970) + DivideFloor(y - 1969, 4) - DivideFloor(y - 1901, 100) + DivideFloor(y - 1601, 400) + (arr[m] + d - 1);
       return day * msPerDay;
     }
 
     private static int GetDateComponents(long t, int part, ref int y, ref int m, ref int d) {
       int numOf400y, numOf100y, numOf4y, numOf1y;
 
-      d = (int)(t / msPerDay) + DaysTo1970;
-      numOf400y = d / DaysPer400Years;
+      d = (int)DivideFloor(t, msPerDay) + DaysTo1970;
+      numOf400y = (int)DivideFloor(d, DaysPer400Years);
       d = d - numOf400y * DaysPer400Years;
-      numOf100y = d / DaysPer100Years;
+      numOf100y = (int)DivideFloor(d, DaysPer100Years);
       if (numOf100y == 4) {
         numOf100y = 3;
       }
       d = d - numOf100y * DaysPer100Years;
-      numOf4y = d / DaysPer4Years;
+      numOf4y = (int)DivideFloor(d, DaysPer4Years);
       d = d - numOf4y * DaysPer4Years;
-      numOf1y = d / DaysPerYear;
+      numOf1y = (int)DivideFloor(d, DaysPerYear);
       if (numOf1y == 4) {
         numOf1y = 3;
       }
+      y = numOf400y * 400 + numOf100y * 100 + numOf4y * 4 + numOf1y + 1;
       if (part == 0) {
-        y = numOf400y * 400 + numOf100y * 100 + numOf4y * 4 + numOf1y + 1;
         return y;
       }
-      if (part == 3) {
-        y = numOf400y * 400 + numOf100y * 100 + numOf4y * 4 + numOf1y + 1;
-      }
       d = d - numOf1y * DaysPerYear;
-      bool isLeapYear = numOf1y == 3 && (numOf4y != 24 && numOf100y == 3);
-      int[] arr = (isLeapYear ? DaysToMonth366 : DaysToMonth365);
+      bool isLeapYear = (y % 4 == 0) && (y % 100 != 0 || y % 400 == 0);
+      int[] arr = isLeapYear ? DaysToMonth366 : DaysToMonth365;
       m = d >> 6;
       while (d >= arr[m]) {
         m++;
@@ -261,11 +259,14 @@ namespace Codeless.Ecma {
 
     private static int GetTimeComponents(long t, int part, ref int h, ref int n, ref int s, ref int ms) {
       t = t % msPerDay;
-      h = (int)(t / msPerHour);
+      if (t < 0) {
+        t += msPerDay;
+      }
+      h = (int)DivideFloor(t, msPerHour);
       t -= h * msPerHour;
-      n = (int)(t / msPerMinute);
+      n = (int)DivideFloor(t, msPerMinute);
       t -= n * msPerMinute;
-      s = (int)(t / msPerSecond);
+      s = (int)DivideFloor(t, msPerSecond);
       ms = (int)(t - s * msPerSecond);
       return ms;
     }
@@ -280,15 +281,15 @@ namespace Codeless.Ecma {
         case EcmaDateComponent.Date:
           return GetDateComponents(t, 2, ref y, ref m, ref d);
         case EcmaDateComponent.Hours:
-          return (int)(t / msPerHour) % HoursPerDay;
+          return (int)DivideFloorMod(t, msPerHour, HoursPerDay);
         case EcmaDateComponent.Minutes:
-          return (int)((t / msPerMinute) % MinutesPerHour);
+          return (int)DivideFloorMod(t, msPerMinute, MinutesPerHour);
         case EcmaDateComponent.Seconds:
-          return (int)((t / msPerSecond) % SecondsPerMinute);
+          return (int)DivideFloorMod(t, msPerSecond, SecondsPerMinute);
         case EcmaDateComponent.Milliseconds:
-          return (int)(t % msPerSecond);
+          return (int)DivideFloorMod(t, 1, msPerSecond);
         case EcmaDateComponent.WeekDay:
-          return ((int)(t / msPerDay) + 4) % 7;
+          return (int)DivideFloorMod(t + msPerDay * 4, msPerDay, 7);
       }
       return 0;
     }
@@ -312,6 +313,22 @@ namespace Codeless.Ecma {
         }
       } catch (ArgumentOutOfRangeException) { }
       return 0;
+    }
+
+    private static long DivideFloorMod(long m, long dividend, long modulo) {
+      m = DivideFloor(m, dividend);
+      m = m % modulo;
+      if (m < 0) {
+        m += modulo;
+      }
+      return m;
+    }
+
+    private static long DivideFloor(long m, long dividend) {
+      if (m < 0) {
+        m -= dividend - 1;
+      }
+      return m / dividend;
     }
     #endregion
   }

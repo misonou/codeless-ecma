@@ -24,8 +24,8 @@ namespace Codeless.Ecma.Native {
       isReadOnly = ht[type] == null || target.IsReadOnly;
     }
 
-    public override IList<EcmaPropertyKey> OwnPropertyKeys {
-      get { return Target.Keys.OfType<object>().Select(v => new EcmaValue(v)).Where(v => EcmaPropertyKey.IsPropertyKey(v)).Select(v => EcmaPropertyKey.FromValue(v)).Concat(base.OwnPropertyKeys).ToList(); }
+    public override IEnumerable<EcmaPropertyKey> GetOwnPropertyKeys() {
+      return Target.Keys.OfType<object>().Select(v => new EcmaValue(v)).Where(v => EcmaPropertyKey.IsPropertyKey(v)).Select(v => EcmaPropertyKey.FromValue(v)).Concat(base.GetOwnPropertyKeys());
     }
 
     public override EcmaValue Get(EcmaPropertyKey propertyKey, RuntimeObject receiver) {
@@ -64,7 +64,7 @@ namespace Codeless.Ecma.Native {
 
     public override EcmaPropertyDescriptor GetOwnProperty(EcmaPropertyKey propertyKey) {
       if (Target.Contains(propertyKey.ToString())) {
-        return new EcmaPropertyDescriptor(Get(propertyKey, null));
+        return new EcmaPropertyDescriptor(Get(propertyKey, null), EcmaPropertyAttributes.DefaultDataProperty);
       }
       return base.GetOwnProperty(propertyKey);
     }

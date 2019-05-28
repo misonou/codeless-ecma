@@ -1,5 +1,6 @@
 ﻿using Codeless.Ecma.Native;
 using Codeless.Ecma.Runtime;
+using Codeless.Ecma.Runtime.Intrinsics;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -13,29 +14,54 @@ namespace Codeless.Ecma {
     public EcmaDate()
       : this(DateTime.UtcNow) { }
 
+    public EcmaDate(RuntimeObject constructor)
+      : base(WellKnownObject.DatePrototype, constructor) { }
+
     public EcmaDate(DateTime dt)
-      : base(WellKnownObject.DatePrototype) {
-      this.timestamp = new EcmaTimestamp(dt);
-    }
+      : this(EcmaTimestamp.FromNativeDateTime(dt).Value) { }
+
+    public EcmaDate(string str)
+      : this(DateConstructor.ParseInternal(str).Value) { }
 
     public EcmaDate(long timestamp)
       : base(WellKnownObject.DatePrototype) {
       this.timestamp = new EcmaTimestamp(timestamp);
     }
 
-    public EcmaDate(long timestamp, RuntimeObject constructor)
-      : base(WellKnownObject.DatePrototype, constructor) {
-      this.timestamp = new EcmaTimestamp(timestamp);
-    }
+    public EcmaDate(long year, long month)
+      : this(EcmaTimestamp.GetTimestamp(EcmaTimestamp.LocalEpoch.Value, 0, year, month)) { }
+
+    public EcmaDate(long year, long month, long date)
+      : this(EcmaTimestamp.GetTimestamp(EcmaTimestamp.LocalEpoch.Value, 0, year, month, date)) { }
+
+    public EcmaDate(long year, long month, long date, long hours)
+      : this(EcmaTimestamp.GetTimestamp(EcmaTimestamp.LocalEpoch.Value, 0, year, month, date, hours)) { }
+
+    public EcmaDate(long year, long month, long date, long hours, long minutes)
+      : this(EcmaTimestamp.GetTimestamp(EcmaTimestamp.LocalEpoch.Value, 0, year, month, date, hours, minutes)) { }
+
+    public EcmaDate(long year, long month, long date, long hours, long minutes, long seconds)
+      : this(EcmaTimestamp.GetTimestamp(EcmaTimestamp.LocalEpoch.Value, 0, year, month, date, hours, minutes, seconds)) { }
+
+    public EcmaDate(long year, long month, long date, long hours, long minutes, long seconds, long milliseconds)
+      : this(EcmaTimestamp.GetTimestamp(EcmaTimestamp.LocalEpoch.Value, 0, year, month, date, hours, minutes, seconds, milliseconds)) { }
 
     public DateTime Value {
       get { return timestamp.ToNativeDateTime(DateTimeKind.Local); }
       set { timestamp = new EcmaTimestamp(value); }
     }
 
+    protected override string ToStringTag {
+      get { return InternalString.ObjectTag.Date; }
+    }
+
     internal EcmaTimestamp Timestamp {
       get { return timestamp; }
       set { timestamp = value; }
+    }
+
+    public EcmaDate Parse(string str) {
+      return new EcmaDate(str);
     }
 
     public long GetTime() {

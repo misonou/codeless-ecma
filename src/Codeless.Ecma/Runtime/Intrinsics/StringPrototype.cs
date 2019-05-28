@@ -7,6 +7,11 @@ using System.Text;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.StringPrototype)]
   internal static class StringPrototype {
+    private static readonly char[] trimChars = "\x09\x0A\x0B\x0C\x0D\x20\xA0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028\u2029\uFEFF".ToCharArray();
+
+    [IntrinsicMember(EcmaPropertyAttributes.None)]
+    public const int Length = 0;
+
     [IntrinsicMember]
     public static EcmaValue ToString([This] EcmaValue thisValue) {
       return thisValue.GetIntrinsicPrimitiveValue(EcmaValueType.String);
@@ -21,38 +26,38 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue CharAt([This] EcmaValue value, EcmaValue index) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
-      int pos = index.ToInt32();
+      string str = value.ToString(true);
+      EcmaValue pos = index.ToInteger();
       if (pos < 0 || pos >= str.Length) {
         return String.Empty;
       }
-      return new String(str[pos], 1);
+      return new String(str[(int)pos], 1);
     }
 
     [IntrinsicMember]
     public static EcmaValue CharCodeAt([This] EcmaValue value, EcmaValue index) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
-      int pos = index.ToInt32();
+      string str = value.ToString(true);
+      EcmaValue pos = index.ToInteger();
       if (pos < 0 || pos >= str.Length) {
         return EcmaValue.NaN;
       }
-      return str[pos];
+      return str[(int)pos];
     }
 
     [IntrinsicMember]
     public static EcmaValue CodePointAt([This] EcmaValue value, EcmaValue index) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
-      int pos = index.ToInt32();
+      string str = value.ToString(true);
+      EcmaValue pos = index.ToInteger();
       if (pos < 0 || pos >= str.Length) {
         return default;
       }
-      char ch = str[pos];
-      if (ch < 0xdb00 || ch > 0xdbff || pos + 1 == str.Length) {
+      char ch = str[(int)pos];
+      if (ch < 0xd800 || ch > 0xdbff || pos + 1 == str.Length) {
         return ch;
       }
-      char ch2 = str[pos + 1];
+      char ch2 = str[(int)pos + 1];
       if (ch2 < 0xdc00 || ch2 > 0xdfff) {
         return ch;
       }
@@ -62,73 +67,112 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue Concat([This] EcmaValue value, params EcmaValue[] args) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
+      string str = value.ToString(true);
       foreach (EcmaValue v in args) {
-        str += v.ToString();
+        str += v.ToString(true);
       }
       return str;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue IndexOf([This] EcmaValue value, EcmaValue needle, EcmaValue position) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
-      string searchString = needle.ToString();
-      return str.IndexOf(searchString, ClampPosition(str, position.ToInt32()));
+      string str = value.ToString(true);
+      string searchString = needle.ToString(true);
+      return str.IndexOf(searchString, position.ToInteger(0, str.Length));
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue LastIndexOf([This] EcmaValue value, EcmaValue needle, EcmaValue position) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
-      string searchString = needle.ToString();
+      string str = value.ToString(true);
+      string searchString = needle.ToString(true);
       EcmaValue pos = position.ToNumber();
-      if (pos == EcmaValue.NaN || pos == EcmaValue.Infinity) {
-        return str.LastIndexOf(searchString);
+      if (pos.IsNaN || !pos.IsFinite) {
+        return searchString == "" ? str.Length : str.LastIndexOf(searchString);
       }
-      return str.LastIndexOf(searchString, ClampPosition(str, position.ToInt32()));
+      int index = pos.ToInteger(0, str.Length);
+      return searchString == "" ? index : str.LastIndexOf(searchString, index);
     }
 
     [IntrinsicMember]
     public static EcmaValue LocaleCompare([This] EcmaValue value, EcmaValue comparand) {
       Guard.RequireObjectCoercible(value);
-      return String.Compare(value.ToString(), comparand.ToString());
+      return String.Compare(value.ToString(true).Normalize(), comparand.ToString(true).Normalize());
     }
 
     [IntrinsicMember]
     public static EcmaValue ToLowerCase([This] EcmaValue value) {
       Guard.RequireObjectCoercible(value);
-      return value.ToString().ToLowerInvariant();
+      string str = value.ToString(true).ToLowerInvariant();
+      StringBuilder sb = new StringBuilder(str.Length);
+      for (int i = 0, len = str.Length; i < len; i++) {
+        char ch = str[i];
+        string upper = MapLowerSpecialCase(ch);
+        if (upper != null) {
+          sb.Append(upper);
+        } else if (ch == '\u03C3') {
+          // conditional mapping for greek letter sigma
+          bool useFinalForm = false;
+          for (int j = i - 1; j >= 0; j--) {
+            if (!IsCaseIgnoreOrSurrogate(str, j) && IsCasedLetter(str, j)) {
+              useFinalForm = true;
+              break;
+            }
+          }
+          if (useFinalForm) {
+            for (int j = i + 1; j < len; j++) {
+              if (!IsCaseIgnoreOrSurrogate(str, j) && IsCasedLetter(str, j)) {
+                useFinalForm = false;
+                break;
+              }
+            }
+          }
+          sb.Append(useFinalForm ? '\u03C2' : '\u03C3');
+        } else {
+          sb.Append(ch);
+        }
+      }
+      return sb.ToString();
     }
 
     [IntrinsicMember]
     public static EcmaValue ToLocaleLowerCase([This] EcmaValue value) {
-      Guard.RequireObjectCoercible(value);
-      return value.ToString().ToLower();
+      return ToLowerCase(value);
     }
 
     [IntrinsicMember]
     public static EcmaValue ToUpperCase([This] EcmaValue value) {
       Guard.RequireObjectCoercible(value);
-      return value.ToString().ToUpperInvariant();
+      string str = value.ToString(true).ToUpperInvariant();
+      StringBuilder sb = new StringBuilder(str.Length);
+      for (int i = 0, len = str.Length; i < len; i++) {
+        char ch = str[i];
+        string upper = MapUpperSpecialCase(ch);
+        if (upper != null) {
+          sb.Append(upper);
+        } else {
+          sb.Append(ch);
+        }
+      }
+      return sb.ToString();
     }
 
     [IntrinsicMember]
     public static EcmaValue ToLocaleUpperCase([This] EcmaValue value) {
-      Guard.RequireObjectCoercible(value);
-      return value.ToString().ToUpper();
+      return ToUpperCase(value);
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue PadStart([This] EcmaValue value, EcmaValue maxLength, EcmaValue fillString) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
-      string filler = fillString.Type == EcmaValueType.Undefined ? " " : fillString.ToString();
-      if (filler.Length == 0) {
+      string str = value.ToString(true);
+      int intMaxLength = maxLength.ToInt32();
+      string filler = fillString == default ? " " : fillString.ToString(true);
+      if (intMaxLength <= str.Length) {
         return str;
       }
-      int intMaxLength = maxLength.ToInt32();
-      if (intMaxLength <= str.Length) {
+      if (filler.Length == 0) {
         return str;
       }
       StringBuilder sb = new StringBuilder();
@@ -137,16 +181,16 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return sb.ToString() + str;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue PadEnd([This] EcmaValue value, EcmaValue maxLength, EcmaValue fillString) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
-      string filler = fillString.Type == EcmaValueType.Undefined ? " " : fillString.ToString();
-      if (filler.Length == 0) {
+      string str = value.ToString(true);
+      int intMaxLength = maxLength.ToInt32();
+      string filler = fillString == default ? " " : fillString.ToString(true);
+      if (intMaxLength <= str.Length) {
         return str;
       }
-      int intMaxLength = maxLength.ToInt32();
-      if (intMaxLength <= str.Length) {
+      if (filler.Length == 0) {
         return str;
       }
       StringBuilder sb = new StringBuilder();
@@ -155,69 +199,79 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return str + sb.ToString();
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue EndsWith([This] EcmaValue value, EcmaValue searchString, EcmaValue endPosition) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
+      string str = value.ToString(true);
       if (searchString.IsRegExp) {
         throw new EcmaTypeErrorException("First argument to String.prototype.endsWith must not be a regular expression");
       }
-      if (endPosition.Type != EcmaValueType.Undefined) {
-        str = str.Substring(0, ClampPosition(str, endPosition.ToInt32()));
+      string needle = searchString.ToString(true);
+      int pos = endPosition == default ? str.Length : endPosition.ToInteger(0, str.Length);
+      if (needle.Length == 0) {
+        return true;
       }
-      return str.EndsWith(searchString.ToString());
+      if (pos < needle.Length) {
+        return false;
+      }
+      return str.Substring(pos - needle.Length, needle.Length) == needle;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue StartsWith([This] EcmaValue value, EcmaValue searchString, EcmaValue startPosition) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
+      string str = value.ToString(true);
       if (searchString.IsRegExp) {
         throw new EcmaTypeErrorException("First argument to String.prototype.startsWith must not be a regular expression");
       }
-      if (startPosition.Type != EcmaValueType.Undefined) {
-        str = str.Substring(ClampPosition(str, startPosition.ToInt32()));
+      string needle = searchString.ToString(true);
+      int pos = startPosition == default ? 0 : startPosition.ToInteger(0, str.Length);
+      if (needle.Length == 0) {
+        return true;
       }
-      return str.StartsWith(searchString.ToString());
+      if (pos + needle.Length > str.Length) {
+        return false;
+      }
+      return str.Substring(pos, needle.Length) == needle;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue Includes([This] EcmaValue value, EcmaValue searchString, EcmaValue position) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
+      string str = value.ToString(true);
       if (searchString.IsRegExp) {
         throw new EcmaTypeErrorException("First argument to String.prototype.includes must not be a regular expression");
       }
       if (position.Type != EcmaValueType.Undefined) {
-        str = str.Substring(ClampPosition(str, position.ToInt32()));
+        str = str.Substring(position.ToInteger(0, str.Length));
       }
-      return str.Contains(searchString.ToString());
+      return str.Contains(searchString.ToString(true));
     }
 
     [IntrinsicMember]
     public static EcmaValue Repeat([This] EcmaValue value, EcmaValue count) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
-      int num = count.ToInt32Checked();
-      if (num < 0) {
-        throw new EcmaRangeErrorException("First argument to String.prototype.repeat must be positive");
+      string str = value.ToString(true);
+      EcmaValue num = count.ToInteger();
+      if (num < 0 || !num.IsFinite) {
+        throw new EcmaRangeErrorException("First argument to String.prototype.repeat must be positive and finite");
       }
-      if (num == 0) {
+      if (num == 0 || str.Length == 0) {
         return String.Empty;
       }
       StringBuilder sb = new StringBuilder();
-      sb.Insert(0, str, num);
+      sb.Insert(0, str, (int)num);
       return sb.ToString();
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 0)]
     public static EcmaValue Normalize([This] EcmaValue value, EcmaValue form) {
       Guard.RequireObjectCoercible(value);
       NormalizationForm f;
       if (form.Type == EcmaValueType.Undefined) {
         f = NormalizationForm.FormC;
       } else {
-        switch (form.ToString()) {
+        switch (form.ToString(true)) {
           case "NFC":
             f = NormalizationForm.FormC;
             break;
@@ -234,18 +288,18 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
             throw new EcmaRangeErrorException("First argument to String.prototype.normalize must be one of the following values: NFC, NFD, NFKC, NFKD");
         }
       }
-      return value.ToString().Normalize(f);
+      return value.ToString(true).Normalize(f);
     }
 
     [IntrinsicMember]
     public static EcmaValue Substr([This] EcmaValue value, EcmaValue start, EcmaValue length) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
-      int pos = ClampPosition(str, start.ToInt32());
+      string str = value.ToString(true);
+      int pos = start.ToInteger(-str.Length, str.Length);
       if (pos < 0) {
-        pos = Math.Max(0, pos + str.Length);
+        pos = pos + str.Length;
       }
-      int len = Math.Min(Math.Max(0, length.ToInt32()), str.Length - pos);
+      int len = length.ToInteger(0, str.Length - pos);
       if (len <= 0) {
         return String.Empty;
       }
@@ -255,9 +309,9 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue Substring([This] EcmaValue value, EcmaValue start, EcmaValue end) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
-      int spos = ClampPosition(str, start.ToInt32());
-      int epos = ClampPosition(str, end.Type == EcmaValueType.Undefined ? str.Length : end.ToInt32());
+      string str = value.ToString(true);
+      int spos = start.ToInteger(0, str.Length);
+      int epos = end == default ? str.Length : end.ToInteger(0, str.Length);
       if (epos < spos) {
         return str.Substring(epos, spos - epos);
       }
@@ -267,78 +321,280 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue Trim([This] EcmaValue value) {
       Guard.RequireObjectCoercible(value);
-      return value.ToString().Trim();
+      return value.ToString(true).Trim(trimChars);
     }
 
     [IntrinsicMember]
-    public static EcmaValue TrimLeft([This] EcmaValue value) {
+    [IntrinsicMember("TrimLeft")]
+    public static EcmaValue TrimStart([This] EcmaValue value) {
       Guard.RequireObjectCoercible(value);
-      return value.ToString().TrimStart();
+      return value.ToString(true).TrimStart(trimChars);
     }
 
     [IntrinsicMember]
-    public static EcmaValue TrimRight([This] EcmaValue value) {
+    [IntrinsicMember("TrimRight")]
+    public static EcmaValue TrimEnd([This] EcmaValue value) {
       Guard.RequireObjectCoercible(value);
-      return value.ToString().TrimEnd();
+      return value.ToString(true).TrimEnd(trimChars);
     }
 
     [IntrinsicMember]
     public static EcmaValue Slice([This] EcmaValue value, EcmaValue start, EcmaValue end) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString();
-      int spos = start.ToInt32();
-      int epos = end.Type == EcmaValueType.Undefined ? str.Length : end.ToInt32();
-      spos = spos < 0 ? Math.Max(spos + str.Length, 0) : Math.Min(spos, str.Length);
-      epos = epos < 0 ? Math.Max(epos + str.Length, 0) : Math.Min(epos, str.Length);
+      string str = value.ToString(true);
+      int spos = start.ToInteger(-str.Length, str.Length);
+      int epos = end == default ? str.Length : end.ToInteger(-str.Length, str.Length);
+      spos = spos < 0 ? spos + str.Length : spos;
+      epos = epos < 0 ? epos + str.Length : epos;
       return str.Substring(spos, Math.Max(epos - spos, 0));
     }
 
     [IntrinsicMember]
     public static EcmaValue Match([This] EcmaValue value, EcmaValue searcher) {
       Guard.RequireObjectCoercible(value);
-      if (searcher.HasProperty(WellKnownSymbol.Match)) {
-        return CallRegExpGeneric(value, searcher, WellKnownSymbol.Match);
+      if (!searcher.IsNullOrUndefined) {
+        RuntimeFunction handler = searcher.ToObject().GetMethod(WellKnownSymbol.Match);
+        if (handler != null) {
+          return handler.Call(searcher, value);
+        }
       }
-      return value.ToString().IndexOf(searcher.ToString()) >= 0;
+      string str = value.ToString(true);
+      EcmaValue regex = EcmaRegExp.Parse(searcher == default ? "" : searcher.ToString(true), "");
+      return regex.Invoke(WellKnownSymbol.Match, str);
+    }
+
+    [IntrinsicMember]
+    public static EcmaValue MatchAll([This] EcmaValue value, EcmaValue searcher) {
+      Guard.RequireObjectCoercible(value);
+      if (!searcher.IsNullOrUndefined) {
+        RuntimeFunction handler = searcher.ToObject().GetMethod(WellKnownSymbol.MatchAll);
+        if (handler != null) {
+          return handler.Call(searcher, value);
+        }
+      }
+      string str = value.ToString(true);
+      EcmaValue regex = EcmaRegExp.Parse(searcher == default ? "" : searcher.ToString(true), "g");
+      return regex.Invoke(WellKnownSymbol.MatchAll, str);
     }
 
     [IntrinsicMember]
     public static EcmaValue Replace([This] EcmaValue value, EcmaValue searcher, EcmaValue replacement) {
       Guard.RequireObjectCoercible(value);
-      if (searcher.HasProperty(WellKnownSymbol.Replace)) {
-        return CallRegExpGeneric(value, searcher, WellKnownSymbol.Replace, replacement);
+      if (!searcher.IsNullOrUndefined) {
+        RuntimeFunction handler = searcher.ToObject().GetMethod(WellKnownSymbol.Replace);
+        if (handler != null) {
+          return handler.Call(searcher, value, replacement);
+        }
       }
-      string str = value.ToString();
-      string needle = searcher.ToString();
+      string str = value.ToString(true);
+      string needle = searcher.ToString(true);
       int index = str.IndexOf(needle);
-      return index >= 0 ? str.Substring(0, index) + replacement.ToString() + str.Substring(index + needle.Length) : str;
+      if (index < 0) {
+        return str;
+      }
+      string newStr = (replacement.IsCallable ? replacement.Call(EcmaValue.Undefined, needle, index, str) : replacement).ToString(true);
+      return str.Substring(0, index) + newStr + str.Substring(index + needle.Length);
     }
 
     [IntrinsicMember]
     public static EcmaValue Search([This] EcmaValue value, EcmaValue searcher) {
       Guard.RequireObjectCoercible(value);
-      if (searcher.HasProperty(WellKnownSymbol.Search)) {
-        return CallRegExpGeneric(value, searcher, WellKnownSymbol.Search);
+      if (!searcher.IsNullOrUndefined) {
+        RuntimeFunction handler = searcher.ToObject().GetMethod(WellKnownSymbol.Search);
+        if (handler != null) {
+          return handler.Call(searcher, value);
+        }
       }
-      return value.ToString().IndexOf(searcher.ToString());
+      string str = value.ToString(true);
+      EcmaValue regex = EcmaRegExp.Parse(searcher == default ? "" : searcher.ToString(true), "");
+      return regex.Invoke(WellKnownSymbol.Search, str);
     }
 
     [IntrinsicMember]
-    public static EcmaValue Split([This] EcmaValue value, EcmaValue searcher) {
+    public static EcmaValue Split([This] EcmaValue value, EcmaValue searcher, EcmaValue limit) {
       Guard.RequireObjectCoercible(value);
-      if (searcher.HasProperty(WellKnownSymbol.Split)) {
-        return CallRegExpGeneric(value, searcher, WellKnownSymbol.Split);
+      if (!searcher.IsNullOrUndefined) {
+        RuntimeFunction handler = searcher.ToObject().GetMethod(WellKnownSymbol.Split);
+        if (handler != null) {
+          return handler.Call(searcher, value, limit);
+        }
       }
-      return new EcmaArray(value.ToString().Split(new[] { searcher.ToString() }, StringSplitOptions.None).Select(v => new EcmaValue(v)));
+      string str = value.ToString(true);
+      string separator = searcher.ToString(true);
+      int count = unchecked((int)limit.ToUInt32());
+      if (separator.Length == 0) {
+        EcmaValue[] arr = new EcmaValue[str.Length];
+        for (int i = 0, len = str.Length; i < len; i++) {
+          arr[i] = str.Substring(i, 1);
+        }
+        return new EcmaArray(arr);
+      }
+      string[] result = str.Split(new[] { separator }, StringSplitOptions.None);
+      if (limit == default) {
+        return new EcmaArray(result.Select(v => new EcmaValue(v)));
+      }
+      return new EcmaArray(result.Take(count).Select(v => new EcmaValue(v)));
     }
 
-    private static EcmaValue CallRegExpGeneric(EcmaValue value, EcmaValue regexp, WellKnownSymbol sym,  EcmaValue arg = default) {
-      RuntimeObject method = regexp.ToObject().GetMethod(sym);
-      return method.Call(regexp, value, arg);
+    private static string MapLowerSpecialCase(char ch) {
+      switch (ch) {
+        case '\u0130': return "\u0069\u0307";
+      }
+      return null;
     }
 
-    private static int ClampPosition(string str, int position) {
-      return Math.Min(Math.Max(0, position), str.Length);
+    private static string MapUpperSpecialCase(char ch) {
+      switch (ch) {
+        case '\u00DF': return "\u0053\u0053";
+        case '\uFB00': return "\u0046\u0046";
+        case '\uFB01': return "\u0046\u0049";
+        case '\uFB02': return "\u0046\u004C";
+        case '\uFB03': return "\u0046\u0046\u0049";
+        case '\uFB04': return "\u0046\u0046\u004C";
+        case '\uFB05': return "\u0053\u0054";
+        case '\uFB06': return "\u0053\u0054";
+        case '\u0587': return "\u0535\u0552";
+        case '\uFB13': return "\u0544\u0546";
+        case '\uFB14': return "\u0544\u0535";
+        case '\uFB15': return "\u0544\u053B";
+        case '\uFB16': return "\u054E\u0546";
+        case '\uFB17': return "\u0544\u053D";
+        case '\u0149': return "\u02BC\u004E";
+        case '\u0390': return "\u0399\u0308\u0301";
+        case '\u03B0': return "\u03A5\u0308\u0301";
+        case '\u01F0': return "\u004A\u030C";
+        case '\u1E96': return "\u0048\u0331";
+        case '\u1E97': return "\u0054\u0308";
+        case '\u1E98': return "\u0057\u030A";
+        case '\u1E99': return "\u0059\u030A";
+        case '\u1E9A': return "\u0041\u02BE";
+        case '\u1F50': return "\u03A5\u0313";
+        case '\u1F52': return "\u03A5\u0313\u0300";
+        case '\u1F54': return "\u03A5\u0313\u0301";
+        case '\u1F56': return "\u03A5\u0313\u0342";
+        case '\u1FB6': return "\u0391\u0342";
+        case '\u1FC6': return "\u0397\u0342";
+        case '\u1FD2': return "\u0399\u0308\u0300";
+        case '\u1FD3': return "\u0399\u0308\u0301";
+        case '\u1FD6': return "\u0399\u0342";
+        case '\u1FD7': return "\u0399\u0308\u0342";
+        case '\u1FE2': return "\u03A5\u0308\u0300";
+        case '\u1FE3': return "\u03A5\u0308\u0301";
+        case '\u1FE4': return "\u03A1\u0313";
+        case '\u1FE6': return "\u03A5\u0342";
+        case '\u1FE7': return "\u03A5\u0308\u0342";
+        case '\u1FF6': return "\u03A9\u0342";
+        case '\u1F80': return "\u1F08\u0399";
+        case '\u1F81': return "\u1F09\u0399";
+        case '\u1F82': return "\u1F0A\u0399";
+        case '\u1F83': return "\u1F0B\u0399";
+        case '\u1F84': return "\u1F0C\u0399";
+        case '\u1F85': return "\u1F0D\u0399";
+        case '\u1F86': return "\u1F0E\u0399";
+        case '\u1F87': return "\u1F0F\u0399";
+        case '\u1F88': return "\u1F08\u0399";
+        case '\u1F89': return "\u1F09\u0399";
+        case '\u1F8A': return "\u1F0A\u0399";
+        case '\u1F8B': return "\u1F0B\u0399";
+        case '\u1F8C': return "\u1F0C\u0399";
+        case '\u1F8D': return "\u1F0D\u0399";
+        case '\u1F8E': return "\u1F0E\u0399";
+        case '\u1F8F': return "\u1F0F\u0399";
+        case '\u1F90': return "\u1F28\u0399";
+        case '\u1F91': return "\u1F29\u0399";
+        case '\u1F92': return "\u1F2A\u0399";
+        case '\u1F93': return "\u1F2B\u0399";
+        case '\u1F94': return "\u1F2C\u0399";
+        case '\u1F95': return "\u1F2D\u0399";
+        case '\u1F96': return "\u1F2E\u0399";
+        case '\u1F97': return "\u1F2F\u0399";
+        case '\u1F98': return "\u1F28\u0399";
+        case '\u1F99': return "\u1F29\u0399";
+        case '\u1F9A': return "\u1F2A\u0399";
+        case '\u1F9B': return "\u1F2B\u0399";
+        case '\u1F9C': return "\u1F2C\u0399";
+        case '\u1F9D': return "\u1F2D\u0399";
+        case '\u1F9E': return "\u1F2E\u0399";
+        case '\u1F9F': return "\u1F2F\u0399";
+        case '\u1FA0': return "\u1F68\u0399";
+        case '\u1FA1': return "\u1F69\u0399";
+        case '\u1FA2': return "\u1F6A\u0399";
+        case '\u1FA3': return "\u1F6B\u0399";
+        case '\u1FA4': return "\u1F6C\u0399";
+        case '\u1FA5': return "\u1F6D\u0399";
+        case '\u1FA6': return "\u1F6E\u0399";
+        case '\u1FA7': return "\u1F6F\u0399";
+        case '\u1FA8': return "\u1F68\u0399";
+        case '\u1FA9': return "\u1F69\u0399";
+        case '\u1FAA': return "\u1F6A\u0399";
+        case '\u1FAB': return "\u1F6B\u0399";
+        case '\u1FAC': return "\u1F6C\u0399";
+        case '\u1FAD': return "\u1F6D\u0399";
+        case '\u1FAE': return "\u1F6E\u0399";
+        case '\u1FAF': return "\u1F6F\u0399";
+        case '\u1FB3': return "\u0391\u0399";
+        case '\u1FBC': return "\u0391\u0399";
+        case '\u1FC3': return "\u0397\u0399";
+        case '\u1FCC': return "\u0397\u0399";
+        case '\u1FF3': return "\u03A9\u0399";
+        case '\u1FFC': return "\u03A9\u0399";
+        case '\u1FB2': return "\u1FBA\u0399";
+        case '\u1FB4': return "\u0386\u0399";
+        case '\u1FC2': return "\u1FCA\u0399";
+        case '\u1FC4': return "\u0389\u0399";
+        case '\u1FF2': return "\u1FFA\u0399";
+        case '\u1FF4': return "\u038F\u0399";
+        case '\u1FB7': return "\u0391\u0342\u0399";
+        case '\u1FC7': return "\u0397\u0342\u0399";
+        case '\u1FF7': return "\u03A9\u0342\u0399";
+      }
+      return null;
+    }
+
+    private static bool IsCasedLetter(string str, int index) {
+      switch (CharUnicodeInfo.GetUnicodeCategory(str, index)) {
+        case UnicodeCategory.LowercaseLetter:
+        case UnicodeCategory.UppercaseLetter:
+        case UnicodeCategory.TitlecaseLetter:
+          return true;
+      }
+      return false;
+    }
+
+    private static bool IsCaseIgnoreOrSurrogate(string str, int index) {
+      switch (CharUnicodeInfo.GetUnicodeCategory(str, index)) {
+        case UnicodeCategory.Surrogate:
+        case UnicodeCategory.NonSpacingMark:
+        case UnicodeCategory.EnclosingMark:
+        case UnicodeCategory.Format:
+        case UnicodeCategory.ModifierLetter:
+        case UnicodeCategory.ModifierSymbol:
+          return true;
+      }
+      switch ((int)str[index]) {
+        // Word_Break=MidLetter
+        case 58:
+        case 183:
+        case 727:
+        case 903:
+        case 1524:
+        case 8231:
+        case 65043:
+        case 65109:
+        case 65306:
+        // Word_Break=MidNumLet
+        case 46:
+        case 8216:
+        case 8217:
+        case 8228:
+        case 65106:
+        case 65287:
+        case 65294:
+        // Word_Break=Single_Quote
+        case 39:
+          return true;
+      }
+      return false;
     }
   }
 }

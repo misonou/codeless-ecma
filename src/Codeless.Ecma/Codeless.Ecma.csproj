@@ -29,6 +29,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <LangVersion>7.1</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Net40|AnyCPU'">
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
@@ -40,6 +41,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <LangVersion>7.1</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Net45|AnyCPU'">
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
@@ -51,6 +53,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <LangVersion>7.1</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net35|AnyCPU'">
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
@@ -62,6 +65,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <LangVersion>7.1</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net40|AnyCPU'">
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
@@ -73,6 +77,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <LangVersion>7.1</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net45|AnyCPU'">
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
@@ -84,12 +89,15 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <LangVersion>7.1</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <LangVersion>7.1</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <LangVersion>7.1</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net35|AnyCPU' Or '$(Configuration)|$(Platform)' == 'Release-Net35|AnyCPU'">
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -131,6 +139,8 @@
     <Compile Include="Diagnostics\InspectorMetaObjectEntryCollection.cs" />
     <Compile Include="Diagnostics\VisualStudio\RuntimeObjectDebuggerProxy.cs" />
     <Compile Include="EcmaArray.cs" />
+    <Compile Include="EcmaJsonReader.cs" />
+    <Compile Include="EcmaRegExpStringEnumerator.cs" />
     <Compile Include="EcmaTimestamp.cs" />
     <Compile Include="EcmaValueUtility.cs" />
     <Compile Include="EcmaDate.cs" />
@@ -154,12 +164,15 @@
     <Compile Include="Primitives\WellKnownPropertyNameBinder.cs" />
     <Compile Include="Primitives\WellKnownSymbolBinder.cs" />
     <Compile Include="Runtime\BoundRuntimeFunction.cs" />
-    <Compile Include="Native\DelegateFunction.cs" />
+    <Compile Include="Runtime\DelegateRuntimeFunction.cs" />
     <Compile Include="Runtime\IEnvironmentRecord.cs" />
     <Compile Include="Runtime\ImmutablePrototypeObject.cs" />
+    <Compile Include="Runtime\IntrinsicFunction.cs" />
     <Compile Include="Runtime\Intrinsics\ErrorConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\ErrorPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\IntrinsicConstructorAttribute.cs" />
+    <Compile Include="Runtime\Intrinsics\ProxyConstructor.cs" />
+    <Compile Include="Runtime\Intrinsics\RegExpStringIteratorPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\SetIteratorPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\RegExpConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\RegExpPrototype.cs" />
@@ -188,7 +201,7 @@
     <Compile Include="Primitives\BooleanBinder.cs" />
     <Compile Include="Guard.cs" />
     <Compile Include="EcmaRegExp.cs" />
-    <Compile Include="EcmaValueJsonConverter.cs" />
+    <Compile Include="EcmaJsonWriter.cs" />
     <Compile Include="EcmaPropertyKey.cs" />
     <Compile Include="Primitives\StringBinder.cs" />
     <Compile Include="Primitives\UndefinedBinder.cs" />
@@ -199,8 +212,8 @@
     <Compile Include="Runtime\Intrinsics\StringPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\SymbolConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\SymbolPrototype.cs" />
-    <Compile Include="Runtime\IntrinsicObject.cs" />
-    <Compile Include="Runtime\TransientIntrinsicObject.cs" />
+    <Compile Include="Runtime\PrimitiveObject.cs" />
+    <Compile Include="Runtime\TransientPrimitiveObject.cs" />
     <Compile Include="Symbol.cs" />
     <Compile Include="WeakKeyedCollection.cs" />
     <Compile Include="WeakKeyedItem.cs" />
@@ -243,6 +256,8 @@
     <Compile Include="EcmaValue.cs" />
     <Compile Include="EcmaArrayEnumerator.cs" />
     <Compile Include="Global.cs" />
+    <Compile Include="Runtime\ArgumentList.cs" />
+    <Compile Include="WellKnownSymbol.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="key.snk" />

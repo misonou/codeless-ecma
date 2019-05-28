@@ -27,11 +27,13 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public override EcmaValueHandle ToHandle(double value) {
-      return new EcmaValueHandle(BitConverter.DoubleToInt64Bits(value));
+      // check for "positive sign" NaN that would returned from Math.Abs(NaN);
+      long value1 = BitConverter.DoubleToInt64Bits(value);
+      return value1 == 9221120237041090560 ? EcmaValueHandle.NaN : new EcmaValueHandle(value1);
     }
 
     public override RuntimeObject ToRuntimeObject(double value) {
-      return new TransientIntrinsicObject(value, WellKnownObject.NumberPrototype);
+      return new TransientPrimitiveObject(value, WellKnownObject.NumberPrototype);
     }
 
     public override double ToDouble(double value) {
@@ -39,11 +41,11 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public override int ToInt32(double value) {
-      return (int)value;
+      return (int)(value % Int32.MaxValue);
     }
 
     public override long ToInt64(double value) {
-      return (long)value;
+      return (long)(value % Int64.MaxValue);
     }
 
     public override string ToString(double value) {

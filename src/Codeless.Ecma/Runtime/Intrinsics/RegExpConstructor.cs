@@ -9,13 +9,33 @@ using System.Threading.Tasks;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.RegExpConstructor)]
   internal static class RegExpConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct, ObjectType = typeof(EcmaRegExp))]
-    public static EcmaValue RegExp([This] EcmaValue thisValue, EcmaValue pattern, EcmaValue flags) {
-      if (EcmaRegExp.TryParse(String.Concat("/", pattern, "/", flags), out EcmaRegExp re)) {
-        thisValue.GetUnderlyingObject<EcmaRegExp>().Init(re);
-        return thisValue;
+    [IntrinsicConstructor(ObjectType = typeof(EcmaRegExp))]
+    public static EcmaValue RegExp([NewTarget] RuntimeObject newTarget, [This] EcmaValue thisValue, EcmaValue pattern, EcmaValue flags) {
+      bool patternIsRegExp = pattern.IsRegExp;
+      if (newTarget == null && patternIsRegExp && flags == default) {
+        EcmaValue constructor = pattern[WellKnownPropertyName.Constructor];
+        if (constructor.Type == EcmaValueType.Object && constructor.ToObject().IsWellknownObject(WellKnownObject.RegExpConstructor)) {
+          return pattern;
+        }
       }
-      throw new EcmaSyntaxErrorException("Invalid regular expression");
+      string strPattern;
+      string strFlags;
+      if (pattern.Type == EcmaValueType.Object && pattern.ToObject() is EcmaRegExp other) {
+        strPattern = other.Source;
+        strFlags = flags == default ? (string)RegExpPrototype.Flags(other) : flags.ToString(true);
+      } else if (patternIsRegExp) {
+        strPattern = pattern["source"].ToString(true);
+        strFlags = flags == default ? pattern["flags"].ToString(true) : flags.ToString(true);
+      } else {
+        strPattern = pattern == default ? "" : pattern.ToString(true);
+        strFlags = flags == default ? "" : flags.ToString(true);
+      }
+      EcmaRegExp re = EcmaRegExp.Parse(strPattern, strFlags);
+      if (newTarget == null) {
+        return re.Clone();
+      }
+      thisValue.GetUnderlyingObject<EcmaRegExp>().Init(re);
+      return thisValue;
     }
 
     [IntrinsicMember(WellKnownSymbol.Species, Getter = true)]
@@ -36,7 +56,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Input([This] EcmaValue thisValue) {
       MatchInfo cur = CheckAndPopulate(RuntimeRealm.GetRealm(thisValue));
       if (cur != null) {
-        return cur.Input;
+        return cur.LastResult.Input;
       }
       return default;
     }
@@ -135,46 +155,36 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         realm.Properties[typeof(MatchInfo)] = new MatchInfo();
       }
       MatchInfo mi = (MatchInfo)realm.Properties[typeof(MatchInfo)];
-      if (mi.LastMatch != regexp.LastMatch) {
-        mi.Input = regexp.LastInput;
-        mi.LastMatch = regexp.LastMatch;
+      if (mi.LastResult != regexp.LastResult) {
+        mi.LastResult = regexp.LastResult;
       }
       return mi;
     }
 
     private class MatchInfo {
-      private Match lastMatch;
+      private IEcmaRegExpResult lastResult;
 
       public MatchInfo() {
-        this.MatchedValues = new List<string>();
+        this.MatchedValues = new List<EcmaValue>();
       }
 
-      public string Input { get; set; }
-
-      public Match LastMatch {
+      public IEcmaRegExpResult LastResult {
         get {
-          return lastMatch;
+          return lastResult;
         }
         set {
-          if (lastMatch != value) {
-            if (value.Success) {
-              this.LastValue = value.Value;
-              this.LeftContext = this.Input.Substring(0, value.Index);
-              this.RightContext = this.Input.Substring(value.Index + value.Length);
-              this.MatchedValues.Clear();
-              foreach (Group group in value.Groups) {
-                this.MatchedValues.Add(group.Value);
-              }
-              if (value.Groups.Count > 0) {
-                this.LastParen = value.Groups[value.Groups.Count - 1].Value;
-              }
-            }
+          if (lastResult != value && value != null) {
+            this.LastValue = value.Value;
+            this.LeftContext = value.Input.Substring(0, value.Index);
+            this.RightContext = value.Input.Substring(value.Index + value.Value.Length);
+            this.MatchedValues.Clear();
+            this.MatchedValues.AddRange(value.Captures.Take(10));
           }
-          lastMatch = value;
+          lastResult = value;
         }
       }
 
-      public List<string> MatchedValues { get; private set; }
+      public List<EcmaValue> MatchedValues { get; private set; }
       public string LastValue { get; private set; }
       public string LastParen { get; private set; }
       public string LeftContext { get; private set; }

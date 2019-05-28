@@ -7,12 +7,12 @@ using System.Text;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.BooleanConstructor)]
   internal static class BooleanConstructor {
-    [IntrinsicConstructor(ObjectType = typeof(IntrinsicObject))]
+    [IntrinsicConstructor(ObjectType = typeof(PrimitiveObject))]
     public static EcmaValue Boolean([NewTarget] RuntimeObject constructor, [This] EcmaValue thisValue, EcmaValue value) {
       if (constructor == null) {
         return value.ToBoolean();
       }
-      ((IntrinsicObject)thisValue.ToObject()).IntrinsicValue = value.ToBoolean();
+      ((PrimitiveObject)thisValue.ToObject()).PrimitiveValue = value.ToBoolean();
       return thisValue;
     }
   }

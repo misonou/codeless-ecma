@@ -21,25 +21,27 @@ namespace Codeless.Ecma {
 
     [IntrinsicMember(FunctionLength = 2)]
     public static EcmaValue Assign(EcmaValue target, params EcmaValue[] sources) {
-      RuntimeObject obj = target.ToObject();
+      Guard.RequireObjectCoercible(target);
+      RuntimeObject obj = ObjectConstructor.Object(null, target).ToObject();
       foreach (EcmaValue source in sources) {
         if (!source.IsNullOrUndefined) {
           foreach (EcmaPropertyEntry e in source.ToObject().GetEnumerableOwnProperties()) {
-            if (!obj.Set(e.Key, e.Value)) {
-              throw new EcmaTypeErrorException(InternalString.Error.CreatePropertyThrow);
-            }
+            obj.CreateDataPropertyOrThrow(e.Key, e.Value);
           }
         }
       }
-      return target;
+      return obj;
     }
 
     [IntrinsicMember]
     public static EcmaValue Create(EcmaValue proto, EcmaValue properties) {
-      if (proto.Type != EcmaValueType.Object || proto.Type != EcmaValueType.Null) {
+      if (proto.Type != EcmaValueType.Object && proto.Type != EcmaValueType.Null) {
         throw new EcmaTypeErrorException(InternalString.Error.PrototypeMustBeObjectOrNull);
       }
       RuntimeObject obj = Create(proto.ToObject());
+      if (properties == default) {
+        return obj;
+      }
       return DefineProperties(obj, properties);
     }
 
@@ -93,7 +95,7 @@ namespace Codeless.Ecma {
     public static EcmaValue GetOwnPropertyDescriptors(EcmaValue target) {
       RuntimeObject obj = target.ToObject();
       RuntimeObject result = new EcmaObject();
-      foreach (EcmaPropertyKey key in obj.OwnPropertyKeys) {
+      foreach (EcmaPropertyKey key in obj.GetOwnPropertyKeys()) {
         EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(key);
         if (descriptor != null) {
           result.CreateDataProperty(key, descriptor.ToValue());
@@ -104,17 +106,17 @@ namespace Codeless.Ecma {
 
     [IntrinsicMember]
     public static EcmaValue GetOwnPropertyNames(EcmaValue target) {
-      return new EcmaArray(target.ToObject().OwnPropertyKeys.Where(v => !v.IsSymbol).Select(v => v.ToValue()));
+      return new EcmaArray(target.ToObject().GetOwnPropertyKeys().Where(v => !v.IsSymbol).Select(v => v.ToValue()));
     }
 
     [IntrinsicMember]
     public static EcmaValue GetOwnPropertySymbols(EcmaValue target) {
-      return new EcmaArray(target.ToObject().OwnPropertyKeys.Where(v => v.IsSymbol).Select(v => v.ToValue()));
+      return new EcmaArray(target.ToObject().GetOwnPropertyKeys().Where(v => v.IsSymbol).Select(v => v.ToValue()));
     }
 
     [IntrinsicMember]
     public static EcmaValue GetPrototypeOf(EcmaValue obj) {
-      return new EcmaValue(obj.ToObject().GetPrototypeOf());
+      return ObjectPrototype.GetPrototypeOf(obj);
     }
 
     [IntrinsicMember]
@@ -133,7 +135,7 @@ namespace Codeless.Ecma {
         return true;
       }
       RuntimeObject runtimeObj = obj.ToObject();
-      return runtimeObj.TestIntegrityLevelFast() >= RuntimeObjectIntegrityLevel.Frozen;
+      return runtimeObj.IntegrityLevel >= RuntimeObjectIntegrityLevel.Frozen;
     }
 
     [IntrinsicMember]
@@ -142,7 +144,7 @@ namespace Codeless.Ecma {
         return true;
       }
       RuntimeObject runtimeObj = obj.ToObject();
-      return runtimeObj.TestIntegrityLevelFast() >= RuntimeObjectIntegrityLevel.Sealed;
+      return runtimeObj.IntegrityLevel >= RuntimeObjectIntegrityLevel.Sealed;
     }
 
     [IntrinsicMember]
@@ -173,7 +175,7 @@ namespace Codeless.Ecma {
     [IntrinsicMember]
     public static EcmaValue SetPrototypeOf(EcmaValue obj, EcmaValue proto) {
       Guard.RequireObjectCoercible(obj);
-      if (proto.Type != EcmaValueType.Object || proto.Type != EcmaValueType.Null) {
+      if (proto.Type != EcmaValueType.Object && proto.Type != EcmaValueType.Null) {
         throw new EcmaTypeErrorException(InternalString.Error.PrototypeMustBeObjectOrNull);
       }
       if (obj.Type != EcmaValueType.Object) {

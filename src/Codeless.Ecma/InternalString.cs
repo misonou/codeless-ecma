@@ -27,6 +27,7 @@ namespace Codeless.Ecma {
       public const string RegExp = "RegExp";
       public const string Json = "JSON";
       public const string Arguments = "Arguments";
+      public const string Array = "Array";
       public const string ArrayIterator = "Array Iterator";
       public const string WeakSet = "WeakSet";
       public const string Set = "Set";
@@ -34,6 +35,8 @@ namespace Codeless.Ecma {
       public const string Map = "Map";
       public const string MapIterator = "Map Iterator";
       public const string SetIterator = "Set Iterator";
+      public const string RegExpStringIterator = "RegExp String Iterator";
+      public const string Null = "Null";
     }
 
     public static class Error {
@@ -44,6 +47,7 @@ namespace Codeless.Ecma {
       public const string NotCoercibleAsObject = "Cannot convert value to an Object";
       public const string NotConvertibleToPrimitive = "Cannot convert object to primitive value";
       public const string SymbolNotConvertibleToNumber = "Cannot convert a Symbol value to a number";
+      public const string SymbolNotConvertibleToString = "Cannot convert a Symbol value to a string";
       public const string CreatePropertyThrow = "Cannot create property on #<Object>";
       public const string DeletePropertyThrow = "Cannot delete property on #<Object>";
       public const string PrototypeMustBeObjectOrNull = "Object prototype may only be an Object or null";
@@ -61,8 +65,20 @@ namespace Codeless.Ecma {
       public const string InvalidDescriptor = "Invalid property descriptor. Cannot both specify accessors and a value or writable attribute";
       public const string GetterMustBeFunction = "Getter must be a function";
       public const string SetterMustBeFunction = "Setter must be a function";
-      public const string InfinityToInteger = "Infinity out of range";
       public const string InvalidArrayLength = "Invalid array length";
+      public const string InvalidIndex = "Invalid index";
+      public const string InvalidTimeValue = "Invalid time value";
+      public const string InvalidRegex = "Invalid regular expression";
+      public const string InvalidRegexFlags = "Invalid regular expression flags";
+      public const string StrictMode = "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them";
+      public const string InvalidHint = "Invalid hint";
+      public const string LastIndexNotWritable = "Cannot assign to read only property 'lastIndex' of object";
+      public const string RegExpDuplicatedNameGroup = "Duplicate capture group name";
+      public const string RegExpInvalidCodePoint = "Unicode codepoint must not be greater than 0x10FFFF in regular expression";
+      public const string RegExpExecReturnWrongType = "RegExp exec method returned something other than an Object or null";
+      public const string UnexpectedJSONEnd = "Unexpected end of JSON input";
+      public const string UnexpectedJSONToken = "Unexpected token {0} in JSON at position {1}";
+      public const string MalformedURI = "URI malformed";
     }
   }
 }

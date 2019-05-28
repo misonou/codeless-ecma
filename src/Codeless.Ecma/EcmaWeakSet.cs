@@ -11,7 +11,7 @@ namespace Codeless.Ecma {
       : base(WellKnownObject.WeakSetPrototype, constructor) { }
 
     public EcmaWeakSet Add(RuntimeObject item) {
-      if (item is TransientIntrinsicObject) {
+      if (item is TransientPrimitiveObject) {
         throw new EcmaTypeErrorException("Invalid value used in weak set");
       }
       collection.GetOrAdd(new WeakKeyedItem(item));

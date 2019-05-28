@@ -264,7 +264,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         return new EcmaArray(length);
       }
       EcmaValue constructor = originalArray[WellKnownPropertyName.Constructor];
-      RuntimeObject obj = constructor.ToObject(true);
+      RuntimeObject obj = constructor.Type == EcmaValueType.Object ? constructor.ToObject() : null;
       if (obj != null && obj.IsWellknownObject(WellKnownObject.ArrayConstructor) && RuntimeRealm.Current != obj.Realm) {
         constructor = default;
       }
@@ -277,7 +277,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (constructor.Type == EcmaValueType.Undefined) {
         return new EcmaArray(length);
       }
-      RuntimeObject obj2 = constructor.ToObject(true);
+      RuntimeObject obj2 = constructor.Type == EcmaValueType.Object ? constructor.ToObject() : null;
       if (obj2 != null && obj2.IsConstructor) {
         return obj2.Construct(length);
       }

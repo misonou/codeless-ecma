@@ -12,48 +12,54 @@ namespace Codeless.Ecma {
     [IntrinsicMember(WellKnownSymbol.ToStringTag, EcmaPropertyAttributes.Configurable)]
     public const string ToStringTag = InternalString.ObjectTag.Json;
 
-    [IntrinsicMember]
-    public static string Stringify(EcmaValue value, EcmaValue replacer = default, EcmaValue space = default) {
-      string indentString;
-      if (space.Type == EcmaValueType.Object) {
-        if (space.IsIntrinsicPrimitiveValue(EcmaValueType.Number)) {
-          space = space.ToNumber();
-        } else if (space.IsIntrinsicPrimitiveValue(EcmaValueType.String)) {
-          space = space.ToString();
-        }
-      }
-      if (space.Type == EcmaValueType.Number) {
-        indentString = new String(' ', Math.Max(0, Math.Min(10, space.ToInt32())));
-      } else if (space.Type == EcmaValueType.String) {
-        indentString = space.ToString();
-        if (indentString.Length > 10) {
-          indentString = indentString.Substring(0, 10);
-        }
-      } else {
-        indentString = String.Empty;
-      }
-      if (replacer.IsCallable) {
-        return JsonConvert.SerializeObject(value.GetUnderlyingObject(), new EcmaValueJsonConverter(indentString, replacer));
-      }
-      if (!EcmaArray.IsArray(replacer)) {
-        return JsonConvert.SerializeObject(value.GetUnderlyingObject(), new EcmaValueJsonConverter(indentString));
-      }
-      HashSet<string> propertyList = new HashSet<string>();
-      if (EcmaArray.IsArray(replacer)) {
-        for (long i = 0, length = replacer[WellKnownPropertyName.Length].ToLength(); i < length; i++) {
-          EcmaValue item = replacer[i];
-          if (item.IsIntrinsicPrimitiveValue(EcmaValueType.String) ||
-              item.IsIntrinsicPrimitiveValue(EcmaValueType.Number)) {
-            propertyList.Add(item.ToString());
-          }
-        }
-      }
-      return JsonConvert.SerializeObject(value.GetUnderlyingObject(), new EcmaValueJsonConverter(indentString, new List<string>(propertyList)));
+    public static string Stringify(EcmaValue value) {
+      return new EcmaJsonWriter().Serialize(value);
+    }
+
+    public static string Stringify(EcmaValue value, RuntimeFunction replacer, string indentString) {
+      return new EcmaJsonWriter(indentString, replacer).Serialize(value);
+    }
+
+    public static string Stringify(EcmaValue value, IList<string> propertyList, string indentString) {
+      return new EcmaJsonWriter(indentString, propertyList).Serialize(value);
     }
 
     [IntrinsicMember]
-    public static EcmaValue Parse(string value, EcmaValue reviver = default) {
-      EcmaValue unfiltered = new EcmaValue(JsonConvert.DeserializeObject(value));
+    public static EcmaValue Stringify(EcmaValue value, EcmaValue replacer, EcmaValue space) {
+      string indentString;
+      space = EcmaValueUtility.UnboxPrimitiveObject(space);
+      if (space.Type == EcmaValueType.Number) {
+        indentString = new String(' ', Math.Max(0, Math.Min(10, space.ToInt32())));
+      } else if (space.Type == EcmaValueType.String) {
+        indentString = space.ToString(true);
+      } else {
+        indentString = String.Empty;
+      }
+      string result;
+      if (replacer.IsCallable) {
+        result = new EcmaJsonWriter(indentString, replacer).Serialize(value);
+      } else if (EcmaArray.IsArray(replacer)) {
+        HashSet<string> propertyList = new HashSet<string>();
+        for (long i = 0, length = replacer[WellKnownPropertyName.Length].ToLength(); i < length; i++) {
+          EcmaValue item = EcmaValueUtility.UnboxPrimitiveObject(replacer[i]);
+          if (item.Type == EcmaValueType.String || item.Type == EcmaValueType.Number) {
+            propertyList.Add(item.ToString(true));
+          }
+        }
+        result = new EcmaJsonWriter(indentString, propertyList).Serialize(value);
+      } else {
+        result = new EcmaJsonWriter(indentString).Serialize(value);
+      }
+      return result ?? EcmaValue.Undefined;
+    }
+
+    public static EcmaValue Parse(string value) {
+      return new EcmaJsonReader(value).Deserialize();
+    }
+
+    [IntrinsicMember]
+    public static EcmaValue Parse(EcmaValue value, EcmaValue reviver) {
+      EcmaValue unfiltered = Parse(value.ToString(true));
       if (!reviver.IsCallable) {
         return unfiltered;
       }
@@ -77,7 +83,7 @@ namespace Codeless.Ecma {
             }
           }
         } else {
-          foreach (EcmaPropertyKey key in value.EnumerateKeys()) {
+          foreach (EcmaPropertyKey key in obj.GetEnumerableOwnPropertyKeys().ToArray()) {
             EcmaValue newValue = InternalizeJsonProperty(obj, key, reviver);
             if (newValue.Type == EcmaValueType.Undefined) {
               obj.Delete(key);

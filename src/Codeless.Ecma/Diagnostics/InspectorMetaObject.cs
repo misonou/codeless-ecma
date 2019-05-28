@@ -15,7 +15,7 @@ namespace Codeless.Ecma.Diagnostics {
         this.Prototype = EcmaValue.Null;
       }
       for (RuntimeObject cur = obj; cur != null; cur = cur.GetPrototypeOf()) {
-        foreach (EcmaPropertyKey property in cur.OwnPropertyKeys) {
+        foreach (EcmaPropertyKey property in cur.GetOwnPropertyKeys()) {
           EcmaPropertyDescriptor descriptor = cur.GetOwnProperty(property);
           if (descriptor.IsDataDescriptor && cur != obj) {
             continue;
@@ -40,7 +40,7 @@ namespace Codeless.Ecma.Diagnostics {
               }
             }
           }
-          if (descriptor.Enumerable.Value) {
+          if (descriptor.Enumerable) {
             EnumerableProperties.Add(property, value);
           } else {
             NonEnumerableProperties.Add(property, value);

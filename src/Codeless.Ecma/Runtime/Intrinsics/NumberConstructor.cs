@@ -7,26 +7,26 @@ using System.Text;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.NumberConstructor)]
   internal static class NumberConstructor {
-    [IntrinsicConstructor(ObjectType = typeof(IntrinsicObject))]
-    public static EcmaValue Number([NewTarget] RuntimeObject constructor, [This] EcmaValue thisValue, EcmaValue value) {
+    [IntrinsicConstructor(ObjectType = typeof(PrimitiveObject))]
+    public static EcmaValue Number([NewTarget] RuntimeObject constructor, [This] EcmaValue thisValue, EcmaValue? value) {
       if (constructor == null) {
-        return value.ToNumber();
+        return value.GetValueOrDefault().ToNumber();
       }
-      ((IntrinsicObject)thisValue.ToObject()).IntrinsicValue = value.ToNumber();
+      ((PrimitiveObject)thisValue.ToObject()).PrimitiveValue = value.HasValue ? value.Value.ToNumber() : 0;
       return thisValue;
     }
 
     [IntrinsicMember("EPSILON", EcmaPropertyAttributes.None)]
-    public const double Epsilon = Double.Epsilon;
+    public const double Epsilon = 2.2204460492503131E-16;
 
     [IntrinsicMember("MAX_VALUE", EcmaPropertyAttributes.None)]
     public const double MaxValue = Double.MaxValue;
 
     [IntrinsicMember("MIN_VALUE", EcmaPropertyAttributes.None)]
-    public const double MinValue = Double.MinValue;
+    public const double MinValue = Double.Epsilon;
 
     [IntrinsicMember("MAX_SAFE_INTEGER", EcmaPropertyAttributes.None)]
-    public const long MaxSafeInteger = (1 << 53) - 1;
+    public const long MaxSafeInteger = (1L << 53) - 1;
 
     [IntrinsicMember("MIN_SAFE_INTEGER", EcmaPropertyAttributes.None)]
     public const long MinSafeInteger = -MaxSafeInteger;
@@ -47,7 +47,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static bool IsInteger(EcmaValue value) {
-      return value.ToNumber().IsInteger;
+      return value.IsInteger;
     }
 
     [IntrinsicMember]
@@ -57,7 +57,6 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static bool IsSafeInteger(EcmaValue value) {
-      value = value.ToNumber();
       if (value.IsInteger) {
         long l = value.ToInt64();
         return l >= MinSafeInteger && l <= MaxSafeInteger;

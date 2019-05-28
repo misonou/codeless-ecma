@@ -27,6 +27,7 @@
     Construct,
     LastIndex,
     Message,
-    ToJson
+    ToJSON,
+    Callee
   }
 }

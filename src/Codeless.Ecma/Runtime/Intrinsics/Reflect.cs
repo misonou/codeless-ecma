@@ -16,7 +16,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static EcmaValue OwnKeys(EcmaValue target) {
-      return new EcmaArray(target.ToObject().OwnPropertyKeys.Select(v => v.ToValue()));
+      return new EcmaArray(target.ToObject().GetOwnPropertyKeys().Select(v => v.ToValue()));
     }
 
     [IntrinsicMember]
@@ -69,7 +69,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue Construct(EcmaValue target, EcmaValue argumentsList, EcmaValue? newTarget) {
       RuntimeObject obj = target.ToObject();
-      return obj.Construct(newTarget.HasValue ? newTarget.Value.ToObject() : obj, EcmaValueUtility.CreateListFromArrayLike(argumentsList));
+      return obj.Construct(EcmaValueUtility.CreateListFromArrayLike(argumentsList), newTarget.HasValue ? newTarget.Value.ToObject() : obj);
     }
   }
 }

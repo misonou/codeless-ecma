@@ -71,7 +71,7 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public RuntimeObject ToRuntimeObject(EcmaValueHandle handle) {
-      return null;
+      throw new EcmaTypeErrorException(InternalString.Error.NotCoercibleAsObject);
     }
 
     public bool TryGet(EcmaValueHandle handle, EcmaPropertyKey name, out EcmaValue value) {

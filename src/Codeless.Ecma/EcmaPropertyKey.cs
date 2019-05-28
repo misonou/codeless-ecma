@@ -8,8 +8,9 @@ using System.Text;
 
 namespace Codeless.Ecma {
   [DebuggerStepThrough]
+  [DebuggerDisplay("{Name,nq}")]
   public struct EcmaPropertyKey : IEquatable<EcmaPropertyKey> {
-    private EcmaValue value;
+    private readonly EcmaValue value;
 
     public EcmaPropertyKey(WellKnownPropertyName value)
       : this(new EcmaValue(new EcmaValueHandle((long)value), WellKnownPropertyNameBinder.Default)) { }
@@ -22,8 +23,7 @@ namespace Codeless.Ecma {
 
     public EcmaPropertyKey(string value)
       : this() {
-      uint number;
-      if (UInt32.TryParse(value, out number) && number < UInt32.MaxValue) {
+      if (UInt32.TryParse(value, out uint number)) {
         this.value = number;
       } else {
         this.value = value;
@@ -31,10 +31,10 @@ namespace Codeless.Ecma {
     }
 
     public EcmaPropertyKey(int value)
-      : this(new EcmaValue(value)) { }
+      : this(value >= 0 ? new EcmaValue(value) : new EcmaValue(value.ToString())) { }
 
     public EcmaPropertyKey(long value)
-      : this(new EcmaValue(value)) { }
+      : this(value >= 0 && value <= UInt32.MaxValue ? new EcmaValue(value) : new EcmaValue(value.ToString())) { }
 
     private EcmaPropertyKey(EcmaValue value)
       : this() {
@@ -47,23 +47,6 @@ namespace Codeless.Ecma {
 
     public bool IsArrayIndex {
       get { return value.Type == EcmaValueType.Number; }
-    }
-
-    public bool IsCanonicalNumericIndex {
-      get {
-        if (value.Type == EcmaValueType.Symbol) {
-          return false;
-        }
-        if (value.Type == EcmaValueType.Number) {
-          return true;
-        }
-        double doubleValue;
-        if (Double.TryParse(value.ToString(), out doubleValue) && Math.Floor(doubleValue) == doubleValue) {
-          value = doubleValue;
-          return true;
-        }
-        return false;
-      }
     }
 
     public Symbol Symbol {
@@ -79,25 +62,37 @@ namespace Codeless.Ecma {
       get { return value.ToString(); }
     }
 
-    public long ArrayIndex {
-      get {
-        if (!IsArrayIndex) {
-          throw new InvalidOperationException();
-        }
-        return value.ToUInt32();
+    public long ToArrayIndex() {
+      if (!IsArrayIndex) {
+        throw new InvalidOperationException();
       }
+      return value.ToInt64();
     }
 
-    public EcmaValue CanonicalNumericIndex {
-      get { return value.ToNumber(); }
+    [EcmaSpecification("CanonicalNumericIndexString", EcmaSpecificationKind.AbstractOperations)]
+    public EcmaValue ToCanonicalNumericIndex() {
+      if (value.Type == EcmaValueType.Number) {
+        return value.ToInt64();
+      }
+      if (value.Type == EcmaValueType.Symbol) {
+        return default;
+      }
+      if (Double.TryParse(value.ToString(), out double doubleValue) && DoubleBinder.Default.ToString(doubleValue) == value.ToString()) {
+        return doubleValue;
+      }
+      return default;
     }
 
     public EcmaValue ToValue() {
-      return value;
+      return value.Type == EcmaValueType.Number ? value.ToString() : value;
     }
 
+    [EcmaSpecification("ToPropertyKey", EcmaSpecificationKind.AbstractOperations)]
     public static EcmaPropertyKey FromValue(EcmaValue v) {
-      if (v.Type == EcmaValueType.Symbol || v.Type == EcmaValueType.Number) {
+      if (v.Type == EcmaValueType.Object) {
+        v = v.ToPrimitive();
+      }
+      if (v.Type == EcmaValueType.Symbol || (v.IsInteger && v.ToNumber() >= 0)) {
         return new EcmaPropertyKey(v);
       }
       return new EcmaPropertyKey(v.ToString());

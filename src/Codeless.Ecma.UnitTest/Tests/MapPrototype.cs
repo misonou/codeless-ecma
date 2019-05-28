@@ -12,7 +12,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       map.Invoke("set", 1, 2);
 
       That(() => {
-        map.Invoke("forEach", RuntimeFunction.FromDelegate(v => {
+        map.Invoke("forEach", RuntimeFunction.Create(v => {
           if (map["size"] < 2) {
             map.Invoke("set", 2, 3);
           }

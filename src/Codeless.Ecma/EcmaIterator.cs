@@ -29,6 +29,14 @@ namespace Codeless.Ecma {
       this.ResultKind = kind;
     }
 
+    public EcmaIterator(IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> iterator, EcmaIteratorResultKind kind, WellKnownObject proto)
+      : base(proto) {
+      Guard.ArgumentNotNull(iterator, "iterator");
+      this.iterator = iterator;
+      this.IteratedObject = RuntimeRealm.GetRuntimeObject(iterator);
+      this.ResultKind = kind;
+    }
+
     public EcmaIteratorResultKind ResultKind { get; private set; }
 
     public RuntimeObject IteratedObject { get; private set; }

@@ -1,5 +1,6 @@
 ﻿using Codeless.Ecma.Runtime.Intrinsics;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -14,9 +15,12 @@ namespace Codeless.Ecma.Runtime {
   }
 
   internal class NativeRuntimeFunction : RuntimeFunction {
+    private static readonly ConcurrentDictionary<MethodInfo, RuntimeFunctionDelegate> dictionary = new ConcurrentDictionary<MethodInfo, RuntimeFunctionDelegate>();
+    private static readonly MethodInfo createFromConstructor = typeof(RuntimeObject).GetMethod("CreateFromConstructor");
+
     private readonly NativeRuntimeFunctionConstraint constraint;
     private readonly WellKnownObject defaultProto = WellKnownObject.ObjectPrototype;
-    private readonly Type runtimeObjectType;
+    private readonly MethodInfo constructThisValue;
     private readonly MethodInfo method;
     private RuntimeFunctionDelegate fn;
 
@@ -25,16 +29,19 @@ namespace Codeless.Ecma.Runtime {
       this.method = method;
       InitProperty(name, GetFuncLength(method));
 
+      Type runtimeObjectType = null;
       if (method.HasAttribute(out IntrinsicConstructorAttribute attribute)) {
         constraint = attribute.Constraint;
         runtimeObjectType = attribute.ObjectType;
         if (method.DeclaringType.HasAttribute(out IntrinsicObjectAttribute a1)) {
           defaultProto = RuntimeRealm.GetPrototypeOf(a1.ObjectType);
         }
-      } else {
+      } else if (method.HasAttribute(out IntrinsicMemberAttribute _)) {
         constraint = NativeRuntimeFunctionConstraint.DenyConstruct;
+      } else {
+        SetPrototypeInternal(new EcmaObject(), EcmaPropertyAttributes.Writable);
       }
-      runtimeObjectType = runtimeObjectType ?? typeof(EcmaObject);
+      constructThisValue = createFromConstructor.MakeGenericMethod(runtimeObjectType ?? typeof(EcmaObject));
     }
 
     public override bool IsConstructor {
@@ -43,7 +50,7 @@ namespace Codeless.Ecma.Runtime {
 
     public override EcmaValue Call(EcmaValue thisValue, params EcmaValue[] arguments) {
       if (constraint == NativeRuntimeFunctionConstraint.AlwaysConstruct) {
-        return base.Construct(this, arguments);
+        return base.Construct(arguments, this);
       }
       if (constraint == NativeRuntimeFunctionConstraint.DenyCall) {
         throw new EcmaTypeErrorException(InternalString.Error.MustCallAsConstructor);
@@ -51,22 +58,26 @@ namespace Codeless.Ecma.Runtime {
       return base.Call(thisValue, arguments);
     }
 
-    public override EcmaValue Construct(RuntimeObject newTarget, params EcmaValue[] arguments) {
-      if (constraint == NativeRuntimeFunctionConstraint.DenyConstruct) {
-        throw new EcmaTypeErrorException(InternalString.Error.NotConstructor);
-      }
-      return base.Construct(newTarget, arguments);
+    protected override EcmaValue Invoke(RuntimeFunctionInvocation invocation, EcmaValue[] arguments) {
+      return GetDelegate()(invocation, arguments, method.IsStatic ? null : invocation.ThisValue.GetUnderlyingObject());
     }
 
-    protected internal override RuntimeFunctionDelegate GetDelegate() {
+    protected RuntimeFunctionDelegate GetDelegate() {
       if (fn == null) {
-        fn = NativeRuntimeFunctionCompiler.Compile(method);
+        fn = dictionary.GetOrAdd(method, NativeRuntimeFunctionCompiler.Compile);
       }
       return fn;
     }
 
     protected override RuntimeObject ConstructThisValue(RuntimeObject newTarget) {
-      return (RuntimeObject)typeof(RuntimeObject).GetMethod("CreateFromConstructor").MakeGenericMethod(runtimeObjectType).Invoke(null, new object[] { defaultProto, newTarget });
+      if (constraint == NativeRuntimeFunctionConstraint.DenyConstruct) {
+        throw new EcmaTypeErrorException(InternalString.Error.NotConstructor);
+      }
+      try {
+        return (RuntimeObject)constructThisValue.Invoke(null, new object[] { defaultProto, newTarget });
+      } catch (TargetInvocationException ex) {
+        throw ex.InnerException;
+      }
     }
 
     private static int GetFuncLength(MethodInfo m) {

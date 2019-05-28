@@ -20,26 +20,21 @@ namespace Codeless.Ecma {
       throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
     }
 
-    public static bool IsIntrinsicPrimitiveValue(this EcmaValue thisValue, EcmaValueType type) {
-      if (thisValue.Type == type) {
-        return true;
-      }
-      if (thisValue.Type == EcmaValueType.Object) {
-        return thisValue.GetUnderlyingObject() is IntrinsicObject obj && obj.IntrinsicValue.Type == type;
-      }
-      return false;
-    }
-
     public static EcmaValue GetIntrinsicPrimitiveValue(this EcmaValue thisValue, EcmaValueType type) {
       if (thisValue.Type == type) {
         return thisValue;
       }
       if (thisValue.Type == EcmaValueType.Object) {
-        if (thisValue.GetUnderlyingObject() is IntrinsicObject obj && obj.IntrinsicValue.Type == type) {
-          return obj.IntrinsicValue;
+        if (thisValue.GetUnderlyingObject() is PrimitiveObject obj && obj.PrimitiveValue.Type == type) {
+          return obj.PrimitiveValue;
         }
       }
       throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
+    }
+
+    public static int ToInteger(this EcmaValue thisValue, int min, int max) {
+      EcmaValue value = thisValue.ToInteger();
+      return value > max ? max : value < min ? min : (int)value;
     }
 
     [EcmaSpecification("CreateListFromArrayLike", EcmaSpecificationKind.AbstractOperations)]
@@ -53,16 +48,35 @@ namespace Codeless.Ecma {
       return arr;
     }
 
-    [EcmaSpecification("ToInteger", EcmaSpecificationKind.AbstractOperations)]
-    public static int ToInt32Checked(this EcmaValue thisValue) {
-      thisValue = thisValue.ToNumber();
-      if (thisValue.IsNaN) {
-        return 0;
+    public static bool TryIndexByPropertyKey(string str, EcmaPropertyKey propertyKey, out EcmaValue value) {
+      if (propertyKey.IsArrayIndex && str != null) {
+        long index = propertyKey.ToArrayIndex();
+        if (index < str.Length) {
+          value = new EcmaValue(new String(str[(int)index], 1));
+          return true;
+        }
       }
-      if (thisValue.IsFinite) {
-        return thisValue.ToInt32();
+      value = default;
+      return false;
+    }
+
+    public static bool TryIndexByPropertyKey(IList list, EcmaPropertyKey propertyKey, out EcmaValue value) {
+      if (propertyKey.IsArrayIndex && list != null) {
+        long index = propertyKey.ToArrayIndex();
+        if (index < list.Count) {
+          value = new EcmaValue(list[(int)index]);
+          return true;
+        }
       }
-      throw new EcmaRangeErrorException(InternalString.Error.InfinityToInteger);
+      value = default;
+      return false;
+    }
+
+    public static EcmaValue UnboxPrimitiveObject(EcmaValue value) {
+      if (value.Type == EcmaValueType.Object && value.GetUnderlyingObject() is PrimitiveObject obj) {
+        return obj.PrimitiveValue;
+      }
+      return value;
     }
 
     public static object ConvertToUnknownType(EcmaValue value, Type conversionType) {
@@ -237,14 +251,11 @@ namespace Codeless.Ecma {
     internal static EcmaValue ParseFloatInternal(string inputString, bool allowTrail) {
       Guard.ArgumentNotNull(inputString, "inputString");
       inputString = inputString.Trim();
-      if (allowTrail ? inputString.IndexOf("Infinity") == 0 : inputString == "Infinity") {
-        return EcmaValue.Infinity;
+      Match m = Regex.Match(inputString, "^[+-]?(Infinity|(\\d+\\.?\\d*|\\.\\d+)([eE][+-]?\\d+)?)");
+      if (m.Success && (allowTrail || m.Length == inputString.Length)) {
+        return m.Groups[1].Value != "Infinity" ? Double.Parse(m.Value) : m.Value[0] == '-' ? EcmaValue.NegativeInfinity : EcmaValue.Infinity;
       }
-      if (allowTrail ? inputString.IndexOf("-Infinity") == 0 : inputString == "-Infinity") {
-        return EcmaValue.NegativeInfinity;
-      }
-      Match m = Regex.Match(inputString, "^[+-]?(\\d+\\.?\\d*|\\.\\d+)([eE][+-]?\\d+)?");
-      return m.Success && (allowTrail || m.Length == inputString.Length) ? Double.Parse(m.Value) : EcmaValue.NaN;
+      return EcmaValue.NaN;
     }
 
 #if NET35

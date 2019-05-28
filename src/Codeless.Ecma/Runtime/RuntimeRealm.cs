@@ -11,6 +11,14 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Codeless.Ecma.Runtime {
+  public class RuntimeExceptionEventArgs : EventArgs {
+    public RuntimeExceptionEventArgs(Exception ex) {
+      this.Exception = ex;
+    }
+
+    public Exception Exception { get; }
+  }
+
   public class RuntimeRealm : IDisposable {
     private static readonly RuntimeObject[] sharedIntrinsics = new RuntimeObject[(int)WellKnownObject.MaxValue];
     private static readonly bool inited;
@@ -47,7 +55,7 @@ namespace Codeless.Ecma.Runtime {
       }
     }
 
-    public EventHandler<Exception> ExceptionThrown = delegate { };
+    public EventHandler<RuntimeExceptionEventArgs> ExceptionThrown = delegate { };
 
     public bool Disposed {
       get { return disposed; }
@@ -122,7 +130,7 @@ namespace Codeless.Ecma.Runtime {
             try {
               action();
             } catch (Exception ex) {
-              ExceptionThrown.Invoke(this, ex);
+              ExceptionThrown.Invoke(this, new RuntimeExceptionEventArgs(ex));
             }
           }
         }
@@ -195,13 +203,13 @@ namespace Codeless.Ecma.Runtime {
             obj = RuntimeObject.Create(null);
             break;
           case WellKnownObject.NumberPrototype:
-            obj = new IntrinsicObject(0, WellKnownObject.ObjectPrototype);
+            obj = new PrimitiveObject(0, WellKnownObject.ObjectPrototype);
             break;
           case WellKnownObject.StringPrototype:
-            obj = new IntrinsicObject("", WellKnownObject.ObjectPrototype);
+            obj = new PrimitiveObject("", WellKnownObject.ObjectPrototype);
             break;
           case WellKnownObject.BooleanPrototype:
-            obj = new IntrinsicObject(false, WellKnownObject.ObjectPrototype);
+            obj = new PrimitiveObject(false, WellKnownObject.ObjectPrototype);
             break;
           default:
             obj = new RuntimeObject(GetPrototypeOf(type));
@@ -232,7 +240,7 @@ namespace Codeless.Ecma.Runtime {
             IntrinsicConstructorAttribute ctorAttr;
             if (member.HasAttribute(out ctorAttr)) {
               string ctorName = ctorAttr.Name ?? member.Name;
-              NativeRuntimeFunction fn = new NativeRuntimeFunction(ctorName, (MethodInfo)member);
+              NativeRuntimeFunction fn = new IntrinsicFunction(ctorName, (MethodInfo)member, WellKnownObject.Global, ctorName);
               definedObj.Add(fn);
               DefineIntrinsicConstructor(typeAttr.ObjectType, ctorName, fn, GetPrototypeOf(typeAttr.ObjectType));
             } else {
@@ -243,7 +251,7 @@ namespace Codeless.Ecma.Runtime {
                   IntrinsicMemberAttribute propAttr = (IntrinsicMemberAttribute)propAttrs[0];
                   EcmaPropertyKey name = GetNameFromMember(propAttr, member);
                   string runtimeName = (propAttr.Getter ? "get " : propAttr.Setter ? "set " : "") + (name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name);
-                  fn = new NativeRuntimeFunction(runtimeName, (MethodInfo)member);
+                  fn = new IntrinsicFunction(runtimeName, (MethodInfo)member, typeAttr.ObjectType, name);
                   definedObj.Add(fn);
                 }
                 foreach (IntrinsicMemberAttribute propAttr in propAttrs) {
@@ -303,30 +311,25 @@ namespace Codeless.Ecma.Runtime {
         state &= ~EcmaPropertyAttributes.Enumerable;
       }
       if (isGetter) {
-        obj.DefineOwnProperty(name, new EcmaPropertyDescriptor(fn, EcmaValue.Undefined, state));
+        obj.DefineOwnProperty(name, new EcmaPropertyDescriptor(state) { Get = fn });
       } else {
-        obj.DefineOwnProperty(name, new EcmaPropertyDescriptor(EcmaValue.Undefined, fn, state));
+        obj.DefineOwnProperty(name, new EcmaPropertyDescriptor(state) { Set = fn });
       }
     }
 
     private static void DefineIntrinsicFunction(WellKnownObject type, EcmaPropertyKey name, NativeRuntimeFunction fn) {
       RuntimeObject obj = EnsureWellKnownObject(type);
-      if (name.IsSymbol) {
-        obj.DefineOwnProperty(name, new EcmaPropertyDescriptor(new EcmaValue(fn), EcmaPropertyAttributes.Configurable));
-      } else {
-        obj.CreateMethodProperty(name, new EcmaValue(fn));
-      }
+      obj.CreateMethodProperty(name, new EcmaValue(fn));
     }
 
     private static void DefineIntrinsicConstructor(WellKnownObject ctorType, EcmaPropertyKey name, NativeRuntimeFunction ctor, WellKnownObject fnProto) {
       DefineIntrinsicFunction(WellKnownObject.Global, name, ctor);
       if (fnProto != WellKnownObject.ObjectPrototype || ctorType == WellKnownObject.ObjectConstructor) {
         RuntimeObject proto = EnsureWellKnownObject(fnProto);
-        proto.DefineOwnProperty("constructor", new EcmaPropertyDescriptor(new EcmaValue(ctor), EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
-        ctor.DefineOwnProperty("prototype", new EcmaPropertyDescriptor(new EcmaValue(proto), EcmaPropertyAttributes.None));
+        ctor.SetPrototypeInternal(proto, EcmaPropertyAttributes.None);
       }
       RuntimeObject cur = EnsureWellKnownObject(ctorType);
-      foreach (EcmaPropertyKey key in cur.OwnPropertyKeys) {
+      foreach (EcmaPropertyKey key in cur.GetOwnPropertyKeys()) {
         ctor.DefineOwnProperty(key, cur.GetOwnProperty(key));
       }
       sharedIntrinsics[(int)ctorType - 1] = ctor;

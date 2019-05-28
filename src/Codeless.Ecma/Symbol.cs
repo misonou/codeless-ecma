@@ -9,22 +9,6 @@ using System.Text;
 using System.Threading;
 
 namespace Codeless.Ecma {
-  public enum WellKnownSymbol {
-    Iterator = 1,
-    Match,
-    Replace,
-    Search,
-    Split,
-    HasInstance,
-    IsConcatSpreadable,
-    Unscopables,
-    Species,
-    ToPrimitive,
-    ToStringTag,
-    AsyncIterator,
-    MatchAll
-  }
-
   [IntrinsicObject(WellKnownObject.SymbolConstructor)]
   public class Symbol {
     private static readonly ConcurrentDictionary<string, Symbol> globalSymbolDict = new ConcurrentDictionary<string, Symbol>();

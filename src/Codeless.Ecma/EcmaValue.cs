@@ -33,8 +33,7 @@ namespace Codeless.Ecma {
     Strict,
     Abstract,
     SameValue,
-    SameValueZero,
-    SameValueNotNumber
+    SameValueZero
   }
 
   public enum EcmaPreferredPrimitiveType {
@@ -47,10 +46,9 @@ namespace Codeless.Ecma {
   /// Represents a dynamic value in pipe executions to mimic behaviors to values in ECMAScript.
   /// </summary>
   [Serializable]
-  [JsonConverter(typeof(EcmaValueJsonConverter))]
   [DebuggerTypeProxy(typeof(EcmaValueDebuggerProxy))]
   [DebuggerDisplay("{DebuggerDisplay,nq}")]
-  public partial struct EcmaValue : IEquatable<EcmaValue>, IComparable<EcmaValue>, IEnumerable<EcmaPropertyKey>, ISerializable, IConvertible {
+  public partial struct EcmaValue : IEquatable<EcmaValue>, IComparable<EcmaValue>, ISerializable, IConvertible {
     /// <summary>
     /// Represents an undefined value. It is similar to *undefined* in ECMAScript which could be returned when accessing an undefined property.
     /// </summary>
@@ -221,32 +219,16 @@ namespace Codeless.Ecma {
       set { this[new EcmaPropertyKey(key)] = value; }
     }
 
+    public EcmaValue this[EcmaValue key] {
+      get { return this[EcmaPropertyKey.FromValue(key)]; }
+      set { this[EcmaPropertyKey.FromValue(key)] = value; }
+    }
+
     /// <summary>
     /// Gets the type of value represented by the <see cref="EcmaValue"/> instance.
     /// </summary>
     public EcmaValueType Type {
       get { return binder.GetValueType(handle); }
-    }
-
-    [EcmaSpecification("typeof", EcmaSpecificationKind.RuntimeSemantics)]
-    public string TypeOf {
-      get {
-        switch (this.Type) {
-          case EcmaValueType.Undefined:
-            return InternalString.TypeOf.Undefined;
-          case EcmaValueType.Null:
-            return InternalString.TypeOf.Object;
-          case EcmaValueType.Boolean:
-            return InternalString.TypeOf.Boolean;
-          case EcmaValueType.Number:
-            return InternalString.TypeOf.Number;
-          case EcmaValueType.String:
-            return InternalString.TypeOf.String;
-          case EcmaValueType.Symbol:
-            return InternalString.TypeOf.Symbol;
-        }
-        return this.IsCallable ? InternalString.TypeOf.Function : InternalString.TypeOf.Object;
-      }
     }
 
     public bool IsNullOrUndefined {
@@ -292,14 +274,16 @@ namespace Codeless.Ecma {
     [EcmaSpecification("IsInteger", EcmaSpecificationKind.AbstractOperations)]
     public bool IsInteger {
       get {
-        switch (binder.GetNumberType(handle)) {
-          case EcmaNumberType.Invalid:
-            return false;
-          case EcmaNumberType.Double:
-            double d = Math.Abs(DoubleBinder.Default.FromHandle(handle));
-            return Math.Floor(d) == d;
+        IEcmaValueBinder binder = binder_;
+        if (binder == Int32Binder.Default || binder == Int64Binder.Default) {
+          return true;
         }
-        return true;
+        EcmaValueHandle handle = this.handle;
+        if (binder == DoubleBinder.Default && handle != EcmaValueHandle.NaN && handle != EcmaValueHandle.PositiveInfinity && handle != EcmaValueHandle.NegativeInfinity) {
+          double value = DoubleBinder.Default.FromHandle(handle);
+          return Math.Truncate(value) == value;
+        }
+        return false;
       }
     }
 
@@ -310,7 +294,16 @@ namespace Codeless.Ecma {
 
     [EcmaSpecification("IsRegExp", EcmaSpecificationKind.AbstractOperations)]
     public bool IsRegExp {
-      get { return GetUnderlyingObject() is EcmaRegExp; }
+      get {
+        if (this.Type != EcmaValueType.Object) {
+          return false;
+        }
+        EcmaValue matcher = this[WellKnownSymbol.Match];
+        if (matcher != default) {
+          return matcher.ToBoolean();
+        }
+        return GetUnderlyingObject() is EcmaRegExp;
+      }
     }
 
     [EcmaSpecification("IsExtensible", EcmaSpecificationKind.AbstractOperations)]
@@ -351,26 +344,6 @@ namespace Codeless.Ecma {
         throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
       }
       return obj.HasInstance(binder.ToRuntimeObject(handle));
-    }
-
-    public IEnumerable<EcmaPropertyKey> EnumerateKeys() {
-      return binder.GetEnumerableOwnProperties(handle);
-    }
-
-    public IEnumerable<EcmaValue> EnumerateValues() {
-      foreach (EcmaPropertyKey propertyKey in binder.GetEnumerableOwnProperties(handle)) {
-        EcmaValue value;
-        binder.TryGet(handle, propertyKey, out value);
-        yield return value;
-      }
-    }
-
-    public IEnumerable<EcmaPropertyEntry> EnumerateEntries() {
-      foreach (EcmaPropertyKey propertyKey in binder.GetEnumerableOwnProperties(handle)) {
-        EcmaValue value;
-        binder.TryGet(handle, propertyKey, out value);
-        yield return new EcmaPropertyEntry(propertyKey, value);
-      }
     }
 
     [DebuggerStepThrough]
@@ -457,7 +430,7 @@ namespace Codeless.Ecma {
           return mode != EcmaValueComparison.Strict || x.binder != DoubleBinder.Default || x.handle != EcmaValueHandle.NaN;
         }
         if (x.binder == DoubleBinder.Default && (x.handle == EcmaValueHandle.NegativeZero || y.handle == EcmaValueHandle.NegativeZero)) {
-          return mode != EcmaValueComparison.SameValue && (x.handle == EcmaValueHandle.PostiveZero || y.handle == EcmaValueHandle.PostiveZero);
+          return mode != EcmaValueComparison.SameValue && (x.handle == EcmaValueHandle.PositiveZero || y.handle == EcmaValueHandle.PositiveZero);
         }
         return false;
       }
@@ -476,7 +449,7 @@ namespace Codeless.Ecma {
               double doubleX = x.ToDouble();
               double doubleY = y.ToDouble();
               if (Double.IsNaN(doubleX) && Double.IsNaN(doubleY)) {
-                return mode != EcmaValueComparison.Strict && mode != EcmaValueComparison.SameValueNotNumber;
+                return mode != EcmaValueComparison.Strict;
               }
               if (doubleX == 0 && doubleY == 0 && x.handle.Value != y.handle.Value) {
                 return mode != EcmaValueComparison.SameValue;
@@ -558,15 +531,19 @@ namespace Codeless.Ecma {
       return binder.ToRuntimeObject(handle);
     }
 
-    public RuntimeObject ToObject(bool ignorePrimitive) {
-      if (ignorePrimitive && this.Type != EcmaValueType.Object) {
-        return null;
+    public override string ToString() {
+      try {
+        return binder.ToString(handle);
+      } catch {
+        return base.ToString();
       }
-      return ToObject();
     }
 
     [EcmaSpecification("ToString", EcmaSpecificationKind.AbstractOperations)]
-    public override string ToString() {
+    public string ToString(bool throwForSymbol) {
+      if (throwForSymbol && this.Type == EcmaValueType.Symbol) {
+        throw new EcmaTypeErrorException(InternalString.Error.SymbolNotConvertibleToString);
+      }
       return binder.ToString(handle);
     }
 
@@ -574,23 +551,50 @@ namespace Codeless.Ecma {
       return binder.ToPrimitive(handle, EcmaPreferredPrimitiveType.Default);
     }
 
-    [EcmaSpecification("ToPrimitive", EcmaSpecificationKind.AbstractOperations)]
     public EcmaValue ToPrimitive(EcmaPreferredPrimitiveType preferredType) {
       return binder.ToPrimitive(handle, preferredType);
     }
 
     [EcmaSpecification("ToNumber", EcmaSpecificationKind.AbstractOperations)]
     public EcmaValue ToNumber() {
+      IEcmaValueBinder binder = this.binder;
+      if (binder == Int32Binder.Default || binder == Int64Binder.Default || binder == DoubleBinder.Default) {
+        return this;
+      }
       return binder.ToNumber(handle);
+    }
+
+    [EcmaSpecification("ToInteger", EcmaSpecificationKind.AbstractOperations)]
+    public EcmaValue ToInteger() {
+      EcmaValue thisValue = ToNumber();
+      IEcmaValueBinder binder = thisValue.binder;
+      if (binder == Int32Binder.Default || binder == Int64Binder.Default) {
+        return thisValue;
+      }
+      double value = DoubleBinder.Default.FromHandle(thisValue.handle);
+      if (Double.IsNaN(value)) {
+        return 0;
+      }
+      if (Double.IsInfinity(value)) {
+        return thisValue;
+      }
+      double roundedValue = Math.Truncate(value);
+      if (Math.Abs(value - roundedValue) < Double.Epsilon) {
+        return thisValue;
+      }
+      return roundedValue;
     }
 
     [EcmaSpecification("ToLength", EcmaSpecificationKind.AbstractOperations)]
     public long ToLength() {
-      long length = ToInt64();
-      if (length < 0) {
+      EcmaValue intValue = ToInteger();
+      if (intValue < 0) {
         return 0;
       }
-      return Math.Min(length, NumberConstructor.MaxSafeInteger);
+      if (intValue.binder_ != Int32Binder.Default && intValue > NumberConstructor.MaxSafeInteger) {
+        return NumberConstructor.MaxSafeInteger;
+      }
+      return intValue.ToInt64();
     }
 
     [EcmaSpecification("ToIndex", EcmaSpecificationKind.AbstractOperations)]
@@ -598,11 +602,11 @@ namespace Codeless.Ecma {
       if (binder == UndefinedBinder.Default) {
         return 0;
       }
-      long index = ToInt64();
-      if (index < 0 || index > NumberConstructor.MaxSafeInteger) {
-        throw new EcmaRangeErrorException("Number out of range");
+      EcmaValue intValue = ToInteger();
+      if (intValue < 0 || (intValue.binder_ != Int32Binder.Default && intValue > NumberConstructor.MaxSafeInteger)) {
+        throw new EcmaRangeErrorException(InternalString.Error.InvalidIndex);
       }
-      return index;
+      return intValue.ToInt64();
     }
 
     [EcmaSpecification("ToBoolean", EcmaSpecificationKind.AbstractOperations)]
@@ -650,6 +654,11 @@ namespace Codeless.Ecma {
 
     public double ToDouble() {
       return binder.ToDouble(handle);
+    }
+
+    public IEnumerator<EcmaPropertyKey> GetEnumerator() {
+      IEnumerable<EcmaPropertyKey> iterable = this.Type == EcmaValueType.Object ? ToObject().GetEnumerablePropertyKeys() : binder.GetEnumerableOwnProperties(handle);
+      return iterable.GetEnumerator();
     }
 
     public static object ChangeType(EcmaValue value, Type conversionType) {
@@ -720,14 +729,10 @@ namespace Codeless.Ecma {
       long longValue = 0;
       switch (binder.GetNumberType(handle)) {
         case EcmaNumberType.Invalid:
-          double doubleValue = ToDouble();
-          if (doubleValue == 0 || Double.IsNaN(doubleValue) || Double.IsInfinity(doubleValue)) {
-            return 0;
-          }
-          longValue = ToInt64();
-          break;
+          EcmaValue number = ToNumber();
+          return number.ConvertToInt(mask, unsigned);
         case EcmaNumberType.Double:
-          if (handle == EcmaValueHandle.PostiveZero || handle == EcmaValueHandle.NegativeZero || handle == EcmaValueHandle.NaN || handle == EcmaValueHandle.PositiveInfinity || handle == EcmaValueHandle.NegativeInfinity) {
+          if (handle == EcmaValueHandle.PositiveZero || handle == EcmaValueHandle.NegativeZero || handle == EcmaValueHandle.NaN || handle == EcmaValueHandle.PositiveInfinity || handle == EcmaValueHandle.NegativeInfinity) {
             return 0;
           }
           longValue = ToInt64();
@@ -737,8 +742,7 @@ namespace Codeless.Ecma {
           longValue = ToInt64();
           break;
       }
-      long mod = longValue % mask;
-      return !unsigned && mod >= (mask >> 1) ? mod - mask : mod;
+      return !unsigned && longValue < 0 ? longValue ^ ~mask : longValue & mask;
     }
 
     private static double MultiplyDouble(double x, double y) {
@@ -805,7 +809,7 @@ namespace Codeless.Ecma {
 
     #region Operator overloading
     public static explicit operator string(EcmaValue value) {
-      return value.ToString();
+      return value.ToString(true);
     }
 
     public static explicit operator bool(EcmaValue value) {
@@ -845,6 +849,10 @@ namespace Codeless.Ecma {
     }
 
     public static implicit operator EcmaValue(RuntimeObject obj) {
+      return new EcmaValue(obj);
+    }
+
+    public static implicit operator EcmaValue(Symbol obj) {
       return new EcmaValue(obj);
     }
 
@@ -999,14 +1007,6 @@ namespace Codeless.Ecma {
     #endregion
 
     #region Interfaces
-    IEnumerator<EcmaPropertyKey> IEnumerable<EcmaPropertyKey>.GetEnumerator() {
-      return EnumerateKeys().GetEnumerator();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator() {
-      return EnumerateKeys().GetEnumerator();
-    }
-
     void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context) {
       object o = GetUnderlyingObject();
       info.AddValue("ut", o.GetType());

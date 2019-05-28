@@ -68,7 +68,7 @@ namespace Codeless.Ecma {
     [IntrinsicMember]
     public static EcmaValue Asinh(EcmaValue value) {
       double x = value.ToDouble();
-      return Math.Log(x + Math.Sqrt(x * x + 1));
+      return Double.IsInfinity(x) || x == 0 ? x : Math.Log(x + Math.Sqrt(x * x + 1));
     }
 
     [IntrinsicMember]
@@ -79,7 +79,7 @@ namespace Codeless.Ecma {
     [IntrinsicMember]
     public static EcmaValue Atanh(EcmaValue value) {
       double x = value.ToDouble();
-      return Math.Log((1 + x) / (1 - x)) / 2;
+      return x == 0 ? x : Math.Log((1 + x) / (1 - x)) / 2;
     }
 
     [IntrinsicMember]
@@ -95,26 +95,21 @@ namespace Codeless.Ecma {
       if (EcmaValue.GetNumberCoercion(value) != EcmaNumberType.Double) {
         return value;
       }
-      return Math.Ceiling(value.ToDouble());
+      double x = value.ToDouble();
+      double c = Math.Ceiling(x);
+      return c == 0 && x < 0 ? -0d : c;
     }
 
     [IntrinsicMember]
     public static EcmaValue Cbrt(EcmaValue value) {
-      return Math.Pow(value.ToDouble(), 1 / 3);
-    }
-
-    [IntrinsicMember]
-    public static EcmaValue Expm1(EcmaValue value) {
-      return Math.Exp(value.ToDouble()) - 1;
+      double x = value.ToDouble();
+      return Double.IsInfinity(x) || x == 0 ? x : Math.Pow(value.ToDouble(), 1f / 3);
     }
 
     [IntrinsicMember]
     public static EcmaValue Clz32(EcmaValue value) {
-      if (value.IsNullOrUndefined || value == 0) {
-        return 32;
-      }
-      return 31 - Math.Floor(Math.Log(value.ToInt32()) * LOG2E);
-
+      uint x = value.ToUInt32();
+      return x == 0 ? 32 : 31 - (int)Math.Floor(Math.Log(x) * LOG2E);
     }
 
     [IntrinsicMember]
@@ -134,6 +129,18 @@ namespace Codeless.Ecma {
     }
 
     [IntrinsicMember]
+    public static EcmaValue Expm1(EcmaValue value) {
+      double x = value.ToDouble();
+      if (x == 0) {
+        return x;
+      }
+      if (Math.Abs(x) < 1e-5) {
+        return x + 0.5 * x * x;
+      }
+      return Math.Exp(x) - 1d;
+    }
+
+    [IntrinsicMember]
     public static EcmaValue Floor(EcmaValue value) {
       if (value.Type != EcmaValueType.Number) {
         value = value.ToNumber();
@@ -149,7 +156,7 @@ namespace Codeless.Ecma {
       return (float)value.ToDouble();
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 2)]
     public static EcmaValue Hypot(params EcmaValue[] values) {
       double y = 0;
       foreach (EcmaValue value in values) {
@@ -171,10 +178,7 @@ namespace Codeless.Ecma {
       uint bh = (b >> 16) & 0xffff;
       uint bl = b & 0xffff;
       uint result = (al * bl) + ((ah * bl + al * bh) << 16);
-      if (result >= Int32.MaxValue) {
-        return (int)result - UInt32.MaxValue - 1;
-      }
-      return result;
+      return (int)result;
     }
 
     [IntrinsicMember]
@@ -185,7 +189,13 @@ namespace Codeless.Ecma {
     [IntrinsicMember]
     public static EcmaValue Log1p(EcmaValue value) {
       double x = value.ToDouble();
-      return Math.Log(1 + x) - (((1 + x) - 1) - x) / (1 + x);
+      if (x < -1) {
+        return EcmaValue.NaN;
+      }
+      if (Math.Abs(x) > 1e-4) {
+        return Math.Log(1 + x);
+      }
+      return (-0.5 * x + 1.0) * x;
     }
 
     [IntrinsicMember]
@@ -201,32 +211,47 @@ namespace Codeless.Ecma {
       return Math.Log10(value.ToDouble());
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 2)]
     public static EcmaValue Max(params EcmaValue[] arr) {
-      double x = Double.NegativeInfinity;
-      foreach (double val in arr) {
-        if (Double.IsNaN(x)) {
+      EcmaValue x = EcmaValue.NegativeInfinity;
+      foreach (EcmaValue val in arr) {
+        EcmaValue num = val.ToNumber();
+        if (num.IsNaN) {
           return EcmaValue.NaN;
         }
-        x = Math.Max(x, val);
+        if (num.Equals(EcmaValue.NegativeZero, EcmaValueComparison.SameValue) && x >= 0) {
+          continue;
+        }
+        if (x <= num) {
+          x = num;
+        }
       }
       return x;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 2)]
     public static EcmaValue Min(params EcmaValue[] arr) {
-      double x = Double.PositiveInfinity;
-      foreach (double val in arr) {
-        if (Double.IsNaN(x)) {
+      EcmaValue x = EcmaValue.Infinity;
+      foreach (EcmaValue val in arr) {
+        EcmaValue num = val.ToNumber();
+        if (num.IsNaN) {
           return EcmaValue.NaN;
         }
-        x = Math.Min(x, val);
+        if (num.Equals(0, EcmaValueComparison.SameValue) && x <= 0) {
+          continue;
+        }
+        if (x >= num) {
+          x = num;
+        }
       }
       return x;
     }
 
     [IntrinsicMember]
     public static EcmaValue Pow(EcmaValue x, EcmaValue y) {
+      if ((x == 1 || x == -1) && (y == EcmaValue.Infinity || y == EcmaValue.NegativeInfinity)) {
+        return EcmaValue.NaN;
+      }
       return Math.Pow(x.ToDouble(), y.ToDouble());
     }
 
@@ -243,20 +268,24 @@ namespace Codeless.Ecma {
       if (EcmaValue.GetNumberCoercion(value) != EcmaNumberType.Double) {
         return value;
       }
-      return Math.Round(value.ToDouble());
+      double x = value.ToDouble();
+      if (x == 0) {
+        return x;
+      }
+      double r = Math.Floor(x + 0.5);
+      return r == 0 && x < 0 ? -0d : r;
     }
 
     [IntrinsicMember]
     public static EcmaValue Sign(EcmaValue value) {
       switch (EcmaValue.GetNumberCoercion(value)) {
-        case EcmaNumberType.Double:
-          return Math.Sign(value.ToDouble());
         case EcmaNumberType.Int64:
           return Math.Sign(value.ToInt64());
         case EcmaNumberType.Int32:
           return Math.Sign(value.ToInt32());
       }
-      return Sign(value.ToNumber());
+      double x = value.ToDouble();
+      return Double.IsNaN(x) ? EcmaValue.NaN : x == 0 ? x : Math.Sign(x);
     }
 
     [IntrinsicMember]
@@ -267,7 +296,7 @@ namespace Codeless.Ecma {
     [IntrinsicMember]
     public static EcmaValue Sinh(EcmaValue value) {
       double x = value.ToDouble();
-      return (Math.Exp(x) - Math.Exp(-x)) / 2;
+      return x == 0 ? x : (Math.Exp(x) - Math.Exp(-x)) / 2;
     }
 
     [IntrinsicMember]
@@ -283,7 +312,10 @@ namespace Codeless.Ecma {
     [IntrinsicMember]
     public static EcmaValue Tanh(EcmaValue value) {
       double x = value.ToDouble();
-      return (Math.Exp(x) - Math.Exp(-x)) / (Math.Exp(x) + Math.Exp(-x));
+      if (Double.IsInfinity(x)) {
+        return x > 0 ? 1 : -1;
+      }
+      return x == 0 ? x : (Math.Exp(x) - Math.Exp(-x)) / (Math.Exp(x) + Math.Exp(-x));
     }
 
     [IntrinsicMember]

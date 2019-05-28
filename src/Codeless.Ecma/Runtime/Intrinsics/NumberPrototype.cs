@@ -16,34 +16,34 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (!number.IsFinite) {
         return number.ToString();
       }
-      int b = digits == default ? 0 : digits.ToInt32Checked();
+      EcmaValue b = digits == default ? 0 : digits.ToInteger();
       if (b < 0 || b > 100) {
         throw new EcmaRangeErrorException("toExponential() argument must be between 0 and 100");
       }
       if (number == 0) {
-        return b == 0 ? "0e+0" : "0." + new String('0', b) + "e+0";
+        return b == 0 ? "0e+0" : "0." + new String('0', (int)b) + "e+0";
       }
       if (digits == default) {
         return GetString(number.ToDouble(), -1, true);
       }
-      return GetString(number.ToDouble(), b + 1, true);
+      return GetString(number.ToDouble(), (int)b + 1, true);
     }
 
     [IntrinsicMember]
     public static EcmaValue ToFixed([This] EcmaValue thisValue, EcmaValue digits) {
       EcmaValue number = thisValue.GetIntrinsicPrimitiveValue(EcmaValueType.Number);
-      int b = digits == default ? 0 : digits.ToInt32Checked();
-      if (!number.IsFinite) {
-        return number.ToString();
-      }
+      EcmaValue b = digits == default ? 0 : digits.ToInteger();
       if (b < 0 || b > 100) {
         throw new EcmaRangeErrorException("toFixed() argument must be between 0 and 100");
       }
+      if (!number.IsFinite) {
+        return number.ToString();
+      }
       if (EcmaValue.GetNumberCoercion(number) == EcmaNumberType.Double) {
         double value = number.ToDouble();
-        return value >= 1e21 ? number.ToString() : GetString(value, b + 1, false);
+        return value >= 1e21 ? number.ToString() : GetString(value, (int)b + 1, false);
       }
-      return b == 0 ? number.ToString() : number.ToString() + "." + new String('0', b);
+      return b == 0 ? number.ToString() : number.ToString() + "." + new String('0', (int)b);
     }
 
     [IntrinsicMember]
@@ -61,20 +61,20 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (!number.IsFinite) {
         return number.ToString();
       }
-      int b = digits.ToInt32Checked();
+      EcmaValue b = digits.ToInteger();
       if (b < 1 || b > 100) {
         throw new EcmaRangeErrorException("toPrecision() argument must be between 1 and 100");
       }
       if (number == 0) {
-        return b == 1 ? "0" : "0." + new String('0', b - 1);
+        return b == 1 ? "0" : "0." + new String('0', (int)b - 1);
       }
-      return GetString(number.ToDouble(), b, false);
+      return GetString(number.ToDouble(), (int)b, false);
     }
 
     [IntrinsicMember]
     public static EcmaValue ToString([This] EcmaValue thisValue, EcmaValue radix) {
       EcmaValue number = thisValue.GetIntrinsicPrimitiveValue(EcmaValueType.Number);
-      int b = radix == default ? 10 : radix.ToInt32Checked();
+      EcmaValue b = radix == default ? 10 : radix.ToInteger();
       if (b < 2 || b > 36) {
         throw new EcmaRangeErrorException("toString() radix argument must be between 2 and 36");
       }
@@ -88,9 +88,9 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         return "0";
       }
       if (EcmaValue.GetNumberCoercion(number) == EcmaNumberType.Double) {
-        return GetString(number.ToDouble(), b);
+        return GetString(number.ToDouble(), (int)b);
       }
-      return GetString(number.ToInt64(), b);
+      return GetString(number.ToInt64(), (int)b);
     }
 
     [IntrinsicMember]

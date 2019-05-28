@@ -11,7 +11,7 @@ namespace Codeless.Ecma.Primitives {
     protected NullBinder() { }
 
     public object FromHandle(EcmaValueHandle value) {
-      return null;
+      return EcmaValue.Null;
     }
 
     public EcmaValueHandle ToHandle(object value) {
@@ -19,7 +19,7 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public string GetToStringTag(EcmaValueHandle handle) {
-      return InternalString.ObjectTag.Object;
+      return InternalString.ObjectTag.Null;
     }
 
     public EcmaValueType GetValueType(EcmaValueHandle handle) {
@@ -71,7 +71,7 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public RuntimeObject ToRuntimeObject(EcmaValueHandle handle) {
-      return null;
+      throw new EcmaTypeErrorException(InternalString.Error.NotCoercibleAsObject);
     }
 
     public bool TryGet(EcmaValueHandle handle, EcmaPropertyKey name, out EcmaValue value) {

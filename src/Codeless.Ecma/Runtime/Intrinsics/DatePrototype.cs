@@ -16,7 +16,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue GetDate([This] EcmaValue value) {
       EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
-      return !dt.IsValid ? EcmaValue.NaN : dt.Value;
+      return !dt.IsValid ? EcmaValue.NaN : dt.GetComponent(EcmaDateComponent.Date);
     }
 
     [IntrinsicMember]
@@ -70,13 +70,13 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue GetUTCDate([This] EcmaValue value) {
       EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
-      return !dt.IsValid ? EcmaValue.NaN : EcmaTimestamp.TimezoneOffset;
+      return !dt.IsValid ? EcmaValue.NaN : dt.GetComponentUtc(EcmaDateComponent.Date);
     }
 
     [IntrinsicMember]
     public static EcmaValue GetUTCDay([This] EcmaValue value) {
       EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
-      return !dt.IsValid ? EcmaValue.NaN : dt.GetComponentUtc(EcmaDateComponent.Date);
+      return !dt.IsValid ? EcmaValue.NaN : dt.GetComponentUtc(EcmaDateComponent.WeekDay);
     }
 
     [IntrinsicMember]
@@ -117,9 +117,11 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static EcmaValue SetTime([This] EcmaValue value, EcmaValue time) {
+      EcmaDate date = value.GetUnderlyingObject<EcmaDate>();
+      time = time.ToNumber();
       EcmaTimestamp dt = time.IsFinite ? new EcmaTimestamp(time.ToInt64()) : EcmaTimestamp.Invalid;
-      value.GetUnderlyingObject<EcmaDate>().Timestamp = dt;
-      return dt.IsValid ? EcmaValue.NaN : dt.Value;
+      date.Timestamp = dt;
+      return dt.IsValid ? dt.Value : EcmaValue.NaN;
     }
 
     [IntrinsicMember(FunctionLength = 3)]
@@ -246,10 +248,22 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return dt.ToTimeString(DateTimeFormatInfo.CurrentInfo);
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue ToJSON([This] EcmaValue value) {
       EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return !dt.IsValid ? null : dt.ToISOString();
+    }
+
+    [IntrinsicMember(WellKnownSymbol.ToPrimitive)]
+    public static EcmaValue ToPrimitive([This] EcmaValue value, EcmaValue hint) {
+      Guard.ArgumentIsObject(value);
+      if (hint == "default" || hint == "string") {
+        return value.ToObject().OrdinaryToPrimitive(EcmaPreferredPrimitiveType.String);
+      }
+      if (hint == "number") {
+        return value.ToObject().OrdinaryToPrimitive(EcmaPreferredPrimitiveType.Number);
+      }
+      throw new EcmaTypeErrorException(InternalString.Error.InvalidHint);
     }
 
     public static bool ValidateArgument(EcmaValue value, out long longValue) {
@@ -263,47 +277,45 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     }
 
     private static EcmaValue SetComponents(EcmaValue value, EcmaDateComponent start, int max, EcmaValue[] args) {
-      EcmaTimestamp result = EcmaTimestamp.Invalid;
+      EcmaDate date = value.GetUnderlyingObject<EcmaDate>();
       long[] checkedValues = new long[Math.Min(args.Length, max)];
       int i = 0;
       for (int length = checkedValues.Length; i < length; i++) {
         if (!ValidateArgument(args[i], out checkedValues[i])) {
-          break;
+          date.Timestamp = EcmaTimestamp.Invalid;
+          return EcmaValue.NaN;
         }
       }
-      if (i == checkedValues.Length) {
-        EcmaTimestamp current = value.GetUnderlyingObject<EcmaDate>().Timestamp;
-        if (!current.IsValid && start == EcmaDateComponent.Year) {
-          current = EcmaTimestamp.LocalEpoch;
-        }
-        if (current.IsValid) {
-          result = (EcmaTimestamp)EcmaTimestamp.GetTimestamp(current.Value, (int)start, checkedValues);
-        }
+      EcmaTimestamp result = date.Timestamp;
+      if (!result.IsValid && start == EcmaDateComponent.Year) {
+        result = EcmaTimestamp.LocalEpoch;
       }
-      value.GetUnderlyingObject<EcmaDate>().Timestamp = result;
-      return result.Value;
+      if (result.IsValid) {
+        result = (EcmaTimestamp)EcmaTimestamp.GetTimestamp(result.Value, (int)start, checkedValues);
+      }
+      date.Timestamp = result;
+      return result.IsValid ? result.Value : EcmaValue.NaN;
     }
 
     private static EcmaValue SetComponentsUtc(EcmaValue value, EcmaDateComponent start, int max, EcmaValue[] args) {
-      EcmaTimestamp result = EcmaTimestamp.Invalid;
+      EcmaDate date = value.GetUnderlyingObject<EcmaDate>();
       long[] checkedValues = new long[Math.Min(args.Length, max)];
       int i = 0;
       for (int length = checkedValues.Length; i < length; i++) {
         if (!ValidateArgument(args[i], out checkedValues[i])) {
-          break;
+          date.Timestamp = EcmaTimestamp.Invalid;
+          return EcmaValue.NaN;
         }
       }
-      if (i == checkedValues.Length) {
-        EcmaTimestamp current = value.GetUnderlyingObject<EcmaDate>().Timestamp;
-        if (!current.IsValid && start == EcmaDateComponent.Year) {
-          current = EcmaTimestamp.LocalEpoch;
-        }
-        if (current.IsValid) {
-          result = (EcmaTimestamp)EcmaTimestamp.GetTimestampUtc(current.Value, (int)start, checkedValues);
-        }
+      EcmaTimestamp result = date.Timestamp;
+      if (!result.IsValid && start == EcmaDateComponent.Year) {
+        result = new EcmaTimestamp(0);
       }
-      value.GetUnderlyingObject<EcmaDate>().Timestamp = result;
-      return result.Value;
+      if (result.IsValid) {
+        result = (EcmaTimestamp)EcmaTimestamp.GetTimestampUtc(result.Value, (int)start, checkedValues);
+      }
+      date.Timestamp = result;
+      return result.IsValid ? result.Value : EcmaValue.NaN;
     }
   }
 }

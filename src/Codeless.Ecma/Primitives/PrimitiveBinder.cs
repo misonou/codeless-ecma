@@ -28,16 +28,6 @@ namespace Codeless.Ecma.Primitives {
 
     public abstract string ToString(T value);
 
-    public EcmaValue ToPrimitive(T value, EcmaPreferredPrimitiveType preferredType) {
-      if (preferredType == EcmaPreferredPrimitiveType.String && this.ValueType == EcmaValueType.String) {
-        return new EcmaValue(ToHandle(value), this);
-      }
-      if (preferredType != EcmaPreferredPrimitiveType.String && this.ValueType == EcmaValueType.Number) {
-        return new EcmaValue(ToHandle(value), this);
-      }
-      return preferredType == EcmaPreferredPrimitiveType.String ? ToString(value) : ToNumber(value);
-    }
-
     public virtual EcmaValue ToNumber(T value) {
       return ToDouble(value);
     }
@@ -65,6 +55,17 @@ namespace Codeless.Ecma.Primitives {
 
     public virtual int GetHashCode(T value) {
       return value.GetHashCode();
+    }
+
+    public static EcmaValue ToPrimitive(IEcmaValueBinder binder, EcmaValueHandle handle, EcmaPreferredPrimitiveType preferredType) {
+      EcmaValueType type = binder.GetValueType(handle);
+      if (preferredType != EcmaPreferredPrimitiveType.Number && type == EcmaValueType.String) {
+        return new EcmaValue(handle, binder);
+      }
+      if (preferredType != EcmaPreferredPrimitiveType.String && type == EcmaValueType.Number) {
+        return new EcmaValue(handle, binder);
+      }
+      return preferredType == EcmaPreferredPrimitiveType.String ? binder.ToString(handle) : binder.ToNumber(handle);
     }
 
     #region Interface
@@ -153,14 +154,7 @@ namespace Codeless.Ecma.Primitives {
     }
 
     EcmaValue IEcmaValueBinder.ToPrimitive(EcmaValueHandle handle, EcmaPreferredPrimitiveType preferredType) {
-      if (preferredType == EcmaPreferredPrimitiveType.String && this.ValueType == EcmaValueType.String) {
-        return new EcmaValue(handle, this);
-      }
-      if (preferredType != EcmaPreferredPrimitiveType.String && this.ValueType == EcmaValueType.Number) {
-        return new EcmaValue(handle, this);
-      }
-      T typedValue = FromHandle(handle);
-      return preferredType == EcmaPreferredPrimitiveType.String ? ToString(typedValue) : ToNumber(typedValue);
+      return ToPrimitive(this, handle, preferredType);
     }
     #endregion
   }

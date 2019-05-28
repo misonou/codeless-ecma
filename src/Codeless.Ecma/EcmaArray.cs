@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Codeless.Ecma {
   public class EcmaArray : RuntimeObject, IList<EcmaValue> {
-    private static EcmaPropertyKey propertyLength = new EcmaPropertyKey(WellKnownPropertyName.Length);
+    private static readonly EcmaPropertyKey propertyLength = new EcmaPropertyKey(WellKnownPropertyName.Length);
     private List<EcmaValue> list;
     private uint length;
     private bool lengthReadOnly;
@@ -50,7 +50,6 @@ namespace Codeless.Ecma {
         return list[index];
       }
       set {
-        // TODO: EcmaArray[index]
         if (index >= 0) {
           if (list == null) {
             list = new List<EcmaValue>();
@@ -60,12 +59,15 @@ namespace Codeless.Ecma {
           }
           list[index] = value;
         }
-        throw new NotImplementedException();
       }
     }
 
     public int Count {
       get { return (int)length; }
+    }
+
+    protected override string ToStringTag {
+      get { return InternalString.ObjectTag.Array; }
     }
 
     [EcmaSpecification("IsArray", EcmaSpecificationKind.AbstractOperations)]
@@ -151,16 +153,14 @@ namespace Codeless.Ecma {
       }
     }
 
-    public override IList<EcmaPropertyKey> OwnPropertyKeys {
-      get {
-        IEnumerable<EcmaPropertyKey> indexes = list != null ? Enumerable.Range(0, list.Count).Select(v => new EcmaPropertyKey(v)) : Enumerable.Empty<EcmaPropertyKey>();
-        return indexes.Concat(new[] { propertyLength }).Concat(base.OwnPropertyKeys).ToList();
-      }
+    public override IEnumerable<EcmaPropertyKey> GetOwnPropertyKeys() {
+      IEnumerable<EcmaPropertyKey> indexes = list != null ? Enumerable.Range(0, list.Count).Select(v => new EcmaPropertyKey(v)) : Enumerable.Empty<EcmaPropertyKey>();
+      return indexes.Concat(new[] { propertyLength }).Concat(base.GetOwnPropertyKeys());
     }
 
     public override EcmaValue Get(EcmaPropertyKey propertyKey, RuntimeObject receiver) {
-      if (propertyKey.IsArrayIndex && list != null && propertyKey.ArrayIndex < list.Count) {
-        return new EcmaValue(list[(int)propertyKey.ArrayIndex]);
+      if (EcmaValueUtility.TryIndexByPropertyKey(list, propertyKey, out EcmaValue value)) {
+        return value;
       }
       if (propertyKey == WellKnownPropertyName.Length) {
         return length;
@@ -180,7 +180,7 @@ namespace Codeless.Ecma {
 
     public override bool HasProperty(EcmaPropertyKey propertyKey) {
       if (propertyKey.IsArrayIndex) {
-        return list != null && propertyKey.ArrayIndex < list.Count;
+        return list != null && propertyKey.ToArrayIndex() < list.Count;
       }
       if (propertyKey == WellKnownPropertyName.Length) {
         return true;
@@ -189,8 +189,11 @@ namespace Codeless.Ecma {
     }
 
     public override EcmaPropertyDescriptor GetOwnProperty(EcmaPropertyKey propertyKey) {
-      if (propertyKey.IsArrayIndex && list != null && propertyKey.ArrayIndex < list.Count) {
-        return new EcmaPropertyDescriptor(list[(int)propertyKey.ArrayIndex]);
+      if (EcmaValueUtility.TryIndexByPropertyKey(list, propertyKey, out EcmaValue value)) {
+        return new EcmaPropertyDescriptor(value, EcmaPropertyAttributes.DefaultDataProperty);
+      }
+      if (propertyKey == propertyLength) {
+        return new EcmaPropertyDescriptor(length, EcmaPropertyAttributes.Configurable & (lengthReadOnly ? 0 : EcmaPropertyAttributes.Configurable));
       }
       return base.GetOwnProperty(propertyKey);
     }
@@ -200,11 +203,11 @@ namespace Codeless.Ecma {
         return SetLength(descriptor);
       }
       if (propertyKey.IsArrayIndex) {
-        long index = propertyKey.ArrayIndex;
+        long index = propertyKey.ToArrayIndex();
         if (index >= length && lengthReadOnly) {
           return false;
         }
-        if (!SetItem(index)) {
+        if (!SetItem(index, descriptor.Value)) {
           return false;
         }
         if (index >= length) {
@@ -243,14 +246,20 @@ namespace Codeless.Ecma {
       return true;
     }
 
-    protected bool SetItem(long v) {
-      // TODO: EcmaArray.SetItem
-      throw new NotImplementedException();
+    protected bool SetItem(long index, EcmaValue value) {
+      if (index >= 0) {
+        this[(int)index] = value;
+        return true;
+      }
+      return base.DefineOwnProperty(index, new EcmaPropertyDescriptor(value));
     }
 
-    protected bool DeleteItem(long v) {
-      // TODO: EcmaArray.DeleteItem
-      throw new NotImplementedException();
+    protected bool DeleteItem(long index) {
+      if (index >= 0) {
+        RemoveAt((int)index);
+        return true;
+      }
+      return base.Delete(index);
     }
 
     #region Interface

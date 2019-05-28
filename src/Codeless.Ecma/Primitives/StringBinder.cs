@@ -32,7 +32,7 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public override RuntimeObject ToRuntimeObject(string value) {
-      return new TransientIntrinsicObject(value, WellKnownObject.StringPrototype);
+      return new TransientPrimitiveObject(value, WellKnownObject.StringPrototype);
     }
 
     public override bool ToBoolean(string value) {
@@ -40,24 +40,15 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public override double ToDouble(string value) {
-      double intValue;
-      return Double.TryParse(value, out intValue) ? intValue : Double.NaN;
+      return EcmaValueUtility.ParseStringNumericLiteral(value).ToDouble();
     }
 
     public override int ToInt32(string value) {
-      int intValue;
-      if (Int32.TryParse(value, out intValue)) {
-        return intValue;
-      }
-      return DoubleBinder.Default.ToInt32(ToDouble(value));
+      return EcmaValueUtility.ParseStringNumericLiteral(value).ToInt32();
     }
 
     public override long ToInt64(string value) {
-      long intValue;
-      if (Int64.TryParse(value, out intValue)) {
-        return intValue;
-      }
-      return DoubleBinder.Default.ToInt64(ToDouble(value));
+      return EcmaValueUtility.ParseStringNumericLiteral(value).ToInt64();
     }
 
     public override string ToString(string value) {
@@ -69,13 +60,12 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public override bool HasOwnProperty(string target, EcmaPropertyKey name) {
-      return name.Name == "length" || base.HasOwnProperty(target, name);
+      return name.Name == "length" || (name.IsArrayIndex && name.ToArrayIndex() < target.Length) || base.HasOwnProperty(target, name);
     }
 
     public override bool TryGet(string target, EcmaPropertyKey name, out EcmaValue value) {
-      if (name.IsCanonicalNumericIndex) {
-        value = name.CanonicalNumericIndex < target.Length ? new String(target[(int)name.CanonicalNumericIndex], 1) : default;
-        return true;
+      if (name.IsArrayIndex) {
+        return EcmaValueUtility.TryIndexByPropertyKey(target, name, out value);
       }
       if (name.Name == "length") {
         value = target.Length;

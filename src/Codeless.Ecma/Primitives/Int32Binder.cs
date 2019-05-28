@@ -31,7 +31,7 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public override RuntimeObject ToRuntimeObject(int value) {
-      return new TransientIntrinsicObject(value, WellKnownObject.NumberPrototype);
+      return new TransientPrimitiveObject(value, WellKnownObject.NumberPrototype);
     }
 
     public override double ToDouble(int value) {

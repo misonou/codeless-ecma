@@ -1,13 +1,13 @@
-﻿using Codeless.Ecma.Runtime;
-using Codeless.Ecma.Runtime.Intrinsics;
+﻿using Codeless.Ecma.Diagnostics;
+using Codeless.Ecma.Runtime;
+using Codeless.Ecma.UnitTest.Constraints;
 using NUnit.Framework;
 using NUnit.Framework.Constraints;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Codeless.Ecma.UnitTest {
   [DebuggerStepThrough]
@@ -15,104 +15,132 @@ namespace Codeless.Ecma.UnitTest {
     [ThreadStatic]
     private static string message;
 
-    public static EcmaValue _ => EcmaValue.Undefined;
-
-    public static IResolveConstraint TypeError => Throws.InstanceOf<EcmaTypeErrorException>();
-
-    public static IResolveConstraint RangeError => Throws.InstanceOf<EcmaRangeErrorException>();
-
     public static void It(string message, Action tests) {
-      NUnit.Framework.Assert.Multiple(() => {
-        Assert.message = message;
+      try {
+        Assert.message = "It " + message;
         tests();
-      });
-    }
-
-    public static void IsUnconstructableFunctionWLength(EcmaValue fn, string name, int functionLength) {
-      That(fn["prototype"], Is.Undefined);
-      That(fn["name"], Is.EqualTo(name));
-      That(fn, Has.DataProperty("name", EcmaPropertyAttributes.Configurable));
-      That(fn["length"], Is.EqualTo(functionLength));
-      That(fn, Has.DataProperty("length", EcmaPropertyAttributes.Configurable));
-      That(() => fn.Construct(), TypeError);
-    }
-
-    public static void IsAbruptedFromSymbolToNumber(RuntimeFunction fn) {
-      EcmaValue sym = SymbolConstructor.Symbol("1");
-      That(() => fn is BoundRuntimeFunction ? fn.Call(default, sym) : fn.Call(sym), TypeError);
-    }
-
-    public static void IsAbruptedFromToPrimitive(RuntimeFunction fn) {
-      RuntimeFunction runtimeFunction = RuntimeFunction.FromDelegate(() => throw new Test262Exception());
-      EcmaValue obj1 = new EcmaObject(new Hashtable { { "valueOf", runtimeFunction } });
-      EcmaValue obj2 = new EcmaObject(new Hashtable { { "toString", runtimeFunction } });
-      That(() => fn is BoundRuntimeFunction ? fn.Call(default, obj1) : fn.Call(obj1), Throws.InstanceOf<Test262Exception>());
-      That(() => fn is BoundRuntimeFunction ? fn.Call(default, obj2) : fn.Call(obj2), Throws.InstanceOf<Test262Exception>());
-    }
-
-    public static void Expect(EcmaValue with, object gives, string because = null) {
-      That(Tuple.Create(with), gives, because);
-    }
-
-    public static void Expect((EcmaValue, EcmaValue) with, object gives, string because = null) {
-      That(with, gives, because);
-    }
-
-    public static void Expect((EcmaValue, EcmaValue, EcmaValue) with, object gives, string because = null) {
-      That(with, gives, because);
-    }
-
-    public static void That(EcmaValue value, IResolveConstraint constraint) {
-      if (ShouldUnboxResult(constraint)) {
-        NUnit.Framework.Assert.That(value.GetUnderlyingObject(), constraint);
-      } else {
-        NUnit.Framework.Assert.That(value, constraint);
+      } finally {
+        Assert.message = null;
       }
     }
 
+    public static void IsConstructorWLength(EcmaValue fn, string name, int functionLength, RuntimeObject prototype) {
+      That(fn, Is.TypeOf("function"));
+      That(fn, Has.OwnProperty("name", name, EcmaPropertyAttributes.Configurable));
+      That(fn, Has.OwnProperty("length", functionLength, EcmaPropertyAttributes.Configurable));
+      That(fn, Has.OwnProperty("prototype", prototype, EcmaPropertyAttributes.None));
+      That(Global.Object.Invoke("getPrototypeOf", fn), Is.EqualTo(Global.Function.Prototype));
+    }
+
+    public static void IsUnconstructableFunctionWLength(EcmaValue fn, string name, int functionLength) {
+      That(fn, Is.TypeOf("function"));
+      That(fn["prototype"], Is.Undefined);
+      That(fn, Has.OwnProperty("name", name, EcmaPropertyAttributes.Configurable));
+      That(fn, Has.OwnProperty("length", functionLength, EcmaPropertyAttributes.Configurable));
+      That(() => fn.Construct(), Throws.TypeError);
+    }
+
+    public static void IsAbruptedFromSymbolToNumber(RuntimeFunction fn) {
+      EcmaValue sym = new Symbol("1");
+      That(() => fn is BoundRuntimeFunction ? fn.Call(default, sym) : fn.Call(sym), Throws.TypeError);
+    }
+
+    public static void IsAbruptedFromToPrimitive(RuntimeFunction fn) {
+      string message = fn is BoundRuntimeFunction b ?
+        String.Format("Function should be returning abrupt record from ToPrimitive(Argument {0})", b.BoundArgs.Length + 1) :
+        String.Format("Function should be returning abrupt record from ToPrimitive(this value)");
+      EcmaValue obj1 = StaticHelper.CreateObject(valueOf: StaticHelper.ThrowTest262Exception, toString: RuntimeFunction.Create(() => new EcmaObject()));
+      EcmaValue obj2 = StaticHelper.CreateObject(toString: StaticHelper.ThrowTest262Exception);
+      That(() => fn is BoundRuntimeFunction ? fn.Call(default, obj1) : fn.Call(obj1), Throws.Test262, message);
+      That(() => fn is BoundRuntimeFunction ? fn.Call(default, obj2) : fn.Call(obj2), Throws.Test262, message);
+    }
+
+    public static void IsAbruptedFromToObject(RuntimeFunction fn) {
+      string message = fn is BoundRuntimeFunction b ?
+        String.Format("Function should be returning abrupt record from ToObject(Argument {0})", b.BoundArgs.Length + 1) :
+        String.Format("Function should be returning abrupt record from ToObject(this value)");
+      That(() => fn is BoundRuntimeFunction ? fn.Call(default, EcmaValue.Undefined) : fn.Call(EcmaValue.Undefined), Throws.TypeError, message);
+      That(() => fn is BoundRuntimeFunction ? fn.Call(default, EcmaValue.Null) : fn.Call(EcmaValue.Null), Throws.TypeError, message);
+    }
+
+    public static void Case(EcmaValue thisArg, object condition, string message = null) {
+      Case((thisArg, new EcmaValue[0]), condition, message);
+    }
+
+    public static void Case((EcmaValue thisArg, EcmaValue) args, object condition, string message = null) {
+      Case((args.Item1, new[] { args.Item2 }), condition, message);
+    }
+
+    public static void Case((EcmaValue thisArg, EcmaValue, EcmaValue) args, object condition, string message = null) {
+      Case((args.Item1, new[] { args.Item2, args.Item3 }), condition, message);
+    }
+
+    public static void Case((EcmaValue thisArg, EcmaValue, EcmaValue, EcmaValue) args, object condition, string message = null) {
+      Case((args.Item1, new[] { args.Item2, args.Item3, args.Item4 }), condition, message);
+    }
+
+    public static void Case((EcmaValue thisArg, EcmaValue, EcmaValue, EcmaValue, EcmaValue) args, object condition, string message = null) {
+      Case((args.Item1, new[] { args.Item2, args.Item3, args.Item4, args.Item5 }), condition, message);
+    }
+
+    public static void Case((EcmaValue thisArg, EcmaValue, EcmaValue, EcmaValue, EcmaValue, EcmaValue) args, object condition, string message = null) {
+      Case((args.Item1, new[] { args.Item2, args.Item3, args.Item4, args.Item5, args.Item6 }), condition, message);
+    }
+
+    public static void Case((EcmaValue thisArg, EcmaValue, EcmaValue, EcmaValue, EcmaValue, EcmaValue, EcmaValue) args, object condition, string message = null) {
+      Case((args.Item1, new[] { args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7 }), condition, message);
+    }
+
+    public static void Case((EcmaValue thisArg, EcmaValue, EcmaValue, EcmaValue, EcmaValue, EcmaValue, EcmaValue, EcmaValue) args, object condition, string message = null) {
+      Case((args.Item1, new[] { args.Item2, args.Item3, args.Item4, args.Item5, args.Item6, args.Item7, args.Item8 }), condition, message);
+    }
+
+    public static void Case((EcmaValue thisArg, EcmaValue[]) args, object condition, string message = null) {
+      RuntimeFunction fn = (RuntimeFunction)TestContext.CurrentContext.Test.Arguments[0];
+      Assume.That(fn, Is.Not.Null);
+
+      IResolveConstraint constraint = condition as IResolveConstraint;
+      if (constraint == null) {
+        constraint = condition is Array arr ? Is.EquivalentTo(arr) : Is.EqualTo(condition);
+      }
+      message = FormatMessage(args, message);
+      if (ShouldRunInDelegate(constraint)) {
+        That(() => fn.Call(args.Item1, args.Item2), constraint, message);
+      } else {
+        That(fn.Call(args.Item1, args.Item2), constraint, message);
+      }
+    }
+
+    public static string FormatMessage((EcmaValue thisArg, EcmaValue[]) args, string message) {
+      return String.Format("{0}{1} [Input = ({2})]", Assert.message, Assert.message != null && message != null ? ": " + message : "",
+        String.Join(", ", new[] { args.Item1 }.Concat(args.Item2).Select(InspectorUtility.WriteValue)));
+    }
+
+    public static void That(EcmaValue value, IResolveConstraint constraint) {
+      That(value, constraint, message, new object[0]);
+    }
+
     public static void That(EcmaValue value, IResolveConstraint constraint, string message, params object[] args) {
-      if (ShouldUnboxResult(constraint)) {
+      if (constraint is CollectionEquivalentConstraint) {
+        NUnit.Framework.Assert.That(value.Type != EcmaValueType.Object ? null : EcmaValueUtility.CreateListFromArrayLike(value).Select(v => v.IsNullOrUndefined ? v : v.GetUnderlyingObject()), constraint, message, args);
+      } else if (ShouldUnboxResult(constraint)) {
         NUnit.Framework.Assert.That(value.GetUnderlyingObject(), constraint, message, args);
       } else {
         NUnit.Framework.Assert.That(value, constraint, message, args);
       }
     }
 
-    public static void That(ITuple callArgs, object condition, string message) {
-      RuntimeFunction fn = (RuntimeFunction)TestContext.CurrentContext.Test.Arguments[0];
-      EcmaValue thisValue = new EcmaValue(callArgs[0]);
-      EcmaValue[] args = new EcmaValue[callArgs.Length - 1];
-      for (int i = 1; i < callArgs.Length; i++) {
-        args[i - 1] = new EcmaValue(callArgs[i]);
-      }
-      IResolveConstraint constraint = condition as IResolveConstraint ?? Is.EqualTo(condition);
-      if (message == null) {
-        message = String.Format("It {0} [Input = {1}]", Assert.message, callArgs);
-      }
-      if (ShouldRunInDelegate(constraint)) {
-        That(() => fn.Call(thisValue, args), constraint, message);
-      } else {
-        try {
-          That(fn.Call(thisValue, args), constraint, message);
-        } catch (AssertionException ex) {
-          throw;
-        } catch (Exception ex) {
-          NUnit.Framework.Assert.Fail("{0}: {1}", message, ex.Message);
-        }
-      }
-    }
-
     private static bool ShouldUnboxResult(IResolveConstraint constraint) {
-      return !(constraint is EqualConstraint c && c.Arguments[0] is EcmaValue) && !(constraint is DataPropertyConstraint);
+      return !(constraint is EqualConstraint equalConstraint && equalConstraint.Arguments[0] is EcmaValue) && !(constraint is DataPropertyConstraint);
     }
 
     private static bool ShouldRunInDelegate(IResolveConstraint constraint) {
-      return (constraint is InstanceOfTypeConstraint c && ((Type)c.Arguments[0]).IsSubclassOf(typeof(Exception))) || constraint is ThrowsNothingConstraint;
+      return (constraint is InstanceOfTypeConstraint typeConstraint && ((Type)typeConstraint.Arguments[0]).IsSubclassOf(typeof(Exception))) || constraint is ThrowsNothingConstraint;
     }
 
     #region Out-out-the-box methods
     public static void That<TActual>(TActual actual, IResolveConstraint expression) {
-      NUnit.Framework.Assert.That(actual, expression);
+      NUnit.Framework.Assert.That(actual, expression, message);
     }
 
     public static void That(TestDelegate code, IResolveConstraint constraint, Func<string> getExceptionMessage) {
@@ -124,7 +152,7 @@ namespace Codeless.Ecma.UnitTest {
     }
 
     public static void That(TestDelegate code, IResolveConstraint constraint) {
-      NUnit.Framework.Assert.That(code, constraint);
+      NUnit.Framework.Assert.That(code, constraint, message);
     }
 
     public static void That<TActual>(ActualValueDelegate<TActual> del, IResolveConstraint expr, Func<string> getExceptionMessage) {
@@ -136,7 +164,7 @@ namespace Codeless.Ecma.UnitTest {
     }
 
     public static void That<TActual>(ActualValueDelegate<TActual> del, IResolveConstraint expr) {
-      NUnit.Framework.Assert.That(del, expr);
+      NUnit.Framework.Assert.That(del, expr, message);
     }
 
     public static void That(Func<bool> condition, Func<string> getExceptionMessage) {
@@ -144,7 +172,7 @@ namespace Codeless.Ecma.UnitTest {
     }
 
     public static void That(Func<bool> condition) {
-      NUnit.Framework.Assert.That(condition);
+      NUnit.Framework.Assert.That(condition, message);
     }
 
     public static void That(Func<bool> condition, string message, params object[] args) {
@@ -156,7 +184,7 @@ namespace Codeless.Ecma.UnitTest {
     }
 
     public static void That(bool condition) {
-      NUnit.Framework.Assert.That(condition);
+      NUnit.Framework.Assert.That(condition, message);
     }
 
     public static void That<TActual>(TActual actual, IResolveConstraint expression, string message, params object[] args) {

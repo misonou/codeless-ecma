@@ -26,15 +26,17 @@ namespace Codeless.Ecma.Native {
       isFixedSize = isReadOnly || target.IsFixedSize;
     }
 
-    public override bool IsExtensible => !isFixedSize;
+    public override bool IsExtensible {
+      get { return !isFixedSize; }
+    }
 
-    public override IList<EcmaPropertyKey> OwnPropertyKeys {
-      get { return Enumerable.Range(0, Target.Count).Select(v => new EcmaPropertyKey(v)).Concat(new[] { new EcmaPropertyKey(WellKnownPropertyName.Length) }).Concat(base.OwnPropertyKeys).ToList(); }
+    public override IEnumerable<EcmaPropertyKey> GetOwnPropertyKeys() {
+      return Enumerable.Range(0, Target.Count).Select(v => new EcmaPropertyKey(v)).Concat(new[] { new EcmaPropertyKey(WellKnownPropertyName.Length) }).Concat(base.GetOwnPropertyKeys());
     }
 
     public override EcmaValue Get(EcmaPropertyKey propertyKey, RuntimeObject receiver) {
-      if (propertyKey.IsArrayIndex) {
-        return new EcmaValue(Target[(int)propertyKey.ArrayIndex]);
+      if (EcmaValueUtility.TryIndexByPropertyKey(this.Target, propertyKey, out EcmaValue value)) {
+        return value;
       }
       if (propertyKey == WellKnownPropertyName.Length) {
         return Target.Count;
@@ -44,10 +46,10 @@ namespace Codeless.Ecma.Native {
 
     public override bool Set(EcmaPropertyKey propertyKey, EcmaValue value, RuntimeObject receiver) {
       if (propertyKey.IsArrayIndex) {
-        if (isReadOnly || (isFixedSize && propertyKey.ArrayIndex > Target.Count)) {
+        if (isReadOnly || (isFixedSize && propertyKey.ToArrayIndex() > Target.Count)) {
           return false;
         }
-        Target[(int)propertyKey.ArrayIndex] = value;
+        Target[(int)propertyKey.ToArrayIndex()] = value;
         return true;
       }
       if (propertyKey == WellKnownPropertyName.Length) {
@@ -78,7 +80,7 @@ namespace Codeless.Ecma.Native {
 
     public override bool HasProperty(EcmaPropertyKey propertyKey) {
       if (propertyKey.IsArrayIndex) {
-        return propertyKey.ArrayIndex < Target.Count;
+        return propertyKey.ToArrayIndex() < Target.Count;
       }
       if (propertyKey == WellKnownPropertyName.Length) {
         return true;
@@ -88,7 +90,7 @@ namespace Codeless.Ecma.Native {
 
     public override EcmaPropertyDescriptor GetOwnProperty(EcmaPropertyKey propertyKey) {
       if (propertyKey.IsArrayIndex) {
-        return new EcmaPropertyDescriptor(Get(propertyKey, null));
+        return new EcmaPropertyDescriptor(Get(propertyKey, null), EcmaPropertyAttributes.DefaultDataProperty);
       }
       if (propertyKey == WellKnownPropertyName.Length) {
         return new EcmaPropertyDescriptor(Get(propertyKey, null), EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
