@@ -55,15 +55,12 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember("__proto__", EcmaPropertyAttributes.Configurable, Getter = true)]
     public static EcmaValue GetPrototypeOf([This] EcmaValue thisValue) {
-      Guard.RequireObjectCoercible(thisValue);
-      RuntimeObject proto = thisValue.ToObject().GetPrototypeOf();
-      return proto == null ? EcmaValue.Null : proto;
+      return EcmaObject.GetPrototypeOf(thisValue);
     }
 
     [IntrinsicMember("__proto__", EcmaPropertyAttributes.Configurable, Setter = true)]
     public static EcmaValue SetPrototypeOf([This] EcmaValue thisValue, EcmaValue proto) {
-      Guard.RequireObjectCoercible(thisValue);
-      return thisValue.ToObject().SetPrototypeOf(proto.ToObject());
+      return EcmaObject.SetPrototypeOf(thisValue, proto);
     }
 
     [IntrinsicMember("__defineGetter__")]

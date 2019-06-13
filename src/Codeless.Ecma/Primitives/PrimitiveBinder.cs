@@ -133,10 +133,6 @@ namespace Codeless.Ecma.Primitives {
       return ToBoolean(FromHandle(handle));
     }
 
-    int IEcmaValueBinder.ToInt32(EcmaValueHandle handle) {
-      return ToInt32(FromHandle(handle));
-    }
-
     long IEcmaValueBinder.ToInt64(EcmaValueHandle handle) {
       return ToInt64(FromHandle(handle));
     }

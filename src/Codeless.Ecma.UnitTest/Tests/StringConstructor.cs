@@ -5,7 +5,7 @@ using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class StringConstructor {
+  public class StringConstructor : TestBase {
     [Test]
     public void Instance() {
       It("should support indexing notation to look up non numeric property names", () => {
@@ -129,7 +129,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((_, Number.Construct(0)), "0");
         Case((_, Number.Construct(NaN)), "NaN");
         Case((_, Number.Construct(Null)), "0");
-        Case((_, Number.Construct(_)), "NaN");
+        Case((_, Number.Construct(Undefined)), "NaN");
         Case((_, Number.Construct(true)), "1");
         Case((_, Number.Construct(false)), "0");
         Case((_, Boolean.Construct(true)), "true");

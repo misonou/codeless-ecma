@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Codeless.Ecma.Runtime.Intrinsics {
+namespace Codeless.Ecma.Runtime {
   [AttributeUsage(AttributeTargets.Method)]
   internal class IntrinsicConstructorAttribute : Attribute {
     public IntrinsicConstructorAttribute() { }

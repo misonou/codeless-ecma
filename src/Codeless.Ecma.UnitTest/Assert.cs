@@ -10,7 +10,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Codeless.Ecma.UnitTest {
-  [DebuggerStepThrough]
   public class Assert {
     [ThreadStatic]
     private static string message;
@@ -49,7 +48,7 @@ namespace Codeless.Ecma.UnitTest {
       string message = fn is BoundRuntimeFunction b ?
         String.Format("Function should be returning abrupt record from ToPrimitive(Argument {0})", b.BoundArgs.Length + 1) :
         String.Format("Function should be returning abrupt record from ToPrimitive(this value)");
-      EcmaValue obj1 = StaticHelper.CreateObject(valueOf: StaticHelper.ThrowTest262Exception, toString: RuntimeFunction.Create(() => new EcmaObject()));
+      EcmaValue obj1 = StaticHelper.CreateObject(valueOf: StaticHelper.ThrowTest262Exception, toString: () => new EcmaObject());
       EcmaValue obj2 = StaticHelper.CreateObject(toString: StaticHelper.ThrowTest262Exception);
       That(() => fn is BoundRuntimeFunction ? fn.Call(default, obj1) : fn.Call(obj1), Throws.Test262, message);
       That(() => fn is BoundRuntimeFunction ? fn.Call(default, obj2) : fn.Call(obj2), Throws.Test262, message);
@@ -121,8 +120,8 @@ namespace Codeless.Ecma.UnitTest {
     }
 
     public static void That(EcmaValue value, IResolveConstraint constraint, string message, params object[] args) {
-      if (constraint is CollectionEquivalentConstraint) {
-        NUnit.Framework.Assert.That(value.Type != EcmaValueType.Object ? null : EcmaValueUtility.CreateListFromArrayLike(value).Select(v => v.IsNullOrUndefined ? v : v.GetUnderlyingObject()), constraint, message, args);
+      if (constraint is CollectionEquivalentConstraint equivalentConstraint) {
+        NUnit.Framework.Assert.That(value.Type != EcmaValueType.Object ? null : EcmaValueUtility.CreateListFromArrayLike(value), equivalentConstraint.Using(new RecursiveArrayEqualityComparer()), message, args);
       } else if (ShouldUnboxResult(constraint)) {
         NUnit.Framework.Assert.That(value.GetUnderlyingObject(), constraint, message, args);
       } else {

@@ -31,14 +31,14 @@ namespace Codeless.Ecma.Native {
     }
 
     public override IEnumerable<EcmaPropertyKey> GetOwnPropertyKeys() {
-      return Enumerable.Range(0, Target.Count).Select(v => new EcmaPropertyKey(v)).Concat(new[] { new EcmaPropertyKey(WellKnownPropertyName.Length) }).Concat(base.GetOwnPropertyKeys());
+      return Enumerable.Range(0, Target.Count).Select(v => new EcmaPropertyKey(v)).Concat(new[] { WellKnownProperty.Length }).Concat(base.GetOwnPropertyKeys());
     }
 
     public override EcmaValue Get(EcmaPropertyKey propertyKey, RuntimeObject receiver) {
       if (EcmaValueUtility.TryIndexByPropertyKey(this.Target, propertyKey, out EcmaValue value)) {
         return value;
       }
-      if (propertyKey == WellKnownPropertyName.Length) {
+      if (propertyKey == WellKnownProperty.Length) {
         return Target.Count;
       }
       return base.Get(propertyKey, receiver);
@@ -52,7 +52,7 @@ namespace Codeless.Ecma.Native {
         Target[(int)propertyKey.ToArrayIndex()] = value;
         return true;
       }
-      if (propertyKey == WellKnownPropertyName.Length) {
+      if (propertyKey == WellKnownProperty.Length) {
         if (isFixedSize) {
           return false;
         }
@@ -72,7 +72,7 @@ namespace Codeless.Ecma.Native {
       if (propertyKey.IsArrayIndex) {
         return false;
       }
-      if (propertyKey == WellKnownPropertyName.Length) {
+      if (propertyKey == WellKnownProperty.Length) {
         return false;
       }
       return base.Delete(propertyKey);
@@ -82,7 +82,7 @@ namespace Codeless.Ecma.Native {
       if (propertyKey.IsArrayIndex) {
         return propertyKey.ToArrayIndex() < Target.Count;
       }
-      if (propertyKey == WellKnownPropertyName.Length) {
+      if (propertyKey == WellKnownProperty.Length) {
         return true;
       }
       return base.HasProperty(propertyKey);
@@ -92,14 +92,14 @@ namespace Codeless.Ecma.Native {
       if (propertyKey.IsArrayIndex) {
         return new EcmaPropertyDescriptor(Get(propertyKey, null), EcmaPropertyAttributes.DefaultDataProperty);
       }
-      if (propertyKey == WellKnownPropertyName.Length) {
+      if (propertyKey == WellKnownProperty.Length) {
         return new EcmaPropertyDescriptor(Get(propertyKey, null), EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
       }
       return base.GetOwnProperty(propertyKey);
     }
 
     public override bool DefineOwnProperty(EcmaPropertyKey propertyKey, EcmaPropertyDescriptor descriptor) {
-      if (propertyKey.IsArrayIndex || propertyKey == WellKnownPropertyName.Length) {
+      if (propertyKey.IsArrayIndex || propertyKey == WellKnownProperty.Length) {
         return Set(propertyKey, descriptor.Value, this);
       }
       return base.DefineOwnProperty(propertyKey, descriptor);

@@ -6,7 +6,7 @@ using static Codeless.Ecma.Global;
 using static Codeless.Ecma.UnitTest.Assert;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class Interop {
+  public class Interop : TestBase {
     public class TestObject {
       public int Value { get; set; }
       public int ReadOnlyValue { get; } = 1;
@@ -45,9 +45,9 @@ namespace Codeless.Ecma.UnitTest.Tests {
       That(value["ReadOnlyValue"], Is.EqualTo(1), "Value should not be changed");
 
       RuntimeObject testObjectPrototype = value.ToObject().GetPrototypeOf();
-      That(testObjectPrototype.GetOwnProperty("Value"), Is.Not.Null, "Property should be defined on the reflected prototype object");
-      That(testObjectPrototype.GetOwnProperty("Value").Get, Is.Not.Null, "Property should be defined as getter/setter");
-      That(testObjectPrototype.GetOwnProperty("ReadOnlyValue").Set, Is.Null, "Readonly property should have no setter");
+      That(testObjectPrototype.GetOwnProperty("Value"), Is.Not.EqualTo(EcmaValue.Undefined), "Property should be defined on the reflected prototype object");
+      That(testObjectPrototype.GetOwnProperty("Value").Get, Is.Not.EqualTo(EcmaValue.Undefined), "Property should be defined as getter/setter");
+      That(testObjectPrototype.GetOwnProperty("ReadOnlyValue").Set, Is.Undefined, "Readonly property should have no setter");
     }
 
     [Test]

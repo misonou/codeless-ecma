@@ -26,9 +26,6 @@ namespace Codeless.Ecma {
     public Promise()
       : base(WellKnownObject.PromisePrototype) { }
 
-    public Promise(RuntimeObject constructor)
-      : base(WellKnownObject.PromisePrototype, constructor) { }
-
     public Promise(Task task)
       : this() {
       Guard.ArgumentNotNull(task, "task");
@@ -76,7 +73,7 @@ namespace Codeless.Ecma {
       Guard.ArgumentNotNull(promises, "promises");
       List<Promise> list = new List<Promise>(promises);
       if (list.Count == 0) {
-        return new Promise(new EcmaArray());
+        return new Promise(PromiseState.Fulfilled, new EcmaArray());
       }
       Promise promise = new Promise();
       EcmaValue[] values = new EcmaValue[list.Count];
@@ -102,7 +99,7 @@ namespace Codeless.Ecma {
       Guard.ArgumentNotNull(promises, "promises");
       List<Promise> list = new List<Promise>(promises);
       if (list.Count == 0) {
-        return new Promise(new EcmaArray());
+        return new Promise(PromiseState.Fulfilled, new EcmaArray());
       }
       Promise promise = new Promise();
       foreach (Promise p in list) {

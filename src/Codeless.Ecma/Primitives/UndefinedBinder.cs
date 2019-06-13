@@ -11,7 +11,7 @@ namespace Codeless.Ecma.Primitives {
     protected UndefinedBinder() { }
 
     public object FromHandle(EcmaValueHandle value) {
-      return null;
+      return EcmaValue.Undefined;
     }
 
     public EcmaValueHandle ToHandle(object value) {

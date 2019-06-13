@@ -170,7 +170,7 @@
     <Compile Include="Runtime\IntrinsicFunction.cs" />
     <Compile Include="Runtime\Intrinsics\ErrorConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\ErrorPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\IntrinsicConstructorAttribute.cs" />
+    <Compile Include="Runtime\IntrinsicConstructorAttribute.cs" />
     <Compile Include="Runtime\Intrinsics\ProxyConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\RegExpStringIteratorPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\SetIteratorPrototype.cs" />
@@ -185,6 +185,7 @@
     <Compile Include="Runtime\RuntimeFunction.cs" />
     <Compile Include="Runtime\NativeRuntimeFunctionCompiler.cs" />
     <Compile Include="Runtime\Intrinsics\FunctionConstructor.cs" />
+    <Compile Include="Runtime\SharedIntrinsicObjectBinder.cs" />
     <Compile Include="Runtime\ThisAttribute.cs" />
     <Compile Include="Runtime\Intrinsics\FunctionPrototype.cs" />
     <Compile Include="Runtime\RuntimeRealm.cs" />
@@ -220,8 +221,8 @@
     <Compile Include="Runtime\RuntimeFunctionInvocation.cs" />
     <Compile Include="Runtime\Intrinsics\ArrayConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\ArrayPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\IntrinsicObjectAttribute.cs" />
-    <Compile Include="Runtime\Intrinsics\IntrinsicMemberAttribute.cs" />
+    <Compile Include="Runtime\IntrinsicObjectAttribute.cs" />
+    <Compile Include="Runtime\IntrinsicMemberAttribute.cs" />
     <Compile Include="Runtime\Intrinsics\IteratorPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\ArrayIteratorPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\MapPrototype.cs" />
@@ -243,7 +244,7 @@
     <Compile Include="EcmaValueComparer.cs" />
     <Compile Include="Runtime\RuntimeObjectProxy.cs" />
     <Compile Include="EcmaMapBase.cs" />
-    <Compile Include="WellKnownPropertyName.cs" />
+    <Compile Include="WellKnownProperty.cs" />
     <Compile Include="WellKnownObject.cs" />
     <Compile Include="Runtime\Intrinsics\Reflect.cs" />
     <Compile Include="Runtime\Intrinsics\PromiseConstructor.cs" />

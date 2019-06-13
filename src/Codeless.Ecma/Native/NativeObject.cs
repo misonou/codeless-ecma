@@ -18,7 +18,7 @@ namespace Codeless.Ecma.Native {
   internal abstract class NativeObject<T> : RuntimeObject, INativeObjectWrapper {
     protected NativeObject(T target, WellKnownObject proto)
       : base(target) {
-      SetPrototypeOf(RuntimeRealm.GetRuntimeObject(proto));
+      SetPrototypeOf(RuntimeRealm.Current.GetRuntimeObject(proto));
       this.Target = target;
     }
 

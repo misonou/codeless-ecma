@@ -32,6 +32,8 @@ namespace Codeless.Ecma {
     EcmaValue CreateNamedGroupObject();
   }
 
+  public delegate string EcmaRegExpReplaceCallback(IEcmaRegExpResult result);
+
   /// <summary>
   /// Represents a ECMAScript-like regular expression object.
   /// </summary>
@@ -57,22 +59,20 @@ namespace Codeless.Ecma {
     public EcmaRegExp()
       : this(String.Empty, String.Empty) { }
 
-    public EcmaRegExp(RuntimeObject constructor)
-      : base(WellKnownObject.RegExpPrototype, constructor) {
-      DefineOwnPropertyNoChecked(WellKnownPropertyName.LastIndex, new EcmaPropertyDescriptor(0, EcmaPropertyAttributes.Writable));
-    }
-
     public EcmaRegExp(string pattern)
       : this(pattern, String.Empty) { }
 
     public EcmaRegExp(string pattern, string flags)
       : base(WellKnownObject.RegExpPrototype) {
       Init(Parse(pattern, flags));
-      DefineOwnPropertyNoChecked(WellKnownPropertyName.LastIndex, new EcmaPropertyDescriptor(0, EcmaPropertyAttributes.Writable));
+      DefineOwnPropertyNoChecked(WellKnownProperty.LastIndex, new EcmaPropertyDescriptor(0, EcmaPropertyAttributes.Writable));
     }
 
+    private EcmaRegExp(RuntimeObject constructor)
+      : base(WellKnownObject.RegExpPrototype, constructor) { }
+
     private EcmaRegExp(Regex nativeRegexp, string pattern, string canonFlags, EcmaRegExpFlags flags, int numericGroupCount, string[] captureGroups)
-      : base(WellKnownObject.RegExpPrototype) {
+      : base(WellKnownObject.RegExpPrototype, true) {
       Guard.ArgumentNotNull(nativeRegexp, "nativeRegexp");
       Guard.ArgumentNotNull(pattern, "pattern");
       Guard.ArgumentNotNull(canonFlags, "canonFlags");
@@ -91,14 +91,14 @@ namespace Codeless.Ecma {
         }
         return m.Value;
       });
-      DefineOwnPropertyNoChecked(WellKnownPropertyName.LastIndex, new EcmaPropertyDescriptor(0, EcmaPropertyAttributes.Writable));
+      DefineOwnPropertyNoChecked(WellKnownProperty.LastIndex, new EcmaPropertyDescriptor(0, EcmaPropertyAttributes.Writable));
     }
 
     /// <summary>
     /// Indicates that the regular expression should be tested against all possible matches in a string.
     /// </summary>
     public bool Global {
-      get { return this.Get("global").ToBoolean(); }
+      get { return this.Get(WellKnownProperty.Global).ToBoolean(); }
     }
 
     /// <summary>
@@ -106,26 +106,26 @@ namespace Codeless.Ecma {
     /// In such case "^" and "$" change from matching at only the start or end of the entire string to the start or end of any line within the string.
     /// </summary>
     public bool Multiline {
-      get { return this.Get("multiline").ToBoolean(); }
+      get { return this.Get(WellKnownProperty.Multiline).ToBoolean(); }
     }
 
     /// <summary>
     /// Indicates that case should be ignored while attempting a match in a string.
     /// </summary>
     public bool IgnoreCase {
-      get { return this.Get("ignoreCase").ToBoolean(); }
+      get { return this.Get(WellKnownProperty.IgnoreCase).ToBoolean(); }
     }
 
     public bool Sticky {
-      get { return this.Get("sticky").ToBoolean(); }
+      get { return this.Get(WellKnownProperty.Sticky).ToBoolean(); }
     }
 
     public bool Unicode {
-      get { return this.Get("unicode").ToBoolean(); }
+      get { return this.Get(WellKnownProperty.Unicode).ToBoolean(); }
     }
 
     public bool DotAll {
-      get { return this.Get("dotAll").ToBoolean(); }
+      get { return this.Get(WellKnownProperty.DotAll).ToBoolean(); }
     }
 
     public string Source { get; private set; }
@@ -135,8 +135,8 @@ namespace Codeless.Ecma {
     internal EcmaRegExpFlags OriginalFlags { get; private set; }
 
     public int LastIndex {
-      get { return (int)this.Get(WellKnownPropertyName.LastIndex).ToLength(); }
-      set { this.Set(WellKnownPropertyName.LastIndex, value); }
+      get { return (int)this.Get(WellKnownProperty.LastIndex).ToLength(); }
+      set { this.Set(WellKnownProperty.LastIndex, value); }
     }
 
     public IEcmaRegExpResult LastResult { get; set; }
@@ -197,7 +197,7 @@ namespace Codeless.Ecma {
         }
       }
       if (global || sticky) {
-        if (!this.Set(WellKnownPropertyName.LastIndex, result != null ? result.Index + result.Value.Length : 0) && sticky) {
+        if (!this.Set(WellKnownProperty.LastIndex, result != null ? result.Index + result.Value.Length : 0) && sticky) {
           throw new EcmaTypeErrorException(InternalString.Error.LastIndexNotWritable);
         }
       }
@@ -217,7 +217,7 @@ namespace Codeless.Ecma {
     /// <param name="replacement">A pipe function argument.</param>
     /// <returns></returns>
     public string Replace(string input, RuntimeFunction replacement) {
-      return Replace(input, new MatchEvaluatorClass(this, input, replacement).MatchEvaluator);
+      return ReplaceInternal(input, m => RegExpPrototype.InvokeReplacementCallback(replacement, new MatchResult(this, input, m, null, 0)));
     }
 
     /// <summary>
@@ -226,15 +226,8 @@ namespace Codeless.Ecma {
     /// <param name="input">Input string.</param>
     /// <param name="replacement">A delegate escapulating a method that returns replacement string for the specifc occurence.</param>
     /// <returns></returns>
-    public string Replace(string input, MatchEvaluator replacement) {
-      if (Global) {
-        if (!this.Set(WellKnownPropertyName.LastIndex, 0)) {
-          throw new EcmaTypeErrorException(InternalString.Error.LastIndexNotWritable);
-        }
-        return GetInstanceForGlobalReplace().nativeRegexp.Replace(input, replacement);
-      }
-      this.LastIndex = 0;
-      return nativeRegexp.Replace(input, replacement, 1);
+    public string Replace(string input, EcmaRegExpReplaceCallback replacement) {
+      return ReplaceInternal(input, m => replacement(new MatchResult(this, input, m, null, 0)));
     }
 
     /// <summary>
@@ -246,7 +239,7 @@ namespace Codeless.Ecma {
     public string Replace(string input, string replacement) {
       replacement = FixReplacementString(replacement);
       if (Global) {
-        if (!this.Set(WellKnownPropertyName.LastIndex, 0)) {
+        if (!this.Set(WellKnownProperty.LastIndex, 0)) {
           throw new EcmaTypeErrorException(InternalString.Error.LastIndexNotWritable);
         }
         return GetInstanceForGlobalReplace().nativeRegexp.Replace(input, replacement);
@@ -403,7 +396,7 @@ namespace Codeless.Ecma {
         re = new EcmaRegExp(nativeRegexp, pattern, canonFlags, options, numericGroupCount, captureGroups.ToArray());
         cache.TryAdd(key, re);
       }
-      return re.Clone();
+      return (EcmaRegExp)re.Clone(RuntimeRealm.Current);
     }
 
     private string DebuggerDisplay {
@@ -416,6 +409,17 @@ namespace Codeless.Ecma {
         return Parse(this.Source, unicode ? this.Flags + "u" : this.Flags.Replace("u", ""));
       }
       return this;
+    }
+
+    private string ReplaceInternal(string input, MatchEvaluator replacement) {
+      if (Global) {
+        if (!this.Set(WellKnownProperty.LastIndex, 0)) {
+          throw new EcmaTypeErrorException(InternalString.Error.LastIndexNotWritable);
+        }
+        return GetInstanceForGlobalReplace().nativeRegexp.Replace(input, replacement);
+      }
+      this.LastIndex = 0;
+      return nativeRegexp.Replace(input, replacement, 1);
     }
 
     private string FixReplacementString(string replacement) {
@@ -809,9 +813,9 @@ namespace Codeless.Ecma {
       public EcmaValue ToValue() {
         if (result.Success) {
           EcmaArray arr = new EcmaArray(Captures.ToArray());
-          arr.CreateDataPropertyOrThrow("index", this.Index);
-          arr.CreateDataPropertyOrThrow("input", this.Input);
-          arr.CreateDataPropertyOrThrow("groups", CreateNamedGroupObject());
+          arr.CreateDataPropertyOrThrow(WellKnownProperty.Index, this.Index);
+          arr.CreateDataPropertyOrThrow(WellKnownProperty.Input, this.Input);
+          arr.CreateDataPropertyOrThrow(WellKnownProperty.Groups, CreateNamedGroupObject());
           return arr;
         }
         return EcmaValue.Null;

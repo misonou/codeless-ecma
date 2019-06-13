@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Codeless.Ecma.Runtime.Intrinsics {
+namespace Codeless.Ecma.Runtime {
   [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = true)]
   public class IntrinsicMemberAttribute : Attribute {
     public IntrinsicMemberAttribute() {

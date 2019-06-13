@@ -7,10 +7,11 @@ namespace Codeless.Ecma {
     private readonly EcmaValue iterator;
     private readonly EcmaValue nextMethod;
     private bool done;
+    private bool disposed;
 
     public EcmaIteratorEnumerator(EcmaValue iterator) {
       this.iterator = iterator;
-      this.nextMethod = iterator["next"];
+      this.nextMethod = iterator[WellKnownProperty.Next];
     }
 
     public EcmaValue Current { get; private set; }
@@ -22,11 +23,11 @@ namespace Codeless.Ecma {
       }
       EcmaValue result = this.nextMethod.Call(this.iterator);
       Guard.ArgumentIsObject(result);
-      if (result["done"]) {
+      if (result[WellKnownProperty.Done]) {
         this.done = true;
         return false;
       }
-      this.Current = result["value"];
+      this.Current = result[WellKnownProperty.Value];
       return true;
     }
 
@@ -48,11 +49,13 @@ namespace Codeless.Ecma {
 
     [EcmaSpecification("IteratorClose", EcmaSpecificationKind.AbstractOperations)]
     void IDisposable.Dispose() {
-      if (!this.done) {
-        EcmaValue returns = iterator["return"];
-        if (returns.IsCallable) {
-          EcmaValue result = returns.Call(iterator);
-          Guard.ArgumentIsObject(result);
+      if (!disposed) {
+        disposed = true;
+        if (!this.done) {
+          EcmaValue returns = iterator[WellKnownProperty.Return];
+          if (returns.IsCallable) {
+            returns.Call(iterator);
+          }
         }
       }
     }

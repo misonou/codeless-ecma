@@ -1,73 +1,59 @@
 ﻿using Codeless.Ecma.Native;
 using Codeless.Ecma.Runtime;
+using Codeless.Ecma.Runtime.Intrinsics;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma {
   public class EcmaArray : RuntimeObject, IList<EcmaValue> {
-    private static readonly EcmaPropertyKey propertyLength = new EcmaPropertyKey(WellKnownPropertyName.Length);
     private List<EcmaValue> list;
-    private uint length;
-    private bool lengthReadOnly;
+    private LinkedList<ArrayChunk> chunks;
 
     public EcmaArray()
-      : base(WellKnownObject.ArrayPrototype) { }
-
-    public EcmaArray(uint length)
       : base(WellKnownObject.ArrayPrototype) {
-      this.length = length;
+      SetLength(0);
     }
 
-    public EcmaArray(uint length, RuntimeObject constructor)
-      : base(WellKnownObject.ArrayPrototype, constructor) {
-      this.length = length;
-    }
-
-    public EcmaArray(IEnumerable<EcmaValue> values)
+    public EcmaArray(long length)
       : base(WellKnownObject.ArrayPrototype) {
-      if (values.Any()) {
-        list = new List<EcmaValue>(values);
-        length = (uint)list.Count;
+      SetLength(length);
+    }
+
+    public EcmaArray(List<EcmaValue> list)
+      : base(WellKnownObject.ArrayPrototype) {
+      Guard.ArgumentNotNull(list, "list");
+      this.list = list;
+      if (!SetLengthDirect(list.Count)) {
+        throw new EcmaTypeErrorException(InternalString.Error.SetPropertyFailed);
       }
     }
 
-    public EcmaArray(IEnumerable<EcmaValue> values, RuntimeObject constructor)
-      : base(WellKnownObject.ArrayPrototype, constructor) {
-      if (values.Any()) {
-        list = new List<EcmaValue>(values);
-        length = (uint)list.Count;
-      }
+    public EcmaArray(params EcmaValue[] values)
+      : base(WellKnownObject.ArrayPrototype) {
+      Guard.ArgumentNotNull(values, "values");
+      Init(values);
     }
 
-    public EcmaValue this[int index] {
-      get {
-        if (list == null || index < 0 || index >= list.Count) {
-          return default;
-        }
-        return list[index];
-      }
-      set {
-        if (index >= 0) {
-          if (list == null) {
-            list = new List<EcmaValue>();
-          }
-          while (index >= list.Count) {
-            list.Add(EcmaValue.Undefined);
-          }
-          list[index] = value;
-        }
-      }
-    }
-
-    public int Count {
-      get { return (int)length; }
+    public long Length {
+      get { return Get(WellKnownProperty.Length).ToLength(); }
+      set { SetLength(value); }
     }
 
     protected override string ToStringTag {
       get { return InternalString.ObjectTag.Array; }
+    }
+
+    internal bool FallbackMode { get; private set; }
+
+    internal void Init(IEnumerable<EcmaValue> values) {
+      list = new List<EcmaValue>(values);
+      if (!SetLengthDirect(list.Count)) {
+        throw new EcmaTypeErrorException(InternalString.Error.SetPropertyFailed);
+      }
     }
 
     [EcmaSpecification("IsArray", EcmaSpecificationKind.AbstractOperations)]
@@ -76,7 +62,7 @@ namespace Codeless.Ecma {
         return false;
       }
       RuntimeObject obj = value.ToObject();
-      if (obj is RuntimeObjectProxy proxy) {
+      while (obj is RuntimeObjectProxy proxy) {
         obj = proxy.ProxyTarget;
       }
       return obj is EcmaArray || obj is NativeArrayObject;
@@ -86,189 +72,976 @@ namespace Codeless.Ecma {
       return new EcmaArray(elements);
     }
 
-    public void Add(EcmaValue item) {
-      if (list == null) {
-        list = new List<EcmaValue>();
-      }
-      list.Add(item);
+    public long IndexOf(EcmaValue searchElement) {
+      return IndexOf(searchElement, 0);
     }
 
-    public void Clear() {
+    public long IndexOf(EcmaValue searchElement, long fromIndex) {
+      if (this.FallbackMode) {
+        return ArrayPrototype.IndexOf(this, searchElement, fromIndex).ToInt64();
+      }
       if (list != null) {
-        list.Clear();
-      }
-    }
-
-    public bool Contains(EcmaValue item) {
-      if (list == null) {
-        return false;
-      }
-      return list.Contains(item);
-    }
-
-    public void CopyTo(EcmaValue[] array, int arrayIndex) {
-      if (list != null) {
-        list.CopyTo(array, arrayIndex);
-      }
-    }
-
-    public IEnumerator<EcmaValue> GetEnumerator() {
-      if (list != null) {
-        return list.GetEnumerator();
-      }
-      return Enumerable.Empty<EcmaValue>().GetEnumerator();
-    }
-
-    public int IndexOf(EcmaValue item) {
-      if (list != null) {
-        return list.IndexOf(item);
+        int realIndex = chunks == null || chunks.Count == 0 ? (int)fromIndex : GetRealIndex(fromIndex, out _, out _);
+        return (int)GetVirtIndex(list.FindIndex(realIndex, v => v.Equals(searchElement, EcmaValueComparison.Strict)));
       }
       return -1;
     }
 
-    public void Insert(int index, EcmaValue item) {
-      if (index >= 0) {
-        if (list == null) {
-          list = new List<EcmaValue>();
-        }
-        // TODO: EcmaArray.Insert
-        while (index > list.Count) {
-          list.Add(EcmaValue.Undefined);
-        }
-        list.Add(item);
+    public long LastIndexOf(EcmaValue searchElement) {
+      if (this.FallbackMode) {
+        return ArrayPrototype.IndexOf(this, searchElement, null).ToInt64();
       }
-      throw new NotImplementedException();
+      if (list != null) {
+        return (int)GetVirtIndex(list.FindLastIndex(v => v.Equals(searchElement, EcmaValueComparison.Strict)));
+      }
+      return -1;
     }
 
-    public bool Remove(EcmaValue item) {
+    public long LastIndexOf(EcmaValue searchElement, long fromIndex) {
+      if (this.FallbackMode) {
+        return ArrayPrototype.LastIndexOf(this, searchElement, fromIndex).ToInt64();
+      }
       if (list != null) {
-        return list.Remove(item);
+        int realIndex = chunks == null || chunks.Count == 0 ? (int)fromIndex : GetRealIndex(fromIndex, out _, out _);
+        return (int)GetVirtIndex(list.FindLastIndex(realIndex, v => v.Equals(searchElement, EcmaValueComparison.Strict)));
+      }
+      return -1;
+    }
+
+    public long Includes(EcmaValue searchElement) {
+      return Includes(searchElement, 0);
+    }
+
+    public long Includes(EcmaValue searchElement, long fromIndex) {
+      if (this.FallbackMode) {
+        return ArrayPrototype.Includes(this, searchElement, fromIndex).ToInt64();
+      }
+      if (list == null) {
+        return -1;
+      }
+      long offset = 0;
+      LinkedListNode<ArrayChunk> node = null;
+      int realIndex = chunks == null || chunks.Count == 0 ? (int)fromIndex : GetRealIndex(fromIndex, out node, out offset);
+      if (searchElement == default && offset < 0) {
+        return fromIndex;
+      }
+      int result = list.FindIndex(realIndex, v => v.Equals(searchElement, EcmaValueComparison.SameValueZero));
+      if (result != -1) {
+        return GetVirtIndex(result);
+      }
+      if (searchElement == default && node != null && node.Next != null) {
+        return fromIndex + node.Value.Count - offset;
+      }
+      return -1;
+    }
+
+    public long Unshift(params EcmaValue[] elements) {
+      if (this.FallbackMode) {
+        return (long)ArrayPrototype.Unshift(this, elements);
+      }
+      InsertRange(0, elements);
+      return this.Length;
+    }
+
+    public long Push(params EcmaValue[] elements) {
+      if (this.FallbackMode) {
+        return (long)ArrayPrototype.Push(this, elements);
+      }
+      long cur = this.Length;
+      InsertRange(cur, elements);
+      return cur + elements.Length;
+    }
+
+    public EcmaValue Shift() {
+      if (this.FallbackMode) {
+        return ArrayPrototype.Shift(this);
+      }
+      EcmaValue item = Get(0);
+      RemoveRange(0, 1);
+      return item;
+    }
+
+    public EcmaValue Pop() {
+      if (this.FallbackMode) {
+        return ArrayPrototype.Pop(this);
+      }
+      long index = this.Length - 1;
+      EcmaValue item = Get(index);
+      RemoveRange(index, 1);
+      return item;
+    }
+
+    public EcmaArray Slice(long start) {
+      return Slice(start, this.Length);
+    }
+
+    public EcmaArray Slice(long start, long end) {
+      if (this.FallbackMode) {
+        return ArrayPrototype.Slice(this, start, end).GetUnderlyingObject<EcmaArray>();
+      }
+      long len = this.Length;
+      start = start < 0 ? Math.Max(0, start + len) : Math.Min(start, len);
+      end = end < 0 ? Math.Max(0, end + len) : Math.Min(end, len);
+
+      EcmaArray target = (EcmaArray)ArrayPrototype.SpeciesCreate(this, 0);
+      if (start < len && start < end) {
+        RemoveRange(start, end - start, true, target);
+      }
+      return target;
+    }
+
+    public EcmaArray Splice(long start) {
+      return Splice(start, this.Length);
+    }
+
+    public EcmaArray Splice(long start, long deleteCount, params EcmaValue[] elements) {
+      if (this.FallbackMode) {
+        return ArrayPrototype.Splice(this, start, deleteCount, elements).GetUnderlyingObject<EcmaArray>();
+      }
+      long len = this.Length;
+      start = start < 0 ? Math.Max(0, start + len) : Math.Min(start, len);
+      deleteCount = Math.Max(0, Math.Min(deleteCount, len - start));
+
+      EcmaArray target = (EcmaArray)ArrayPrototype.SpeciesCreate(this, 0);
+      RemoveRange(start, deleteCount, false, target);
+      InsertRange(start, elements);
+      return target;
+    }
+
+    public EcmaArray Sort() {
+      if (this.FallbackMode) {
+        ArrayPrototype.Sort(this, EcmaValue.Undefined);
+        return this;
+      }
+      long len = this.Length;
+      int itemCount = list != null ? list.Count : 0;
+      if (itemCount > 0) {
+        list.Sort((x, y) => ArrayPrototype.SortCompare(x, y, EcmaValue.Undefined));
+      }
+      if (chunks != null) {
+        if (len > itemCount) {
+          chunks.Clear();
+          chunks.AddFirst(new ArrayChunk(itemCount, (int)(len - itemCount)));
+        }
+      }
+      return this;
+    }
+
+    public EcmaArray Reverse() {
+      if (this.FallbackMode) {
+        ArrayPrototype.Reverse(this);
+        return this;
+      }
+      if (list != null) {
+        list.Reverse();
+        if (chunks != null && chunks.Count > 0) {
+          ArrayChunk final = chunks.First.Value;
+          long initialOffset = final.Offset;
+          if (chunks.Count > 1) {
+            chunks.Reverse();
+            for (LinkedListNode<ArrayChunk> cur = chunks.First; cur.Next != null; cur = cur.Next) {
+              cur.Value.Count = cur.Next.Value.Count;
+            }
+          }
+          if (initialOffset == 0) {
+            final.Offset = this.Length - list.Count;
+            final.Count = 0;
+          } else {
+            final.Offset = 0;
+            final.Count = list.Count;
+          }
+        }
+      }
+      return this;
+    }
+
+    public void ForEach(RuntimeFunction callback) {
+      ForEach(callback, EcmaValue.Undefined);
+    }
+
+    public void ForEach(RuntimeFunction callback, EcmaValue thisArg) {
+      if (this.FallbackMode) {
+        ArrayPrototype.ForEach(this, callback, thisArg);
+        return;
+      }
+      foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
+        callback.Call(thisArg, entry.Value, entry.Key, this);
+      }
+    }
+
+    public bool Some(RuntimeFunction callback) {
+      return Some(callback, EcmaValue.Undefined);
+    }
+
+    public bool Some(RuntimeFunction callback, EcmaValue thisArg) {
+      if (this.FallbackMode) {
+        return (bool)ArrayPrototype.Some(this, callback, thisArg);
+      }
+      if (list != null) {
+        foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
+          if (callback.Call(thisArg, entry.Value, entry.Key, this)) {
+            return true;
+          }
+        }
       }
       return false;
     }
 
-    public void RemoveAt(int index) {
-      if (list != null && index >= 0 && index < list.Count) {
-        list.RemoveAt(index);
+    public bool Every(RuntimeFunction callback) {
+      return Every(callback, EcmaValue.Undefined);
+    }
+
+    public bool Every(RuntimeFunction callback, EcmaValue thisArg) {
+      if (this.FallbackMode) {
+        return (bool)ArrayPrototype.Every(this, callback, thisArg);
       }
+      if (list != null) {
+        foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true, true)) {
+          if (!(bool)callback.Call(thisArg, entry.Value, entry.Key, this)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    public EcmaValue Filter(RuntimeFunction callback) {
+      return Filter(callback, EcmaValue.Undefined);
+    }
+
+    public EcmaArray Filter(RuntimeFunction callback, EcmaValue thisArg) {
+      if (this.FallbackMode) {
+        return ArrayPrototype.Filter(this, callback, thisArg).GetUnderlyingObject<EcmaArray>();
+      }
+      List<EcmaValue> arr = new List<EcmaValue>();
+      if (list != null) {
+        foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
+          if (callback.Call(thisArg, entry.Value, entry.Key, this)) {
+            arr.Add(entry.Value);
+          }
+        }
+      }
+      return new EcmaArray(arr);
+    }
+
+    public EcmaValue Map(RuntimeFunction callback) {
+      return Map(callback, EcmaValue.Undefined);
+    }
+
+    public EcmaArray Map(RuntimeFunction callback, EcmaValue thisArg) {
+      if (this.FallbackMode) {
+        return ArrayPrototype.Map(this, callback, thisArg).GetUnderlyingObject<EcmaArray>();
+      }
+      List<EcmaValue> arr = new List<EcmaValue>();
+      if (list != null) {
+        foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
+          if (callback.Call(thisArg, entry.Value, entry.Key, this)) {
+            arr.Add(entry.Value);
+          }
+        }
+      }
+      return new EcmaArray(arr);
+    }
+
+    public EcmaValue Reduce(RuntimeFunction callback) {
+      if (this.FallbackMode) {
+        return ArrayPrototype.Reduce(this, callback, null);
+      }
+      if (list == null || list.Count == 0) {
+        throw new EcmaTypeErrorException(InternalString.Error.ReduceEmptyArray);
+      }
+      bool reduce = false;
+      EcmaValue initialValue = default;
+      foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
+        if (reduce) {
+          initialValue = callback.Call(EcmaValue.Undefined, initialValue, entry.Value, entry.Key, this);
+        } else {
+          initialValue = entry.Value;
+        }
+      }
+      return initialValue;
+    }
+
+    public EcmaValue Reduce(RuntimeFunction callback, EcmaValue initialValue) {
+      if (this.FallbackMode) {
+        return ArrayPrototype.Reduce(this, callback, initialValue);
+      }
+      if (list != null) {
+        foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
+          initialValue = callback.Call(EcmaValue.Undefined, initialValue, entry.Value, entry.Key, this);
+        }
+      }
+      return initialValue;
+    }
+
+    public EcmaValue Find(RuntimeFunction predicate) {
+      return Find(predicate, EcmaValue.Undefined);
+    }
+
+    public EcmaValue Find(RuntimeFunction predicate, EcmaValue thisArg) {
+      if (this.FallbackMode) {
+        return ArrayPrototype.Find(this, predicate, thisArg);
+      }
+      if (list != null) {
+        foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(false)) {
+          if (predicate.Call(thisArg, entry.Value, entry.Key, this)) {
+            return entry.Value;
+          }
+        }
+      }
+      return default;
+    }
+
+    public long FindIndex(RuntimeFunction predicate) {
+      return FindIndex(predicate, EcmaValue.Undefined);
+    }
+
+    public long FindIndex(RuntimeFunction predicate, EcmaValue thisArg) {
+      if (this.FallbackMode) {
+        return (long)ArrayPrototype.FindIndex(this, predicate, thisArg);
+      }
+      if (list != null) {
+        foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(false)) {
+          if (predicate.Call(thisArg, entry.Value, entry.Key, this)) {
+            return entry.Key.ToInt64();
+          }
+        }
+      }
+      return -1;
+    }
+
+    public string Join() {
+      return Join(",");
+    }
+
+    public string Join(string separater) {
+      return ArrayPrototype.Join(this, separater).ToString();
+    }
+
+    public EcmaArray Concat(params EcmaValue[] elements) {
+      return ArrayPrototype.Concat(this, elements).GetUnderlyingObject<EcmaArray>();
+    }
+
+    public EcmaIterator Keys() {
+      if (!this.FallbackMode) {
+        return new EcmaIterator(EnumerateEntries(false).GetEnumerator(), EcmaIteratorResultKind.Key, WellKnownObject.ArrayIteratorPrototype);
+      }
+      return new EcmaIterator(this, EcmaIteratorResultKind.Key, WellKnownObject.ArrayIteratorPrototype);
+    }
+
+    public EcmaIterator Values() {
+      if (!this.FallbackMode) {
+        return new EcmaIterator(EnumerateEntries(false).GetEnumerator(), EcmaIteratorResultKind.Value, WellKnownObject.ArrayIteratorPrototype);
+      }
+      return new EcmaIterator(this, EcmaIteratorResultKind.Value, WellKnownObject.ArrayIteratorPrototype);
+    }
+
+    public EcmaIterator Entries() {
+      if (!this.FallbackMode) {
+        return new EcmaIterator(EnumerateEntries(false).GetEnumerator(), EcmaIteratorResultKind.Entry, WellKnownObject.ArrayIteratorPrototype);
+      }
+      return new EcmaIterator(this, EcmaIteratorResultKind.Entry, WellKnownObject.ArrayIteratorPrototype);
     }
 
     public override IEnumerable<EcmaPropertyKey> GetOwnPropertyKeys() {
-      IEnumerable<EcmaPropertyKey> indexes = list != null ? Enumerable.Range(0, list.Count).Select(v => new EcmaPropertyKey(v)) : Enumerable.Empty<EcmaPropertyKey>();
-      return indexes.Concat(new[] { propertyLength }).Concat(base.GetOwnPropertyKeys());
+      if (this.FallbackMode) {
+        return base.GetOwnPropertyKeys();
+      }
+      return EnumerateOwnPropertyIndex().Concat(base.GetOwnPropertyKeys());
     }
 
     public override EcmaValue Get(EcmaPropertyKey propertyKey, RuntimeObject receiver) {
-      if (EcmaValueUtility.TryIndexByPropertyKey(list, propertyKey, out EcmaValue value)) {
-        return value;
-      }
-      if (propertyKey == WellKnownPropertyName.Length) {
-        return length;
+      if (ShouldLookupFromList(propertyKey, out long index)) {
+        int i = GetRealIndex(index);
+        if (i >= 0) {
+          return list[i];
+        }
       }
       return base.Get(propertyKey, receiver);
     }
 
-    public override bool Delete(EcmaPropertyKey propertyKey) {
-      if (propertyKey.IsArrayIndex) {
-        return false;
+    public override bool Set(EcmaPropertyKey propertyKey, EcmaValue value, RuntimeObject receiver) {
+      if (ShouldLookupFromList(propertyKey, out long index)) {
+        return SetItem(index, value);
       }
-      if (propertyKey == WellKnownPropertyName.Length) {
-        return false;
+      return base.Set(propertyKey, value, receiver);
+    }
+
+    public override bool Delete(EcmaPropertyKey propertyKey) {
+      if (ShouldLookupFromList(propertyKey, out long index)) {
+        return DeleteItem(index);
       }
       return base.Delete(propertyKey);
     }
 
     public override bool HasProperty(EcmaPropertyKey propertyKey) {
-      if (propertyKey.IsArrayIndex) {
-        return list != null && propertyKey.ToArrayIndex() < list.Count;
-      }
-      if (propertyKey == WellKnownPropertyName.Length) {
+      if (ShouldLookupFromList(propertyKey, out long index) && GetRealIndex(index) >= 0) {
         return true;
       }
       return base.HasProperty(propertyKey);
     }
 
     public override EcmaPropertyDescriptor GetOwnProperty(EcmaPropertyKey propertyKey) {
-      if (EcmaValueUtility.TryIndexByPropertyKey(list, propertyKey, out EcmaValue value)) {
-        return new EcmaPropertyDescriptor(value, EcmaPropertyAttributes.DefaultDataProperty);
-      }
-      if (propertyKey == propertyLength) {
-        return new EcmaPropertyDescriptor(length, EcmaPropertyAttributes.Configurable & (lengthReadOnly ? 0 : EcmaPropertyAttributes.Configurable));
+      if (ShouldLookupFromList(propertyKey, out long index)) {
+        int i = GetRealIndex(index);
+        return i >= 0 ? new EcmaPropertyDescriptor(list[i], EcmaPropertyAttributes.DefaultDataProperty) : null;
       }
       return base.GetOwnProperty(propertyKey);
     }
 
     public override bool DefineOwnProperty(EcmaPropertyKey propertyKey, EcmaPropertyDescriptor descriptor) {
-      if (propertyKey == WellKnownPropertyName.Length) {
+      if (propertyKey == WellKnownProperty.Length) {
         return SetLength(descriptor);
       }
       if (propertyKey.IsArrayIndex) {
         long index = propertyKey.ToArrayIndex();
-        if (index >= length && lengthReadOnly) {
-          return false;
+        if (index >= 0) {
+          if (!this.FallbackMode) {
+            if (descriptor.IsDataDescriptor && descriptor.Writable) {
+              return SetItem(index, descriptor.Value);
+            }
+            SetFallbackMode();
+          }
+          if (index >= this.Length && !base.DefineOwnProperty(WellKnownProperty.Length, new EcmaPropertyDescriptor(index + 1))) {
+            return false;
+          }
         }
-        if (!SetItem(index, descriptor.Value)) {
-          return false;
-        }
-        if (index >= length) {
-          length = (uint)index + 1;
-        }
-        return true;
       }
       return base.DefineOwnProperty(propertyKey, descriptor);
     }
 
+    public override bool SetIntegrityLevel(RuntimeObjectIntegrityLevel level) {
+      if (!this.FallbackMode) {
+        try {
+          this.FallbackMode = true;
+          return base.SetIntegrityLevel(level);
+        } finally {
+          this.FallbackMode = false;
+        }
+      }
+      return base.SetIntegrityLevel(level);
+    }
+
+    public IEnumerator<EcmaValue> GetEnumerator() {
+      if (this.FallbackMode) {
+        EcmaArrayEnumerator iterator = new EcmaArrayEnumerator(this);
+        while (iterator.MoveNext()) {
+          yield return iterator.Current.Value;
+        }
+      } else if (list == null) {
+        yield break;
+      } else if (chunks == null || chunks.Count == 0) {
+        for (int i = 0, len = list.Count; i < len; i++) {
+          yield return list[i];
+        }
+      } else {
+        int i = 0;
+        foreach (ArrayChunk s in chunks) {
+          for (long j = 0, len = s.Offset; j < len; j++) {
+            yield return default;
+          }
+          for (long j = 0, len = s.Count; j < len; j++) {
+            yield return list[i++];
+          }
+        }
+      }
+    }
+
+    protected override RuntimeObjectIntegrityLevel TestIntegrityLevel() {
+      return !this.FallbackMode ? RuntimeObjectIntegrityLevel.Default : base.TestIntegrityLevel();
+    }
+
+    private bool SetLength(long length) {
+      return DefineOwnProperty(WellKnownProperty.Length, new EcmaPropertyDescriptor(length, EcmaPropertyAttributes.Writable));
+    }
+
     [EcmaSpecification("ArraySetLength", EcmaSpecificationKind.AbstractOperations)]
-    protected bool SetLength(EcmaPropertyDescriptor descriptor) {
-      if (descriptor.IsAccessorDescriptor) {
-        return base.DefineOwnProperty(propertyLength, descriptor);
+    private bool SetLength(EcmaPropertyDescriptor descriptor) {
+      if (descriptor.HasValue) {
+        uint newLen = descriptor.Value.ToUInt32();
+        if (newLen != descriptor.Value.ToNumber()) {
+          throw new EcmaRangeErrorException(InternalString.Error.InvalidArrayLength);
+        }
+        long curLen = this.Length;
+        if (!this.FallbackMode) {
+          if (newLen < curLen) {
+            RemoveRange(newLen, curLen - newLen);
+          } else if (newLen > curLen) {
+            EnsureChunkList();
+            chunks.AddLast(new ArrayChunk(newLen - curLen, 0));
+          }
+        }
       }
-      uint newLength = descriptor.Value.ToUInt32();
-      if (newLength != descriptor.Value.ToNumber()) {
-        throw new EcmaRangeErrorException(InternalString.Error.InvalidArrayLength);
+      return base.DefineOwnProperty(WellKnownProperty.Length, descriptor);
+    }
+
+    private bool SetLengthDirect(long newLen) {
+      return base.DefineOwnProperty(WellKnownProperty.Length, new EcmaPropertyDescriptor(newLen, EcmaPropertyAttributes.Writable));
+    }
+
+    private bool ShouldLookupFromList(EcmaPropertyKey propertyKey, out long index) {
+      if (propertyKey.IsArrayIndex && !this.FallbackMode) {
+        index = propertyKey.ToArrayIndex();
+        return index >= 0;
       }
-      if (newLength >= length) {
-        length = newLength;
-        return true;
+      index = default;
+      return false;
+    }
+
+    private void SetFallbackMode() {
+      if (this.FallbackMode) {
+        return;
       }
-      if (lengthReadOnly) {
+      this.FallbackMode = true;
+      if (list == null) {
+        return;
+      }
+      foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
+        DefineOwnPropertyNoChecked(EcmaPropertyKey.FromValue(entry.Key), new EcmaPropertyDescriptor(entry.Value, EcmaPropertyAttributes.DefaultDataProperty));
+      }
+      list = null;
+      chunks = null;
+    }
+
+    private int GetRealIndex(long index, out LinkedListNode<ArrayChunk> node, out long offset) {
+      long curLen = this.Length;
+      long cur = 0;
+      int realIndex = 0;
+      if (index >= curLen) {
+        node = chunks.Last;
+        offset = (index - curLen + node.Value.Count);
+        return list.Count;
+      }
+      for (node = chunks.First; node != null; node = node.Next) {
+        ArrayChunk chunk = node.Value;
+        cur += chunk.Offset;
+        if (index < cur) {
+          break;
+        }
+        if (index <= cur + chunk.Count) {
+          offset = index - cur;
+          return realIndex + (int)offset;
+        }
+        cur += chunk.Count;
+        realIndex += checked((int)chunk.Count);
+      }
+      offset = index - cur;
+      return realIndex;
+    }
+
+    private int GetRealIndex(long index) {
+      if (list == null || index >= this.Length) {
+        return -1;
+      }
+      if (chunks == null || chunks.Count == 0) {
+        return index < list.Count ? (int)index : -1;
+      }
+      int realIndex = GetRealIndex(index, out LinkedListNode<ArrayChunk> node, out long offset);
+      return offset >= 0 && offset < node.Value.Count ? realIndex : -1;
+    }
+
+    private long GetVirtIndex(int index) {
+      if (list == null || index >= list.Count) {
+        return -1;
+      }
+      if (chunks == null || chunks.Count == 0) {
+        return index;
+      }
+      long cur = 0;
+      long count = 0;
+      foreach (ArrayChunk chunk in chunks) {
+        cur += chunk.Offset;
+        if (index < count) {
+          break;
+        }
+        cur += chunk.Count;
+        count += chunk.Count;
+      }
+      return cur + index - count;
+    }
+
+    private bool SetItem(long index, EcmaValue value) {
+      if (this.FallbackMode) {
+        throw new InvalidOperationException();
+      }
+      if (this.IntegrityLevel >= RuntimeObjectIntegrityLevel.Frozen) {
         return false;
       }
-      while (newLength < length) {
-        if (!DeleteItem((long)length - 1)) {
+      long curLen = this.Length;
+      long newLen = Math.Max(curLen, index + 1);
+      if (list == null) {
+        list = new List<EcmaValue>();
+      }
+      if (chunks == null || chunks.Count == 0) {
+        if (index < curLen) {
+          list[(int)index] = value;
+          return true;
+        }
+        if (!this.IsExtensible || !SetLengthDirect(newLen)) {
           return false;
         }
-        length--;
+        if (index > curLen) {
+          EnsureChunkList();
+          chunks.AddLast(new ArrayChunk(index - curLen, 1));
+        }
+        list.Add(value);
+        return true;
       }
-      if (descriptor.Writable == false) {
-        lengthReadOnly = true;
+
+      int realIndex = GetRealIndex(index, out LinkedListNode<ArrayChunk> node, out long offset);
+      ArrayChunk chunk = node.Value;
+      if (offset >= 0 && offset < chunk.Count) {
+        list[realIndex] = value;
+        return true;
+      }
+      if (!this.IsExtensible || !SetLengthDirect(newLen)) {
+        return false;
+      }
+      if (offset > chunk.Count) {
+        chunks.AddAfter(node, new ArrayChunk(offset - chunk.Count, 1));
+      } else if (offset == chunk.Count) {
+        chunk.Count++;
+        LinkedListNode<ArrayChunk> next = node.Next;
+        if (next != null && --next.Value.Offset == 0) {
+          chunk.Count += next.Value.Count;
+          chunks.Remove(next);
+        }
+      } else if (offset == -1) {
+        chunk.Count++;
+        chunk.Offset--;
+      } else {
+        chunks.AddBefore(node, new ArrayChunk(chunk.Offset + offset, 1));
+        chunk.Offset = -offset - 1;
+      }
+      if (chunks.Count == 1 && chunks.First.Value.Offset == 0) {
+        chunks.Clear();
+      }
+      list.Insert(realIndex, value);
+      return true;
+    }
+
+    private bool DeleteItem(long index) {
+      if (this.FallbackMode) {
+        throw new InvalidOperationException();
+      }
+      if (list == null || index >= this.Length) {
+        return true;
+      }
+      if (chunks == null || chunks.Count == 0) {
+        if (this.IntegrityLevel >= RuntimeObjectIntegrityLevel.Sealed) {
+          return false;
+        }
+        if (index < list.Count - 1) {
+          EnsureChunkList();
+          chunks.First.Value.Count = (int)index;
+          chunks.AddLast(new ArrayChunk(1, list.Count - (int)index - 1));
+        }
+        list.RemoveAt((int)index);
+        return true;
+      }
+
+      int realIndex = GetRealIndex(index, out LinkedListNode<ArrayChunk> node, out long offset);
+      ArrayChunk chunk = node.Value;
+      if (offset < 0 || offset >= chunk.Count) {
+        return true;
+      }
+      if (this.IntegrityLevel >= RuntimeObjectIntegrityLevel.Sealed) {
+        return false;
+      }
+      if (offset == chunk.Count - 1) {
+        LinkedListNode<ArrayChunk> next = node.Next ?? chunks.AddAfter(node, new ArrayChunk(0, 0));
+        next.Value.Offset++;
+        if (--chunk.Count == 0) {
+          next.Value.Offset += chunk.Offset;
+          chunks.Remove(node);
+        }
+      } else if (offset == 0) {
+        chunk.Offset++;
+        chunk.Count--;
+      } else {
+        chunks.AddAfter(node, new ArrayChunk(offset - 1, chunk.Count - offset - 1));
+        chunk.Count = offset;
+      }
+      list.RemoveAt(realIndex);
+      return true;
+    }
+
+    private bool InsertRange(long index, ICollection<EcmaValue> value) {
+      if (this.FallbackMode) {
+        throw new InvalidOperationException();
+      }
+      if (value.Count == 0) {
+        return true;
+      }
+      if (!this.IsExtensible || !SetLengthDirect(this.Length + value.Count)) {
+        return false;
+      }
+      if (list == null) {
+        list = new List<EcmaValue>();
+      }
+      if (chunks == null || chunks.Count == 0) {
+        if (index <= list.Count) {
+          list.InsertRange((int)index, value);
+        } else {
+          EnsureChunkList();
+          chunks.AddLast(new ArrayChunk(index, value.Count));
+          list.AddRange(value);
+        }
+        return true;
+      }
+
+      int realIndex = GetRealIndex(index, out LinkedListNode<ArrayChunk> node, out long offset);
+      ArrayChunk chunk = node.Value;
+      if (offset >= 0) {
+        chunk.Count += value.Count;
+      } else {
+        chunks.AddBefore(node, new ArrayChunk(chunk.Offset + offset, value.Count));
+        chunk.Offset = -offset;
+      }
+      list.InsertRange(realIndex, value);
+      return true;
+    }
+
+    private bool RemoveRange(long index, long count, bool silent = false, EcmaArray clone = null) {
+      if (this.FallbackMode) {
+        throw new InvalidOperationException();
+      }
+      long curLen = this.Length;
+      if (list == null) {
+        return true;
+      }
+      if (!silent) {
+        if (this.IntegrityLevel >= RuntimeObjectIntegrityLevel.Sealed || !SetLengthDirect(curLen - count)) {
+          return false;
+        }
+      }
+      if (chunks == null || chunks.Count == 0) {
+        if (index < list.Count) {
+          int removeCount = (int)Math.Min(count, list.Count - index);
+          if (clone != null) {
+            clone.InsertRange(0, list.GetRange((int)index, removeCount));
+          }
+          if (!silent) {
+            list.RemoveRange((int)index, removeCount);
+          }
+        }
+        return true;
+      }
+
+      long until = Math.Min(index + count, curLen);
+      long cur = 0;
+      int realIndex = 0;
+      int startIndex = -1;
+      int startOffset = -1;
+      int endOffset = -1;
+      LinkedListNode<ArrayChunk> startNode = null;
+      LinkedListNode<ArrayChunk> node = chunks.First;
+      for (; node != null; node = node.Next) {
+        ArrayChunk chunk = node.Value;
+        cur += chunk.Offset;
+        if (startNode == null && index < cur + chunk.Count) {
+          startNode = node;
+          startOffset = (int)(index - cur);
+          startIndex = realIndex + Math.Max(0, startOffset);
+        }
+        endOffset = (int)(until - cur);
+        if (clone != null) {
+          int cloneCount = checked((int)(chunk.Count - Math.Max(0, endOffset)));
+          if (node == startNode) {
+            if (startOffset < 0) {
+              clone.Length = -startOffset + Math.Min(0, endOffset);
+            }
+            clone.InsertRange(clone.Length, list.GetRange(startIndex, cloneCount - (startIndex - realIndex)));
+          } else {
+            clone.Length += chunk.Offset + Math.Min(0, endOffset);
+            clone.InsertRange(clone.Length, list.GetRange(realIndex, cloneCount));
+          }
+        }
+        if (until < cur + chunk.Count) {
+          break;
+        }
+        cur += chunk.Count;
+        realIndex += checked((int)chunk.Count);
+      }
+      if (!silent) {
+        if (startOffset > 0) {
+          startNode.Value.Count = startOffset + (endOffset >= 0 ? node.Value.Count - endOffset : 0);
+          startNode = startNode.Next;
+        } else if (endOffset > 0) {
+          node.Value.Count = node.Value.Count - endOffset;
+          node.Value.Offset = startNode.Value.Offset + startOffset;
+          node = node.Previous;
+        } else {
+          node.Value.Offset += endOffset + startNode.Value.Offset + startOffset;
+          node = node.Previous;
+        }
+        if (startNode != null) {
+          while (startNode != node) {
+            chunks.Remove(startNode.Next);
+          }
+          chunks.Remove(startNode);
+        }
+        list.RemoveRange(startIndex, realIndex - startIndex + Math.Max(0, endOffset));
       }
       return true;
     }
 
-    protected bool SetItem(long index, EcmaValue value) {
-      if (index >= 0) {
-        this[(int)index] = value;
-        return true;
+    private void EnsureChunkList() {
+      if (chunks == null) {
+        chunks = new LinkedList<ArrayChunk>();
       }
-      return base.DefineOwnProperty(index, new EcmaPropertyDescriptor(value));
+      if (chunks.Count == 0 && list != null && list.Count > 0) {
+        chunks.AddFirst(new ArrayChunk(0, list.Count));
+      }
     }
 
-    protected bool DeleteItem(long index) {
-      if (index >= 0) {
-        RemoveAt((int)index);
+    private IEnumerable<EcmaPropertyKey> EnumerateOwnPropertyIndex() {
+      if (list != null) {
+        if (chunks == null || chunks.Count == 0) {
+          for (long i = 0, len = list.Count; i < len; i++) {
+            yield return i;
+          }
+        } else {
+          long i = 0;
+          foreach (ArrayChunk s in chunks) {
+            i += s.Offset;
+            for (long j = 0, len = s.Count; j < len; i++, j++) {
+              yield return i;
+            }
+          }
+        }
+      }
+    }
+
+    private IEnumerable<KeyValuePair<EcmaValue, EcmaValue>> EnumerateEntries(bool skipSparse, bool keepLength = false) {
+      long i = 0;
+      long len = 0;
+      if (keepLength) {
+        len = this.Length;
+      }
+      start:
+      if (!keepLength) {
+        len = this.Length;
+      }
+      if (list == null) {
+        yield break;
+      }
+      List<EcmaValue>.Enumerator t = list.GetEnumerator();
+      if (chunks == null || chunks.Count == 0) {
+        for (int j = (int)i; i < len; i++, j++) {
+          if (IsCollectionModified(t)) {
+            goto start;
+          }
+          yield return new KeyValuePair<EcmaValue, EcmaValue>(i, list[j]);
+        }
+      } else {
+        int j = GetRealIndex(i, out LinkedListNode<ArrayChunk> node, out long offset);
+        while (i < len) {
+          if (offset < 0) {
+            if (skipSparse) {
+              i -= offset;
+              offset = 0;
+            } else {
+              for (; offset < 0; i++, offset++) {
+                if (IsCollectionModified(t)) {
+                  goto start;
+                }
+                yield return new KeyValuePair<EcmaValue, EcmaValue>(i, EcmaValue.Undefined);
+              }
+            }
+          }
+          for (long until = Math.Min(len, i + node.Value.Count - offset); i < until; i++, j++) {
+            if (IsCollectionModified(t)) {
+              goto start;
+            }
+            yield return new KeyValuePair<EcmaValue, EcmaValue>(i, list[j]);
+          }
+          node = node.Next;
+          if (node == null) {
+            break;
+          }
+          offset = -node.Value.Offset;
+        }
+      }
+    }
+
+    private bool IsCollectionModified(List<EcmaValue>.Enumerator iterator) {
+      try {
+        iterator.MoveNext();
+        return false;
+      } catch (InvalidOperationException) {
         return true;
       }
-      return base.Delete(index);
     }
 
     #region Interface
+    int IList<EcmaValue>.IndexOf(EcmaValue item) {
+      return (int)IndexOf(item);
+    }
+
+    void IList<EcmaValue>.Insert(int index, EcmaValue item) {
+      if (!InsertRange(index, new[] { item })) {
+        throw new InvalidOperationException();
+      }
+    }
+
+    void IList<EcmaValue>.RemoveAt(int index) {
+      if (!RemoveRange(index, 1)) {
+        throw new InvalidOperationException();
+      }
+    }
+
+    int ICollection<EcmaValue>.Count {
+      get { return (int)this.Length; }
+    }
+
+    void ICollection<EcmaValue>.Add(EcmaValue item) {
+      if (!SetItem(this.Length, item)) {
+        throw new InvalidOperationException();
+      }
+    }
+
+    void ICollection<EcmaValue>.Clear() {
+      if (!SetLength(0)) {
+        throw new InvalidOperationException();
+      }
+    }
+
+    void ICollection<EcmaValue>.CopyTo(EcmaValue[] array, int arrayIndex) {
+      throw new NotImplementedException();
+    }
+
+    bool ICollection<EcmaValue>.Contains(EcmaValue item) {
+      return list != null && Includes(item) >= 0;
+    }
+
+    bool ICollection<EcmaValue>.Remove(EcmaValue item) {
+      if (list != null) {
+        long index = Includes(item);
+        return index >= 0 && RemoveRange(index, 1);
+      }
+      return false;
+    }
+
     bool ICollection<EcmaValue>.IsReadOnly {
       get { return false; }
     }
 
     IEnumerator IEnumerable.GetEnumerator() {
       return GetEnumerator();
+    }
+    #endregion
+
+    #region Helper class
+    [DebuggerDisplay("({Offset}, {Count})")]
+    private class ArrayChunk {
+      public ArrayChunk(long offset, long count) {
+        this.Offset = offset;
+        this.Count = count;
+      }
+
+      public long Offset { get; set; }
+      public long Count { get; set; }
     }
     #endregion
   }

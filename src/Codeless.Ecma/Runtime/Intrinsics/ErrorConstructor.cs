@@ -16,7 +16,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static RuntimeObject CreateError(RuntimeObject constructor, EcmaValue message, WellKnownObject defaultProto, Exception ex) {
       RuntimeObject err = new PrimitiveObject(new EcmaValue(ex), defaultProto, constructor);
       if (message != default) {
-        err.DefinePropertyOrThrow(WellKnownPropertyName.Message, new EcmaPropertyDescriptor(message.ToString(), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
+        err.DefinePropertyOrThrow(WellKnownProperty.Message, new EcmaPropertyDescriptor(message.ToString(), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
       }
       return err;
     }
@@ -25,7 +25,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       Guard.ArgumentNotNull(exception, "exception");
       RuntimeObject err = new PrimitiveObject(new EcmaValue(exception), GetPrototype(exception));
       if (!String.IsNullOrEmpty(exception.Message)) {
-        err.DefinePropertyOrThrow(WellKnownPropertyName.Message, new EcmaPropertyDescriptor(exception.Message.ToString(), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
+        err.DefinePropertyOrThrow(WellKnownProperty.Message, new EcmaPropertyDescriptor(exception.Message.ToString(), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
       }
       return err;
     }

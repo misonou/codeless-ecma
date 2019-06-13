@@ -48,7 +48,7 @@ namespace Codeless.Ecma.Runtime {
         if (EcmaValueUtility.TryIndexByPropertyKey(str, propertyKey, out EcmaValue ch)) {
           return new EcmaPropertyDescriptor(ch, EcmaPropertyAttributes.Enumerable);
         }
-        if (propertyKey == WellKnownPropertyName.Length) {
+        if (propertyKey == WellKnownProperty.Length) {
           return new EcmaPropertyDescriptor(str.Length, EcmaPropertyAttributes.None);
         }
       }
@@ -60,7 +60,7 @@ namespace Codeless.Ecma.Runtime {
         if (propertyKey.IsArrayIndex && propertyKey.ToArrayIndex() < value.ToString().Length) {
           return true;
         }
-        if (propertyKey == WellKnownPropertyName.Length) {
+        if (propertyKey == WellKnownProperty.Length) {
           return true;
         }
       }
@@ -70,7 +70,7 @@ namespace Codeless.Ecma.Runtime {
     public override bool DefineOwnProperty(EcmaPropertyKey propertyKey, EcmaPropertyDescriptor descriptor) {
       if (value.Type == EcmaValueType.String && this.IsExtensible) {
         if (base.GetOwnPropertyKeys().Any()) {
-          DefineOwnPropertyNoChecked("length", GetOwnProperty("length"));
+          DefineOwnPropertyNoChecked(WellKnownProperty.Length, GetOwnProperty(WellKnownProperty.Length));
         }
       }
       return base.DefineOwnProperty(propertyKey, descriptor);

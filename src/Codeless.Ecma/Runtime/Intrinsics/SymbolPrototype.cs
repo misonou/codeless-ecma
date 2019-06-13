@@ -7,7 +7,7 @@ using System.Text;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.SymbolPrototype)]
   internal static class SymbolPrototype {
-    [IntrinsicMember(WellKnownSymbol.ToStringTag)]
+    [IntrinsicMember(WellKnownSymbol.ToStringTag, EcmaPropertyAttributes.Configurable)]
     public static string ToStringTag = InternalString.ObjectTag.Symbol;
 
     [IntrinsicMember(WellKnownSymbol.ToPrimitive)]

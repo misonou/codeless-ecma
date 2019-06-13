@@ -17,8 +17,8 @@ namespace Codeless.Ecma {
 
     public EcmaRegExpStringEnumerator(EcmaValue re, string inputString) {
       this.re = re;
-      this.global = re["global"].ToBoolean();
-      this.unicode = re["unicode"].ToBoolean();
+      this.global = re[WellKnownProperty.Global].ToBoolean();
+      this.unicode = re[WellKnownProperty.Unicode].ToBoolean();
       this.inputString = inputString;
       this.callback = RegExpPrototype.CreateExecCallback(re);
     }

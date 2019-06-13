@@ -41,10 +41,16 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public override int ToInt32(double value) {
+      if (Double.IsNaN(value) || Double.IsInfinity(value)) {
+        return 0;
+      }
       return (int)(value % Int32.MaxValue);
     }
 
     public override long ToInt64(double value) {
+      if (Double.IsNaN(value) || Double.IsInfinity(value)) {
+        return 0L;
+      }
       return (long)(value % Int64.MaxValue);
     }
 

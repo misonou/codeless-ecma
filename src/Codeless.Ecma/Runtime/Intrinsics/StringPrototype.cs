@@ -431,9 +431,9 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       }
       string[] result = str.Split(new[] { separator }, StringSplitOptions.None);
       if (limit == default) {
-        return new EcmaArray(result.Select(v => new EcmaValue(v)));
+        return new EcmaArray(result.Select(v => new EcmaValue(v)).ToList());
       }
-      return new EcmaArray(result.Take(count).Select(v => new EcmaValue(v)));
+      return new EcmaArray(result.Take(count).Select(v => new EcmaValue(v)).ToList());
     }
 
     private static string MapLowerSpecialCase(char ch) {

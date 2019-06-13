@@ -6,9 +6,8 @@ namespace Codeless.Ecma.Runtime {
     private readonly object target;
 
     public DelegateRuntimeFunction(Delegate callback)
-      : base("", callback?.Method) {
-      Guard.ArgumentNotNull(callback, "callback");
-      target = callback.Target;
+      : base("", Guard.ArgumentNotNull(callback, "callback").GetType().GetMethod("Invoke")) {
+      target = callback;
     }
 
     protected override EcmaValue Invoke(RuntimeFunctionInvocation invocation, EcmaValue[] arguments) {

@@ -249,7 +249,7 @@ namespace Codeless.Ecma {
       get {
         IEcmaValueBinder binder = binder_;
         EcmaValueHandle handle = this.handle;
-        return binder != default && binder.GetValueType(handle) == EcmaValueType.Object && binder.HasOwnProperty(handle, WellKnownPropertyName.Length);
+        return binder != default && binder.GetValueType(handle) == EcmaValueType.Object && binder.HasOwnProperty(handle, WellKnownProperty.Length);
       }
     }
 
@@ -330,22 +330,6 @@ namespace Codeless.Ecma {
       return binder.HasOwnProperty(handle, name);
     }
 
-    [EcmaSpecification("InstanceofOperator", EcmaSpecificationKind.RuntimeSemantics)]
-    public bool InstanceOf(EcmaValue constructor) {
-      if (constructor.Type != EcmaValueType.Object) {
-        throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
-      }
-      RuntimeObject obj = constructor.ToObject();
-      RuntimeObject instOfHandler = obj.GetMethod(Symbol.HasInstance);
-      if (instOfHandler != null) {
-        return instOfHandler.Call(constructor, this).ToBoolean();
-      }
-      if (!constructor.IsCallable) {
-        throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
-      }
-      return obj.HasInstance(binder.ToRuntimeObject(handle));
-    }
-
     [DebuggerStepThrough]
     public EcmaValue Call(EcmaValue thisArgs, params EcmaValue[] arguments) {
       return binder.Call(handle, thisArgs, arguments);
@@ -372,14 +356,6 @@ namespace Codeless.Ecma {
       return method.Call(this, arguments);
     }
 
-    public EcmaValue Or(EcmaValue other) {
-      return ToBoolean() ? this : other;
-    }
-
-    public EcmaValue And(EcmaValue other) {
-      return ToBoolean() ? other : this;
-    }
-
     public EcmaIteratorEnumerator ForOf() {
       return ToObject().GetIterator();
     }
@@ -396,8 +372,6 @@ namespace Codeless.Ecma {
       Description = "Equivalent to calling Equals with EcmaValueComparison.SameValue")]
     [EcmaSpecification("SameValueZero", EcmaSpecificationKind.AbstractOperations,
       Description = "Equivalent to calling Equals with EcmaValueComparison.SameValueZero")]
-    [EcmaSpecification("SameValueNonNumber", EcmaSpecificationKind.AbstractOperations,
-      Description = "Equivalent to calling Equals with EcmaValueComparison.SameValueNonNumber")]
     public static bool Equals(EcmaValue x, EcmaValue y, EcmaValueComparison mode) {
       if (mode == EcmaValueComparison.Abstract) {
         while (x.Type != y.Type) {
@@ -754,8 +728,7 @@ namespace Codeless.Ecma {
     }
 
     private static readonly ConcurrentDictionary<Type, IEcmaValueBinder> binderTypes = new ConcurrentDictionary<Type, IEcmaValueBinder>(new Dictionary<Type, IEcmaValueBinder> {
-      { typeof(WellKnownSymbol), WellKnownSymbolBinder.Default },
-      { typeof(WellKnownPropertyName), WellKnownPropertyNameBinder.Default }
+      { typeof(WellKnownSymbol), WellKnownSymbolBinder.Default }
     });
 
     private static EcmaValue UnboxObject(object target) {
@@ -777,32 +750,31 @@ namespace Codeless.Ecma {
       IEcmaValueBinder binder = null;
       if (type.IsEnum) {
         binder = binderTypes.GetOrAdd(type, t => (IEcmaValueBinder)Activator.CreateInstance(typeof(EnumBinder<>).MakeGenericType(t)));
+      } else if (type.IsSubclassOf(typeof(Delegate))) {
+        binder = new DelegateRuntimeFunction((Delegate)target);
       } else {
         switch (System.Type.GetTypeCode(type)) {
           case TypeCode.Boolean:
-            binder = BooleanBinder.Default;
-            break;
+            return new EcmaValue(BooleanBinder.Default.ToHandle((bool)target), BooleanBinder.Default);
           case TypeCode.Byte:
           case TypeCode.SByte:
           case TypeCode.Char:
           case TypeCode.Int16:
-          case TypeCode.Int32:
           case TypeCode.UInt16:
-            binder = Int32Binder.Default;
-            break;
-          case TypeCode.Int64:
+            return new EcmaValue(Int32Binder.Default.ToHandle(Convert.ToInt32(target)), Int32Binder.Default);
+          case TypeCode.Int32:
+            return new EcmaValue(Int32Binder.Default.ToHandle((int)target), Int32Binder.Default);
           case TypeCode.UInt32:
-            binder = Int64Binder.Default;
-            break;
+            return new EcmaValue(Int64Binder.Default.ToHandle(Convert.ToInt64(target)), Int64Binder.Default);
+          case TypeCode.Int64:
+            return new EcmaValue(Int64Binder.Default.ToHandle((long)target), Int64Binder.Default);
           case TypeCode.UInt64:
           case TypeCode.Single:
+            return new EcmaValue(DoubleBinder.Default.ToHandle(Convert.ToDouble(target)), DoubleBinder.Default);
           case TypeCode.Double:
-            binder = DoubleBinder.Default;
-            break;
-          default:
-            binder = RuntimeRealm.GetRuntimeObject(target);
-            break;
+            return new EcmaValue(DoubleBinder.Default.ToHandle((double)target), DoubleBinder.Default);
         }
+        binder = RuntimeRealm.Current.GetRuntimeObject(target);
       }
       return new EcmaValue(binder.ToHandle(target), binder);
     }
@@ -849,11 +821,15 @@ namespace Codeless.Ecma {
     }
 
     public static implicit operator EcmaValue(RuntimeObject obj) {
-      return new EcmaValue(obj);
+      return obj != null ? obj.ToValue() : EcmaValue.Undefined;
     }
 
     public static implicit operator EcmaValue(Symbol obj) {
-      return new EcmaValue(obj);
+      return obj != null ? new EcmaValue(obj) : EcmaValue.Undefined;
+    }
+
+    public static implicit operator EcmaValue(Delegate del) {
+      return del != null ? new DelegateRuntimeFunction(del).ToValue() : EcmaValue.Undefined;
     }
 
     public static bool operator ==(EcmaValue x, EcmaValue y) {
@@ -986,7 +962,7 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue operator &(EcmaValue x, EcmaValue y) {
-      return new EcmaValue((+x).ToInt64() & (+y).ToInt64());
+      return y;
     }
 
     public static EcmaValue operator |(EcmaValue x, long y) {
@@ -994,7 +970,7 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue operator |(EcmaValue x, EcmaValue y) {
-      return new EcmaValue((+x).ToInt64() | (+y).ToInt64());
+      return y;
     }
 
     public static EcmaValue operator <<(EcmaValue x, int y) {

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Codeless.Ecma.Runtime.Intrinsics {
+namespace Codeless.Ecma.Runtime {
   [AttributeUsage(AttributeTargets.Class)]
   internal class IntrinsicObjectAttribute : Attribute {
     public IntrinsicObjectAttribute(WellKnownObject objectType) {

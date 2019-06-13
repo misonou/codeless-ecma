@@ -6,7 +6,7 @@ using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class MathObject {
+  public class MathObject : TestBase {
     [Test]
     public void Properties() {
       That(Math.GetPrototypeOf(), Is.EqualTo(Object.Prototype));

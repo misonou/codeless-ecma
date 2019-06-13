@@ -9,6 +9,12 @@ namespace Codeless.Ecma {
     private int stringStartKey;
     private int symbolStartKey;
 
+    public EcmaPropertyKeyCollection()
+      : base() { }
+
+    public EcmaPropertyKeyCollection(EcmaPropertyKeyCollection other)
+      : base(new List<EcmaPropertyKey>(other.Items)) { }
+
     protected override void InsertItem(int index, EcmaPropertyKey item) {
       if (index != this.Count || Contains(item)) {
         throw new InvalidOperationException();

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,11 +16,11 @@ namespace Codeless.Ecma.Runtime {
       this.invocation = invocation;
       this.arguments = arguments;
       if (invocation.FunctionObject.ContainsUseStrict) {
-        DefineOwnPropertyNoChecked(WellKnownPropertyName.Callee, new EcmaPropertyDescriptor(throwStrictMode, throwStrictMode, EcmaPropertyAttributes.None));
+        DefineOwnPropertyNoChecked(WellKnownProperty.Callee, new EcmaPropertyDescriptor(throwStrictMode, throwStrictMode, EcmaPropertyAttributes.None));
       } else {
-        DefineOwnPropertyNoChecked(WellKnownPropertyName.Callee, new EcmaPropertyDescriptor(invocation.Parent?.FunctionObject, EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
+        DefineOwnPropertyNoChecked(WellKnownProperty.Callee, new EcmaPropertyDescriptor(invocation.Parent?.FunctionObject, EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
       }
-      DefineOwnPropertyNoChecked(WellKnownSymbol.Iterator, new EcmaPropertyDescriptor(RuntimeRealm.GetRuntimeObject(WellKnownObject.ArrayPrototype).Get(WellKnownSymbol.Iterator), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
+      DefineOwnPropertyNoChecked(WellKnownSymbol.Iterator, new EcmaPropertyDescriptor(RuntimeRealm.Current.GetRuntimeObject(WellKnownObject.ArrayPrototype).Get(WellKnownSymbol.Iterator), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
     }
 
     public EcmaValue this[int index] {
@@ -53,7 +53,7 @@ namespace Codeless.Ecma.Runtime {
       if (EcmaValueUtility.TryIndexByPropertyKey(arguments, propertyKey, out EcmaValue ch)) {
         return new EcmaPropertyDescriptor(ch, EcmaPropertyAttributes.Enumerable);
       }
-      if (propertyKey == WellKnownPropertyName.Length) {
+      if (propertyKey == WellKnownProperty.Length) {
         return new EcmaPropertyDescriptor(arguments.Length, EcmaPropertyAttributes.None);
       }
       return base.GetOwnProperty(propertyKey);
@@ -63,7 +63,7 @@ namespace Codeless.Ecma.Runtime {
       if (propertyKey.IsArrayIndex && propertyKey.ToArrayIndex() < arguments.Length) {
         return true;
       }
-      if (propertyKey == WellKnownPropertyName.Length) {
+      if (propertyKey == WellKnownProperty.Length) {
         return true;
       }
       return base.HasProperty(propertyKey);
@@ -72,7 +72,7 @@ namespace Codeless.Ecma.Runtime {
     public override bool DefineOwnProperty(EcmaPropertyKey propertyKey, EcmaPropertyDescriptor descriptor) {
       if (this.IsExtensible) {
         if (base.GetOwnPropertyKeys().Any()) {
-          DefineOwnPropertyNoChecked("length", GetOwnProperty("length"));
+          DefineOwnPropertyNoChecked(WellKnownProperty.Length, GetOwnProperty(WellKnownProperty.Length));
         }
       }
       return base.DefineOwnProperty(propertyKey, descriptor);

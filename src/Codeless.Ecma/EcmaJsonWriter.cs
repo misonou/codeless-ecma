@@ -72,7 +72,7 @@ namespace Codeless.Ecma {
       if (propertyList != null) {
         entries.AddRange(propertyList.Select(v => new EcmaPropertyEntry(v, value.Get(v))));
       } else {
-        entries.AddRange(value.GetEnumerableOwnProperties());
+        entries.AddRange(value.GetEnumerableOwnProperties(false));
       }
       foreach (EcmaPropertyEntry e in entries) {
         EcmaValue v = TransformValue(value, e.Key, e.Value);
@@ -107,7 +107,7 @@ namespace Codeless.Ecma {
       stack.Push(value);
       writer.Write("[");
 
-      long length = value.Get(WellKnownPropertyName.Length).ToLength();
+      long length = value.Get(WellKnownProperty.Length).ToLength();
       for (long i = 0; i < length; i++) {
         if (i > 0) {
           writer.Write(",");
@@ -198,7 +198,7 @@ namespace Codeless.Ecma {
 
     private EcmaValue TransformValue(RuntimeObject holder, EcmaPropertyKey property, EcmaValue value) {
       if (value.Type == EcmaValueType.Object) {
-        EcmaValue toJson = value[WellKnownPropertyName.ToJSON];
+        EcmaValue toJson = value[WellKnownProperty.ToJSON];
         if (toJson.IsCallable) {
           value = toJson.Call(value, property.ToValue());
         }

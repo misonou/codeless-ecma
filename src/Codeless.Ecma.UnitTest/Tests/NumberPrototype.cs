@@ -7,7 +7,7 @@ using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class NumberPrototype {
+  public class NumberPrototype : TestBase {
     [Test]
     public void Properties() {
       That(Number.Prototype, Has.OwnProperty("constructor", Number, EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
@@ -211,7 +211,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return \"NaN\" if this is NaN", () => {
-        Case((NaN, _), "NaN");
+        Case((NaN, Undefined), "NaN");
 
         int calls = 0;
         EcmaValue obj = CreateObject(valueOf: () => { calls++; return Infinity; });
@@ -242,8 +242,8 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return a string containing the the number value of this if precision is undefined", () => {
-        Case((Number.Construct(7), _), "7");
-        Case((39, _), "39");
+        Case((Number.Construct(7), Undefined), "7");
+        Case((39, Undefined), "39");
         Case(Number.Prototype, "0");
         Case(42, "42");
       });
@@ -265,7 +265,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should perform ToInteger(fractionDigits)", () => {
-        Case((Number.Prototype, _), "0");
+        Case((Number.Prototype, Undefined), "0");
         Case((Number.Prototype, 0), "0");
         Case((Number.Prototype, 1), "0.0");
         Case((Number.Prototype, 1.1), "0.0");
@@ -279,7 +279,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return string value on Number objects", () => {
-        Case((Number.Construct(1), _), "1");
+        Case((Number.Construct(1), Undefined), "1");
         Case((Number.Construct(1), 0), "1");
         Case((Number.Construct(1), 1), "1.0");
         Case((Number.Construct(1), 1.1), "1.0");
@@ -293,7 +293,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return \"NaN\" if this is NaN", () => {
-        Case((NaN, _), "NaN");
+        Case((NaN, Undefined), "NaN");
         Case((NaN, 0), "NaN");
         Case((NaN, 1), "NaN");
         Case((NaN, 1.1), "NaN");
@@ -451,11 +451,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should handle undefined fractionDigits, not only casting it to 0", () => {
-        Case((123.456, _), "1.23456e+2");
+        Case((123.456, Undefined), "1.23456e+2");
         Case((123.456, 0), "1e+2");
-        Case((1.1e-32, _), "1.1e-32");
+        Case((1.1e-32, Undefined), "1.1e-32");
         Case((1.1e-32, 0), "1e-32");
-        Case((100, _), "1e+2");
+        Case((100, Undefined), "1e+2");
         Case((100, 0), "1e+2");
       });
     }

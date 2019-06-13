@@ -36,32 +36,32 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember(EcmaPropertyAttributes.Configurable, Getter = true)]
     public static EcmaValue Flags([This] EcmaValue thisValue) {
-      if (thisValue == RuntimeRealm.GetRuntimeObject(WellKnownObject.RegExpPrototype)) {
+      if (thisValue.Type != EcmaValueType.Object) {
+        throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
+      }
+      if (thisValue.ToObject().IsWellknownObject(WellKnownObject.RegExpPrototype)) {
         return "";
       }
       if (thisValue.GetUnderlyingObject() is EcmaRegExp re) {
         return re.Flags;
       }
-      if (thisValue.Type != EcmaValueType.Object) {
-        throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
-      }
       StringBuilder sb = new StringBuilder(6);
-      if (thisValue["global"].ToBoolean()) {
+      if (thisValue[WellKnownProperty.Global].ToBoolean()) {
         sb.Append('g');
       }
-      if (thisValue["ignoreCase"].ToBoolean()) {
+      if (thisValue[WellKnownProperty.IgnoreCase].ToBoolean()) {
         sb.Append('i');
       }
-      if (thisValue["multiline"].ToBoolean()) {
+      if (thisValue[WellKnownProperty.Multiline].ToBoolean()) {
         sb.Append('m');
       }
-      if (thisValue["dotAll"].ToBoolean()) {
+      if (thisValue[WellKnownProperty.DotAll].ToBoolean()) {
         sb.Append('s');
       }
-      if (thisValue["unicode"].ToBoolean()) {
+      if (thisValue[WellKnownProperty.Unicode].ToBoolean()) {
         sb.Append('u');
       }
-      if (thisValue["sticky"].ToBoolean()) {
+      if (thisValue[WellKnownProperty.Sticky].ToBoolean()) {
         sb.Append('y');
       }
       return sb.ToString();
@@ -69,7 +69,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember(EcmaPropertyAttributes.Configurable, Getter = true)]
     public static EcmaValue DotAll([This] EcmaValue thisValue) {
-      if (thisValue == RuntimeRealm.GetRuntimeObject(WellKnownObject.RegExpPrototype)) {
+      if (thisValue.ToObject().IsWellknownObject(WellKnownObject.RegExpPrototype)) {
         return default;
       }
       EcmaRegExp re = thisValue.GetUnderlyingObject<EcmaRegExp>();
@@ -78,7 +78,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember(EcmaPropertyAttributes.Configurable, Getter = true)]
     public static EcmaValue Global([This] EcmaValue thisValue) {
-      if (thisValue == RuntimeRealm.GetRuntimeObject(WellKnownObject.RegExpPrototype)) {
+      if (thisValue.ToObject().IsWellknownObject(WellKnownObject.RegExpPrototype)) {
         return default;
       }
       EcmaRegExp re = thisValue.GetUnderlyingObject<EcmaRegExp>();
@@ -87,7 +87,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember(EcmaPropertyAttributes.Configurable, Getter = true)]
     public static EcmaValue IgnoreCase([This] EcmaValue thisValue) {
-      if (thisValue == RuntimeRealm.GetRuntimeObject(WellKnownObject.RegExpPrototype)) {
+      if (thisValue.ToObject().IsWellknownObject(WellKnownObject.RegExpPrototype)) {
         return default;
       }
       EcmaRegExp re = thisValue.GetUnderlyingObject<EcmaRegExp>();
@@ -96,7 +96,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember(EcmaPropertyAttributes.Configurable, Getter = true)]
     public static EcmaValue Multiline([This] EcmaValue thisValue) {
-      if (thisValue == RuntimeRealm.GetRuntimeObject(WellKnownObject.RegExpPrototype)) {
+      if (thisValue.ToObject().IsWellknownObject(WellKnownObject.RegExpPrototype)) {
         return default;
       }
       EcmaRegExp re = thisValue.GetUnderlyingObject<EcmaRegExp>();
@@ -105,7 +105,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember(EcmaPropertyAttributes.Configurable, Getter = true)]
     public static EcmaValue Source([This] EcmaValue thisValue) {
-      if (thisValue == RuntimeRealm.GetRuntimeObject(WellKnownObject.RegExpPrototype)) {
+      if (thisValue.ToObject().IsWellknownObject(WellKnownObject.RegExpPrototype)) {
         return "(?:)";
       }
       EcmaRegExp re = thisValue.GetUnderlyingObject<EcmaRegExp>();
@@ -114,7 +114,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember(EcmaPropertyAttributes.Configurable, Getter = true)]
     public static EcmaValue Sticky([This] EcmaValue thisValue) {
-      if (thisValue == RuntimeRealm.GetRuntimeObject(WellKnownObject.RegExpPrototype)) {
+      if (thisValue.ToObject().IsWellknownObject(WellKnownObject.RegExpPrototype)) {
         return default;
       }
       EcmaRegExp re = thisValue.GetUnderlyingObject<EcmaRegExp>();
@@ -123,7 +123,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember(EcmaPropertyAttributes.Configurable, Getter = true)]
     public static EcmaValue Unicode([This] EcmaValue thisValue) {
-      if (thisValue == RuntimeRealm.GetRuntimeObject(WellKnownObject.RegExpPrototype)) {
+      if (thisValue.ToObject().IsWellknownObject(WellKnownObject.RegExpPrototype)) {
         return default;
       }
       EcmaRegExp re = thisValue.GetUnderlyingObject<EcmaRegExp>();
@@ -136,10 +136,10 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       string inputString = str.ToString(true);
       ExecCallback exec = CreateExecCallback(thisValue);
       IEcmaRegExpResult result;
-      if (thisValue["global"]) {
+      if (thisValue[WellKnownProperty.Global]) {
         List<EcmaValue> arr = new List<EcmaValue>();
-        bool unicode = thisValue["unicode"].ToBoolean();
-        thisValue["lastIndex"] = 0;
+        bool unicode = thisValue[WellKnownProperty.Unicode].ToBoolean();
+        thisValue[WellKnownProperty.LastIndex] = 0;
         while ((result = exec(inputString)) != null) {
           arr.Add(result.Value);
           if (result.Value.Length == 0) {
@@ -165,7 +165,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       Guard.ArgumentIsObject(thisValue);
       string input = str.ToString(true);
       EcmaRegExp re;
-      if (IsCustomRegExpObject(thisValue, out re, out _) || thisValue["sticky"]) {
+      if (IsCustomRegExpObject(thisValue, out re, out _) || thisValue[WellKnownProperty.Sticky]) {
         return ReplaceGeneric(thisValue, input, replacement);
       }
       if (replacement.IsCallable) {
@@ -192,14 +192,14 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       IEcmaRegExpResult result;
       int lastIndex = 0;
       int lastResultLength = -1;
-      bool unicode = re["unicode"].ToBoolean();
+      bool unicode = re[WellKnownProperty.Unicode].ToBoolean();
       while (arr.Count < count && (result = exec(inputString)) != null) {
         lastResultLength = result.Value.Length;
         if (lastResultLength > 0 || lastIndex != result.Index) {
           arr.Add(inputString.Substring(lastIndex, result.Index - lastIndex));
           arr.AddRange(result.Captures.Skip(1).Take(count - arr.Count));
         }
-        lastIndex = (int)re["lastIndex"].ToUInt32();
+        lastIndex = (int)re[WellKnownProperty.LastIndex].ToUInt32();
         if (lastResultLength == 0) {
           AdvanceStringIndex(re, inputString, unicode, lastIndex);
         }
@@ -237,11 +237,11 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       }
 
       ExecCallback exec = CreateExecCallback(re);
-      bool global = re["global"].ToBoolean();
+      bool global = re[WellKnownProperty.Global].ToBoolean();
       bool unicode = false;
       if (global) {
-        re["lastIndex"] = 0;
-        unicode = re["unicode"].ToBoolean();
+        re[WellKnownProperty.LastIndex] = 0;
+        unicode = re[WellKnownProperty.Unicode].ToBoolean();
       }
 
       StringBuilder sb = new StringBuilder();
@@ -305,12 +305,12 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     }
 
     public static void AdvanceStringIndex(EcmaValue re, string inputString, bool unicode) {
-      AdvanceStringIndex(re, inputString, unicode, (int)re["lastIndex"].ToUInt32());
+      AdvanceStringIndex(re, inputString, unicode, (int)re[WellKnownProperty.LastIndex].ToUInt32());
     }
 
     [EcmaSpecification("AdvanceStringIndex", EcmaSpecificationKind.AbstractOperations)]
     public static void AdvanceStringIndex(EcmaValue re, string inputString, bool unicode, int lastIndex) {
-      re["lastIndex"] = lastIndex + (unicode && lastIndex < inputString.Length && Char.IsSurrogatePair(inputString, lastIndex) ? 2 : 1);
+      re[WellKnownProperty.LastIndex] = lastIndex + (unicode && lastIndex < inputString.Length && Char.IsSurrogatePair(inputString, lastIndex) ? 2 : 1);
     }
 
     public static string InvokeReplacementCallback(RuntimeFunction callback, IEcmaRegExpResult result) {
@@ -336,7 +336,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     private static bool IsCustomRegExpObject(EcmaValue thisValue, out EcmaRegExp re, out EcmaValue exec) {
       re = thisValue.GetUnderlyingObject() as EcmaRegExp;
-      exec = thisValue["exec"];
+      exec = thisValue[WellKnownProperty.Exec];
       return re == null || (exec.IsCallable && !exec.ToObject().IsIntrinsicFunction(WellKnownObject.RegExpPrototype, "exec"));
     }
 
@@ -386,25 +386,25 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       public ExecGenericResult(string input, EcmaValue result) {
         this.result = result;
         this.Input = input;
-        this.Index = unchecked((int)result["index"].ToUInt32());
+        this.Index = unchecked((int)result[WellKnownProperty.Index].ToUInt32());
         this.Value = result[0].ToString(true);
       }
 
-      public bool HasNamedGroups => result["groups"] != default;
+      public bool HasNamedGroups => result[WellKnownProperty.Groups] != default;
       public int Index { get; }
       public string Input { get; }
       public string Value { get; }
 
       public IEnumerable<EcmaValue> Captures {
         get {
-          for (long i = 0, len = result["length"].ToLength(); i < len; i++) {
+          for (long i = 0, len = result[WellKnownProperty.Length].ToLength(); i < len; i++) {
             yield return result[i];
           }
         }
       }
 
       public EcmaValue CreateNamedGroupObject() {
-        return result["groups"];
+        return result[WellKnownProperty.Groups];
       }
 
       public EcmaValue ToValue() {

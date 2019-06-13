@@ -19,7 +19,7 @@ namespace Codeless.Ecma.Runtime {
     protected override string ToStringTag => InternalString.ObjectTag.Function;
 
     public RuntimeObject Prototype {
-      get { return this.Get(WellKnownPropertyName.Prototype).ToObject(); }
+      get { return this.Get(WellKnownProperty.Prototype).ToObject(); }
     }
 
     public static RuntimeFunction GetExecutingFunction() {
@@ -87,17 +87,21 @@ namespace Codeless.Ecma.Runtime {
     }
 
     protected void InitProperty(string name, int length) {
-      DefineOwnPropertyNoChecked(WellKnownPropertyName.Length, new EcmaPropertyDescriptor(length, EcmaPropertyAttributes.Configurable));
-      DefineOwnPropertyNoChecked(WellKnownPropertyName.Name, new EcmaPropertyDescriptor(name, EcmaPropertyAttributes.Configurable));
+      DefineOwnPropertyNoChecked(WellKnownProperty.Length, new EcmaPropertyDescriptor(length, EcmaPropertyAttributes.Configurable));
+      DefineOwnPropertyNoChecked(WellKnownProperty.Name, new EcmaPropertyDescriptor(name, EcmaPropertyAttributes.Configurable));
     }
 
-    internal void SetPrototypeInternal(RuntimeObject proto, EcmaPropertyAttributes protoAttributes) {
-      proto.DefineOwnProperty("constructor", new EcmaPropertyDescriptor(this, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
-      DefineOwnProperty("prototype", new EcmaPropertyDescriptor(proto, protoAttributes));
+    protected void SetPrototypeInternal(RuntimeObject proto, EcmaPropertyAttributes protoAttributes) {
+      proto.DefineOwnProperty(WellKnownProperty.Constructor, new EcmaPropertyDescriptor(this, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
+      DefineOwnProperty(WellKnownProperty.Prototype, new EcmaPropertyDescriptor(proto, protoAttributes));
+    }
+
+    public static implicit operator RuntimeFunction(Delegate del) {
+      return del != null ? new DelegateRuntimeFunction(del) : null;
     }
 
     public static explicit operator RuntimeFunction(WellKnownObject type) {
-      return (RuntimeFunction)RuntimeRealm.GetRuntimeObject(type);
+      return (RuntimeFunction)RuntimeRealm.Current.GetRuntimeObject(type);
     }
   }
 }

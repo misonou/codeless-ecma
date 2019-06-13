@@ -37,10 +37,34 @@ namespace Codeless.Ecma {
       return value > max ? max : value < min ? min : (int)value;
     }
 
+    [EcmaSpecification("InstanceofOperator", EcmaSpecificationKind.RuntimeSemantics)]
+    public static bool InstanceOf(this EcmaValue thisValue, EcmaValue constructor) {
+      if (constructor.Type != EcmaValueType.Object) {
+        throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
+      }
+      RuntimeObject obj = constructor.ToObject();
+      RuntimeObject instOfHandler = obj.GetMethod(Symbol.HasInstance);
+      if (instOfHandler != null) {
+        return instOfHandler.Call(constructor, thisValue).ToBoolean();
+      }
+      if (!constructor.IsCallable) {
+        throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
+      }
+      return obj.HasInstance(thisValue.ToObject());
+    }
+
+    [EcmaSpecification("Relational Operators `in`", EcmaSpecificationKind.RuntimeSemantics)]
+    public static bool In(this EcmaValue thisValue, EcmaValue other) {
+      if (other.Type != EcmaValueType.Object) {
+        throw new EcmaTypeErrorException(InternalString.Error.NotObject);
+      }
+      return other.HasProperty(EcmaPropertyKey.FromValue(thisValue));
+    }
+
     [EcmaSpecification("CreateListFromArrayLike", EcmaSpecificationKind.AbstractOperations)]
     public static EcmaValue[] CreateListFromArrayLike(EcmaValue value) {
       Guard.ArgumentIsObject(value);
-      long len = value["length"].ToLength();
+      long len = value[WellKnownProperty.Length].ToLength();
       EcmaValue[] arr = new EcmaValue[len];
       for (long i = 0; i < len; i++) {
         arr[i] = value[i];

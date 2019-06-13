@@ -7,9 +7,6 @@ namespace Codeless.Ecma {
     public EcmaWeakMap()
       : base(WellKnownObject.WeakMapPrototype) { }
 
-    public EcmaWeakMap(RuntimeObject constructor)
-      : base(WellKnownObject.WeakMapPrototype, constructor) { }
-
     public EcmaValue Get(RuntimeObject key) {
       Entry entry = collection.TryGet<Entry>(key);
       return entry != null ? entry.Value : default;

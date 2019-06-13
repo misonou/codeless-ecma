@@ -15,7 +15,7 @@ namespace Codeless.Ecma {
     public KeyValuePair<EcmaValue, EcmaValue> Current { get; private set; }
 
     public bool MoveNext() {
-      if (++nextIndex < target.Get(WellKnownPropertyName.Length).ToLength()) {
+      if (++nextIndex < target.Get(WellKnownProperty.Length).ToLength()) {
         this.Current = new KeyValuePair<EcmaValue, EcmaValue>(nextIndex, target.Get(nextIndex));
         return true;
       }

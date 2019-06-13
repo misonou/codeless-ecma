@@ -6,7 +6,7 @@ using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class GlobalObject {
+  public class GlobalObject : TestBase {
     [Test]
     public void Properties() {
       That(GlobalThis, Has.OwnProperty("Infinity", Infinity, EcmaPropertyAttributes.None));
@@ -21,7 +21,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsAbruptedFromToPrimitive(parseInt.Bind(_, ""));
 
       It("should coerce input argument by ToPrimitive(value, String)", () => {
-        Case((_, _), NaN);
+        Case((_, Undefined), NaN);
         Case((_, Null), NaN);
         Case((_, ""), NaN);
 
@@ -75,7 +75,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((_, 11, "2"), 0b11);
         Case((_, 11, "0"), 11);
         Case((_, 11, ""), 11);
-        Case((_, 11, _), 11);
+        Case((_, 11, Undefined), 11);
         Case((_, 11, Null), 11);
         Case((_, 11, String.Construct("2")), 0b11);
         Case((_, 11, String.Construct("Infinity")), 11);
@@ -200,7 +200,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsAbruptedFromToPrimitive(parseFloat.Bind(_));
 
       It("should coerce input argument by ToPrimitive(value, String)", () => {
-        Case((_, _), NaN);
+        Case((_, Undefined), NaN);
         Case((_, Null), NaN);
         Case((_, ""), NaN);
 
@@ -450,7 +450,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((_, CreateObject(toPrimitive: ThrowTest262Exception)), Throws.Test262);
         Case((_, CreateObject(toPrimitive: () => EcmaArray.Of(42))), Throws.TypeError);
         Case((_, CreateObject(toPrimitive: () => Symbol.ToPrimitive)), Throws.TypeError);
-        Case((_, CreateObject((Symbol.ToPrimitive, get: ThrowTest262Exception.Call, set: null))), Throws.Test262);
+        Case((_, CreateObject((Symbol.ToPrimitive, get: ThrowTest262Exception, set: null))), Throws.Test262);
         Case((_, CreateObject((Symbol.ToPrimitive, 42))), Throws.TypeError);
         Case((_, CreateObject((Symbol.ToPrimitive, ""))), Throws.TypeError);
         Case((_, CreateObject((Symbol.ToPrimitive, true))), Throws.TypeError);
@@ -497,7 +497,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((_, CreateObject(toPrimitive: ThrowTest262Exception)), Throws.Test262);
         Case((_, CreateObject(toPrimitive: () => EcmaArray.Of(42))), Throws.TypeError);
         Case((_, CreateObject(toPrimitive: () => Symbol.ToPrimitive)), Throws.TypeError);
-        Case((_, CreateObject((Symbol.ToPrimitive, get: ThrowTest262Exception.Call, set: null))), Throws.Test262);
+        Case((_, CreateObject((Symbol.ToPrimitive, get: ThrowTest262Exception, set: null))), Throws.Test262);
         Case((_, CreateObject((Symbol.ToPrimitive, 42))), Throws.TypeError);
         Case((_, CreateObject((Symbol.ToPrimitive, ""))), Throws.TypeError);
         Case((_, CreateObject((Symbol.ToPrimitive, true))), Throws.TypeError);

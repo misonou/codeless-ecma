@@ -6,13 +6,11 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(EcmaMap))]
     public static EcmaValue Map([This] EcmaValue thisValue, EcmaValue iterable) {
       if (!iterable.IsNullOrUndefined) {
-        EcmaValue adder = thisValue["set"];
+        EcmaValue adder = thisValue[WellKnownProperty.Set];
         Guard.ArgumentIsCallable(adder);
-        using (EcmaIteratorEnumerator iterator = iterable.ForOf()) {
-          foreach (EcmaValue value in iterator) {
-            Guard.ArgumentIsObject(value);
-            adder.Call(thisValue, value[0], value[1]);
-          }
+        foreach (EcmaValue value in iterable.ForOf()) {
+          Guard.ArgumentIsObject(value);
+          adder.Call(thisValue, value[0], value[1]);
         }
       }
       return thisValue;

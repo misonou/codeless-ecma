@@ -42,6 +42,8 @@ namespace Codeless.Ecma {
 
     public static RuntimeObject Math => (RuntimeObject)WellKnownObject.Math;
 
+    public static RuntimeObject Reflect => (RuntimeObject)WellKnownObject.Reflect;
+
     public static RuntimeFunction Array => (RuntimeFunction)WellKnownObject.ArrayConstructor;
 
     public static RuntimeFunction Boolean => (RuntimeFunction)WellKnownObject.BooleanConstructor;

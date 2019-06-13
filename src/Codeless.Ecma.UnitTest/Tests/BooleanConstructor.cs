@@ -5,7 +5,7 @@ using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class BooleanConstructor {
+  public class BooleanConstructor : TestBase {
     [Test, RuntimeFunctionInjection]
     public void Constructor(RuntimeFunction ctor) {
       IsConstructorWLength(ctor, "Boolean", 1, Boolean.Prototype);
@@ -72,7 +72,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return boolean value not a Boolean object", () => {
-        Case((_, _), Is.TypeOf("boolean"));
+        Case((_, Undefined), Is.TypeOf("boolean"));
         Case((_, 0), Is.TypeOf("boolean"));
         Case((_, 1), Is.TypeOf("boolean"));
         Case((_, -1), Is.TypeOf("boolean"));

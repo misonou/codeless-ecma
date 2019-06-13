@@ -5,7 +5,7 @@ using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class DateConstructor {
+  public class DateConstructor : TestBase {
     [Test, RuntimeFunctionInjection]
     public void Constructor(RuntimeFunction ctor) {
       IsConstructorWLength(ctor, "Date", 7, Date.Prototype);
@@ -20,7 +20,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should invoke @@toPrimitive and coerce returned value", () => {
         That(Date.Construct(CreateObject(toPrimitive: () => 8)).Invoke("getTime"), Is.EqualTo(8));
-        That(Date.Construct(CreateObject(toPrimitive: () => _)).Invoke("getTime"), Is.EqualTo(NaN));
+        That(Date.Construct(CreateObject(toPrimitive: () => Undefined)).Invoke("getTime"), Is.EqualTo(NaN));
         That(Date.Construct(CreateObject(toPrimitive: () => true)).Invoke("getTime"), Is.EqualTo(1));
         That(Date.Construct(CreateObject(toPrimitive: () => false)).Invoke("getTime"), Is.EqualTo(0));
         That(Date.Construct(CreateObject(toPrimitive: () => Null)).Invoke("getTime"), Is.EqualTo(0));
@@ -33,16 +33,16 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should coerce input value in the correct order", () => {
-        string log = "";
+        Logs.Clear();
         Date.Construct(Undefined,
-          CreateObject(toString: () => { log += "year"; return 0; }),
-          CreateObject(toString: () => { log += "month"; return 0; }),
-          CreateObject(toString: () => { log += "date"; return 1; }),
-          CreateObject(toString: () => { log += "hours"; return 0; }),
-          CreateObject(toString: () => { log += "minutes"; return 0; }),
-          CreateObject(toString: () => { log += "seconds"; return 0; }),
-          CreateObject(toString: () => { log += "ms"; return 0; }));
-        That(log, Is.EqualTo("yearmonthdatehoursminutessecondsms"));
+          CreateObject(toString: Intercept(() => 0, "year")),
+          CreateObject(toString: Intercept(() => 0, "month")),
+          CreateObject(toString: Intercept(() => 0, "date")),
+          CreateObject(toString: Intercept(() => 0, "hours")),
+          CreateObject(toString: Intercept(() => 0, "minutes")),
+          CreateObject(toString: Intercept(() => 0, "seconds")),
+          CreateObject(toString: Intercept(() => 0, "ms")));
+        CollectionAssert.AreEqual(new[] { "year", "month", "date", "hours", "minutes", "seconds", "ms" }, Logs);
       });
 
       It("should return a string representing the current time if Date is called as a function", () => {
@@ -57,7 +57,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         That(Date.Call(Date, NaN), Is.TypeOf("string"));
         That(Date.Call(Date, Infinity), Is.TypeOf("string"));
         That(Date.Call(Date, -Infinity), Is.TypeOf("string"));
-        That(Date.Call(Date, _), Is.TypeOf("string"));
+        That(Date.Call(Date, Undefined), Is.TypeOf("string"));
         That(Date.Call(Date, Null), Is.TypeOf("string"));
 
         That(Date.Construct() - Date.Construct(Date.Call(Date)).Invoke("getTime"), Is.AtLeast(-1000).And.AtMost(1000));
@@ -71,7 +71,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         That(Date.Construct() - Date.Construct(Date.Call(Date, NaN)).Invoke("getTime"), Is.AtLeast(-1000).And.AtMost(1000));
         That(Date.Construct() - Date.Construct(Date.Call(Date, Infinity)).Invoke("getTime"), Is.AtLeast(-1000).And.AtMost(1000));
         That(Date.Construct() - Date.Construct(Date.Call(Date, -Infinity)).Invoke("getTime"), Is.AtLeast(-1000).And.AtMost(1000));
-        That(Date.Construct() - Date.Construct(Date.Call(Date, _)).Invoke("getTime"), Is.AtLeast(-1000).And.AtMost(1000));
+        That(Date.Construct() - Date.Construct(Date.Call(Date, Undefined)).Invoke("getTime"), Is.AtLeast(-1000).And.AtMost(1000));
         That(Date.Construct() - Date.Construct(Date.Call(Date, Null)).Invoke("getTime"), Is.AtLeast(-1000).And.AtMost(1000));
       });
     }
@@ -130,16 +130,16 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should coerce input value in the correct order", () => {
-        string log = "";
+        Logs.Clear();
         utc.Call(Undefined,
-          CreateObject(toString: () => { log += "year"; return 0; }),
-          CreateObject(toString: () => { log += "month"; return 0; }),
-          CreateObject(toString: () => { log += "date"; return 1; }),
-          CreateObject(toString: () => { log += "hours"; return 0; }),
-          CreateObject(toString: () => { log += "minutes"; return 0; }),
-          CreateObject(toString: () => { log += "seconds"; return 0; }),
-          CreateObject(toString: () => { log += "ms"; return 0; }));
-        That(log, Is.EqualTo("yearmonthdatehoursminutessecondsms"));
+          CreateObject(toString: Intercept(() => 0, "year")),
+          CreateObject(toString: Intercept(() => 0, "month")),
+          CreateObject(toString: Intercept(() => 0, "date")),
+          CreateObject(toString: Intercept(() => 0, "hours")),
+          CreateObject(toString: Intercept(() => 0, "minutes")),
+          CreateObject(toString: Intercept(() => 0, "seconds")),
+          CreateObject(toString: Intercept(() => 0, "ms")));
+        CollectionAssert.AreEqual(new[] { "year", "month", "date", "hours", "minutes", "seconds", "ms" }, Logs);
       });
 
       It("should produce NaN with Inifinite or NaN values", () => {

@@ -15,7 +15,6 @@ namespace Codeless.Ecma {
     bool IsExtensible(EcmaValueHandle handle);
     bool IsCallable(EcmaValueHandle handle);
     bool ToBoolean(EcmaValueHandle handle);
-    int ToInt32(EcmaValueHandle handle);
     long ToInt64(EcmaValueHandle handle);
     double ToDouble(EcmaValueHandle handle);
     string ToString(EcmaValueHandle handle);

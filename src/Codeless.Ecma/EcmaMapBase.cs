@@ -13,9 +13,6 @@ namespace Codeless.Ecma {
     public EcmaMapBase(WellKnownObject proto)
       : base(proto) { }
 
-    public EcmaMapBase(WellKnownObject proto, RuntimeObject constructor)
-      : base(proto, constructor) { }
-
     public int Size {
       get { return dict.Count; }
     }

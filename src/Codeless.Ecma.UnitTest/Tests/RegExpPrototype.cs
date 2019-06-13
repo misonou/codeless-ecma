@@ -7,7 +7,7 @@ using static Codeless.Ecma.UnitTest.StaticHelper;
 using static Codeless.Ecma.UnitTest.Tests.RegExpSS;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class RegExpPrototype {
+  public class RegExpPrototype : TestBase {
     [Test, RuntimeFunctionInjection]
     public void Exec(RuntimeFunction exec) {
       IsUnconstructableFunctionWLength(exec, "exec", 1);
@@ -15,7 +15,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       RequireThisRegExpObject();
 
       It("should coerce its argument to string", () => {
-        object undefined = _;
+        object undefined = Undefined;
         VerifyMatch(@"1|12", "123", new[] { "1" }, 0);
         VerifyMatch(@"1|12", 1.01, new[] { "1" }, 0);
         VerifyMatch(@"2|12", Number.Construct(1.012), new[] { "12" }, 3);
@@ -24,7 +24,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         VerifyMatch(@"AL|se", Boolean.Construct(), new[] { "se" }, 3);
         VerifyMatch(@"LS", "i", CreateObject(toString: () => false), new[] { "ls" }, 2);
         VerifyMatch(@"ll|l", Null, new[] { "ll" }, 2);
-        VerifyMatch(@"nd|ne", _, new[] { "nd" }, 1);
+        VerifyMatch(@"nd|ne", Undefined, new[] { "nd" }, 1);
         VerifyMatch(@"((1)|(12))((3)|(23))", String.Construct("123"), new[] { "123", "1", "1", undefined, "23", undefined, "23" }, 0);
         VerifyMatch(@"a[a-z]{2,4}", Object.Construct("abcdefghi"), new[] { "abcde" }, 0);
         VerifyMatch(@"a[a-z]{2,4}?", CreateObject(toString: () => "abcdefghi"), new[] { "abc" }, 0);
@@ -129,9 +129,9 @@ namespace Codeless.Ecma.UnitTest.Tests {
         CheckEquivalence(RegExp.Construct("t[a-b|q-s]"), true);
         CheckEquivalence(RegExp.Construct("AL|se"), Boolean.Construct());
         CheckEquivalence(RegExp.Construct("AL|se"), CreateObject(toString: () => false));
-        CheckEquivalence(RegExp.Construct("undefined"), _);
+        CheckEquivalence(RegExp.Construct("undefined"), Undefined);
         CheckEquivalence(RegExp.Construct("ll|l"), Null);
-        CheckEquivalence(RegExp.Construct("[a-z]n"), RuntimeFunction.Create(() => _));
+        CheckEquivalence(RegExp.Construct("[a-z]n"), RuntimeFunction.Create(() => Undefined));
         CheckEquivalence(RegExp.Construct("a[a-z]{2,4}"), Object.Construct("abcdefghi"));
         CheckEquivalence(RegExp.Construct("(aa|aabaac|ba|b|c)*"), CreateObject(toString: () => new EcmaObject(), valueOf: () => "aabaac"));
       });
@@ -188,7 +188,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       VerifyMatch(@"b(.).(.).", "abcdefg", new[] { "bcdef", "c", "e" }, 1);
 
       // String coercion of first parameter
-      Case((RegExp.Construct("toString value"), CreateObject(toString: () => "toString value", valueOf: () => ThrowTest262Exception.Call())), Is.Not.EqualTo(Null));
+      Case((RegExp.Construct("toString value"), CreateObject(toString: () => "toString value", valueOf: ThrowTest262Exception)), Is.Not.EqualTo(Null));
 
       // Return value should not have `index` and `input` property
       EcmaValue result = match.Call(RegExp.Construct(".(.).", "g"), "abcdefghi");
@@ -384,20 +384,20 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       // global: Behavior when there is an error thrown while accessing the `exec` method of "global" instances
       re = RegExp.Construct(".");
-      DefineProperty(re, "exec", get: ThrowTest262Exception.Call);
+      DefineProperty(re, "exec", get: ThrowTest262Exception);
       Case(re, Throws.Test262);
       That(re["lastIndex"], Is.EqualTo(0));
 
       // global: Behavior when error is thrown during retrieval of `global` property
       EcmaValue obj = new EcmaObject();
-      DefineProperty(obj, "global", get: ThrowTest262Exception.Call);
+      DefineProperty(obj, "global", get: ThrowTest262Exception);
       Case(obj, Throws.Test262);
 
       // global: Errors thrown by `unicode` accessor are forwarded to the runtime for global patterns
       EcmaValue nonGlobalRe = RegExp.Construct(".");
       EcmaValue globalRe = RegExp.Construct(".", "g");
-      DefineProperty(nonGlobalRe, "unicode", get: ThrowTest262Exception.Call);
-      DefineProperty(globalRe, "unicode", get: ThrowTest262Exception.Call);
+      DefineProperty(nonGlobalRe, "unicode", get: ThrowTest262Exception);
+      DefineProperty(globalRe, "unicode", get: ThrowTest262Exception);
       Case(nonGlobalRe, Throws.Nothing);
       Case(globalRe, Throws.Test262);
 
@@ -431,7 +431,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       DefineProperty(re, "global", writable: true);
 
       re["lastIndex"] = 0;
-      re["global"] = _;
+      re["global"] = Undefined;
       Case((re, "aa", "b"), "ba", "value: undefined");
 
       re["lastIndex"] = 0;
@@ -474,7 +474,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       re = RegExp.Construct("^|\\udf06", "g");
       DefineProperty(re, "unicode", writable: true);
 
-      re["unicode"] = _;
+      re["unicode"] = Undefined;
       Case((re, "\ud834\udf06", "XXX"), "XXX\ud834XXX");
 
       re["unicode"] = Null;
@@ -562,7 +562,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       Case((RegExp.Construct(""), "abc"), new[] { "a", "b", "c" });
 
       // Successful match of empty string
-      Case((RegExp.Construct(""), ""), new object[] { });
+      Case((RegExp.Construct(""), ""), EcmaValue.EmptyArray);
 
       // Unsuccessful match of empty string
       Case((RegExp.Construct("."), ""), new[] { "" });
@@ -583,7 +583,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       Case(RegExp.Prototype, "(?:)");
       Case(RegExp.Construct(""), "(?:)");
 
-      Case(_, Throws.TypeError);
+      Case(Undefined, Throws.TypeError);
       Case(Null, Throws.TypeError);
       Case(true, Throws.TypeError);
       Case(1, Throws.TypeError);
@@ -640,7 +640,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(flags, "get flags", 0);
       Case(RegExp.Prototype, "");
 
-      Case(_, Throws.TypeError);
+      Case(Undefined, Throws.TypeError);
       Case(Null, Throws.TypeError);
       Case(true, Throws.TypeError);
       Case(1, Throws.TypeError);
@@ -659,42 +659,42 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should get property in specified order", () => {
         EcmaValue obj = new EcmaObject();
-        ArrayList calls = new ArrayList();
-        DefineProperty(obj, "global", get: CreateFunction(calls, "g"));
-        DefineProperty(obj, "ignoreCase", get: CreateFunction(calls, "i"));
-        DefineProperty(obj, "multiline", get: CreateFunction(calls, "m"));
-        DefineProperty(obj, "dotAll", get: CreateFunction(calls, "s"));
-        DefineProperty(obj, "unicode", get: CreateFunction(calls, "u"));
-        DefineProperty(obj, "sticky", get: CreateFunction(calls, "y"));
+        Logs.Clear();
+        DefineProperty(obj, "global", get: Intercept(() => Undefined, "g"));
+        DefineProperty(obj, "ignoreCase", get: Intercept(() => Undefined, "i"));
+        DefineProperty(obj, "multiline", get: Intercept(() => Undefined, "m"));
+        DefineProperty(obj, "dotAll", get: Intercept(() => Undefined, "s"));
+        DefineProperty(obj, "unicode", get: Intercept(() => Undefined, "u"));
+        DefineProperty(obj, "sticky", get: Intercept(() => Undefined, "y"));
         flags.Call(obj);
-        That(calls, Is.EquivalentTo(new[] { "g", "i", "m", "s", "u", "y" }));
+        CollectionAssert.AreEqual(new[] { "g", "i", "m", "s", "u", "y" }, Logs);
       });
 
       It("should rethrow exceptions raised in property gets", () => {
         EcmaValue obj;
 
         obj = new EcmaObject();
-        DefineProperty(obj, "global", get: ThrowTest262Exception.Call);
+        DefineProperty(obj, "global", get: ThrowTest262Exception);
         Case(obj, Throws.Test262);
 
         obj = new EcmaObject();
-        DefineProperty(obj, "ignoreCase", get: ThrowTest262Exception.Call);
+        DefineProperty(obj, "ignoreCase", get: ThrowTest262Exception);
         Case(obj, Throws.Test262);
 
         obj = new EcmaObject();
-        DefineProperty(obj, "multiline", get: ThrowTest262Exception.Call);
+        DefineProperty(obj, "multiline", get: ThrowTest262Exception);
         Case(obj, Throws.Test262);
 
         obj = new EcmaObject();
-        DefineProperty(obj, "dotAll", get: ThrowTest262Exception.Call);
+        DefineProperty(obj, "dotAll", get: ThrowTest262Exception);
         Case(obj, Throws.Test262);
 
         obj = new EcmaObject();
-        DefineProperty(obj, "unicode", get: ThrowTest262Exception.Call);
+        DefineProperty(obj, "unicode", get: ThrowTest262Exception);
         Case(obj, Throws.Test262);
 
         obj = new EcmaObject();
-        DefineProperty(obj, "sticky", get: ThrowTest262Exception.Call);
+        DefineProperty(obj, "sticky", get: ThrowTest262Exception);
         Case(obj, Throws.Test262);
       });
 
@@ -735,7 +735,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(global, "get global", 0);
       Case(RegExp.Prototype, Is.Undefined);
 
-      Case(_, Throws.TypeError);
+      Case(Undefined, Throws.TypeError);
       Case(Null, Throws.TypeError);
       Case(true, Throws.TypeError);
       Case(1, Throws.TypeError);
@@ -763,7 +763,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(dotAll, "get dotAll", 0);
       Case(RegExp.Prototype, Is.Undefined);
 
-      Case(_, Throws.TypeError);
+      Case(Undefined, Throws.TypeError);
       Case(Null, Throws.TypeError);
       Case(true, Throws.TypeError);
       Case(1, Throws.TypeError);
@@ -791,7 +791,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(ignoreCase, "get ignoreCase", 0);
       Case(RegExp.Prototype, Is.Undefined);
 
-      Case(_, Throws.TypeError);
+      Case(Undefined, Throws.TypeError);
       Case(Null, Throws.TypeError);
       Case(true, Throws.TypeError);
       Case(1, Throws.TypeError);
@@ -819,7 +819,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(multiline, "get multiline", 0);
       Case(RegExp.Prototype, Is.Undefined);
 
-      Case(_, Throws.TypeError);
+      Case(Undefined, Throws.TypeError);
       Case(Null, Throws.TypeError);
       Case(true, Throws.TypeError);
       Case(1, Throws.TypeError);
@@ -847,7 +847,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(sticky, "get sticky", 0);
       Case(RegExp.Prototype, Is.Undefined);
 
-      Case(_, Throws.TypeError);
+      Case(Undefined, Throws.TypeError);
       Case(Null, Throws.TypeError);
       Case(true, Throws.TypeError);
       Case(1, Throws.TypeError);
@@ -875,7 +875,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(unicode, "get unicode", 0);
       Case(RegExp.Prototype, Is.Undefined);
 
-      Case(_, Throws.TypeError);
+      Case(Undefined, Throws.TypeError);
       Case(Null, Throws.TypeError);
       Case(true, Throws.TypeError);
       Case(1, Throws.TypeError);
@@ -899,7 +899,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
     private static void RequireThisObject() {
       It("should throw a TypeError if this value is not an Object", () => {
         EcmaValue obj = CreateObject(toString: ThrowTest262Exception);
-        Case((_, obj), Throws.TypeError);
+        Case((Undefined, obj), Throws.TypeError);
         Case((Null, obj), Throws.TypeError);
         Case((true, obj), Throws.TypeError);
         Case((1, obj), Throws.TypeError);
@@ -911,7 +911,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
     private static void RequireThisRegExpObject() {
       It("should throw a TypeError if this value has no [[RegExpMatcher]] internal slot", () => {
         EcmaValue obj = CreateObject(toString: ThrowTest262Exception);
-        Case((_, obj), Throws.TypeError);
+        Case((Undefined, obj), Throws.TypeError);
         Case((Null, obj), Throws.TypeError);
         Case((true, obj), Throws.TypeError);
         Case((1, obj), Throws.TypeError);

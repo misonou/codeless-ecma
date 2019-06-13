@@ -1,11 +1,12 @@
-﻿using Codeless.Ecma.Runtime.Intrinsics;
+﻿using Codeless.Ecma.Diagnostics;
+using Codeless.Ecma.Runtime.Intrinsics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma.Runtime {
-  public class RuntimeObjectProxy : RuntimeObject {
+  public class RuntimeObjectProxy : RuntimeObject, IInspectorMetaProvider {
     private RuntimeObject handler;
     private RuntimeObject target;
 
@@ -17,13 +18,13 @@ namespace Codeless.Ecma.Runtime {
       Init(target, handler);
     }
 
-    public RuntimeObject ProxyTarget => target;
+    public RuntimeObject ProxyTarget => ThrowIfProxyRevoked();
 
     public override bool IsExtensible => GetIsExtensible();
 
     protected override string ToStringTag {
       get {
-        ThrowIfProxyRevoked();
+        RuntimeObject target = ThrowIfProxyRevoked();
         if (EcmaArray.IsArray(target) || target.IsCallable) {
           return new EcmaValue(target).ToStringTag;
         }
@@ -45,15 +46,15 @@ namespace Codeless.Ecma.Runtime {
 
     #region Proxy overriden methods
     public override IEnumerable<EcmaPropertyKey> GetOwnPropertyKeys() {
-      ThrowIfProxyRevoked();
-      RuntimeObject trap = handler.GetMethod(WellKnownPropertyName.OwnKeys);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject trap = handler.GetMethod(WellKnownProperty.OwnKeys);
       if (trap == null) {
         return target.GetOwnPropertyKeys();
       }
       EcmaValue resultArray = trap.Call(handler, target);
       Guard.ArgumentIsObject(resultArray);
       List<EcmaPropertyKey> list = new List<EcmaPropertyKey>();
-      long len = resultArray["length"].ToLength();
+      long len = resultArray[WellKnownProperty.Length].ToLength();
       for (long i = 0; i < len; i++) {
         EcmaValue value = resultArray[i];
         if (!EcmaPropertyKey.IsPropertyKey(value)) {
@@ -92,8 +93,8 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override bool PreventExtensions() {
-      ThrowIfProxyRevoked();
-      RuntimeObject trap = handler.GetMethod(WellKnownPropertyName.PreventExtensions);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject trap = handler.GetMethod(WellKnownProperty.PreventExtensions);
       if (trap == null) {
         return target.PreventExtensions();
       }
@@ -107,8 +108,8 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override RuntimeObject GetPrototypeOf() {
-      ThrowIfProxyRevoked();
-      RuntimeObject trap = handler.GetMethod(WellKnownPropertyName.GetPrototypeOf);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject trap = handler.GetMethod(WellKnownProperty.GetPrototypeOf);
       if (trap == null) {
         return target.GetPrototypeOf();
       }
@@ -126,8 +127,8 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override bool SetPrototypeOf(RuntimeObject proto) {
-      ThrowIfProxyRevoked();
-      RuntimeObject trap = handler.GetMethod(WellKnownPropertyName.SetPrototypeOf);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject trap = handler.GetMethod(WellKnownProperty.SetPrototypeOf);
       if (trap == null) {
         return target.SetPrototypeOf(proto);
       }
@@ -144,19 +145,19 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override EcmaPropertyDescriptor GetOwnProperty(EcmaPropertyKey propertyKey) {
-      ThrowIfProxyRevoked();
-      RuntimeObject method = handler.GetMethod(WellKnownPropertyName.GetOwnPropertyDescriptor);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject method = handler.GetMethod(WellKnownProperty.GetOwnPropertyDescriptor);
       EcmaPropertyDescriptor targetDesc = target.GetOwnProperty(propertyKey);
       if (method != null) {
         EcmaValue result = method.Call(handler, target, propertyKey.ToValue());
         if (result.Type == EcmaValueType.Undefined) {
-          if (targetDesc != null && (!targetDesc.Configurable || !this.IsExtensible)) {
+          if (targetDesc != null && (!targetDesc.Configurable || !target.IsExtensible)) {
             throw new EcmaTypeErrorException(InternalString.Error.InvalidTrapResult);
           }
           return null;
         }
         EcmaPropertyDescriptor resultDesc = EcmaPropertyDescriptor.FromValue(result);
-        if (!EcmaPropertyDescriptor.ValidateAndApplyPropertyDescriptor(ref resultDesc, targetDesc, !this.IsExtensible) ||
+        if (!EcmaPropertyDescriptor.ValidateAndApplyPropertyDescriptor(ref resultDesc, targetDesc, !target.IsExtensible) ||
             resultDesc.Configurable == false && (targetDesc == null || targetDesc.Configurable == true)) {
           throw new EcmaTypeErrorException(InternalString.Error.InvalidTrapResult);
         }
@@ -166,12 +167,12 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override bool DefineOwnProperty(EcmaPropertyKey propertyKey, EcmaPropertyDescriptor descriptor) {
-      ThrowIfProxyRevoked();
-      RuntimeObject trap = handler.GetMethod(WellKnownPropertyName.DefineProperty);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject trap = handler.GetMethod(WellKnownProperty.DefineProperty);
       if (trap == null) {
         return target.DefineOwnProperty(propertyKey, descriptor);
       }
-      if (!(bool)trap.Call(target, propertyKey.ToValue(), descriptor.ToValue())) {
+      if (!(bool)trap.Call(handler, target, propertyKey.ToValue(), descriptor.ToValue())) {
         return false;
       }
       bool settingUnconfigurable = descriptor.Configurable == false;
@@ -192,12 +193,12 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override bool HasProperty(EcmaPropertyKey propertyKey) {
-      ThrowIfProxyRevoked();
-      RuntimeObject trap = handler.GetMethod(WellKnownPropertyName.Has);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject trap = handler.GetMethod(WellKnownProperty.Has);
       if (trap == null) {
         return target.HasProperty(propertyKey);
       }
-      bool result = (bool)trap.Call(target, propertyKey.ToValue());
+      bool result = (bool)trap.Call(handler, target, propertyKey.ToValue());
       if (!result) {
         EcmaPropertyDescriptor descriptor = target.GetOwnProperty(propertyKey);
         if (descriptor != null && !descriptor.Configurable) {
@@ -211,12 +212,12 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override EcmaValue Get(EcmaPropertyKey propertyKey, RuntimeObject receiver) {
-      ThrowIfProxyRevoked();
-      RuntimeObject trap = handler.GetMethod(WellKnownPropertyName.Get);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject trap = handler.GetMethod(WellKnownProperty.Get);
       if (trap == null) {
         return target.Get(propertyKey, receiver);
       }
-      EcmaValue result = trap.Call(target, propertyKey.ToValue(), receiver);
+      EcmaValue result = trap.Call(handler, target, propertyKey.ToValue(), receiver);
       EcmaPropertyDescriptor descriptor = target.GetOwnProperty(propertyKey);
       if (descriptor != null && !descriptor.Configurable) {
         if (descriptor.IsDataDescriptor && !descriptor.Writable && !descriptor.Value.Equals(result, EcmaValueComparison.SameValue)) {
@@ -230,8 +231,8 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override bool Set(EcmaPropertyKey propertyKey, EcmaValue value, RuntimeObject receiver) {
-      ThrowIfProxyRevoked();
-      RuntimeObject trap = handler.GetMethod(WellKnownPropertyName.Set);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject trap = handler.GetMethod(WellKnownProperty.Set);
       if (trap == null) {
         return target.Set(propertyKey, value, receiver);
       }
@@ -251,8 +252,8 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override bool Delete(EcmaPropertyKey propertyKey) {
-      ThrowIfProxyRevoked();
-      RuntimeObject trap = handler.GetMethod(WellKnownPropertyName.DeleteProperty);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject trap = handler.GetMethod(WellKnownProperty.DeleteProperty);
       if (trap == null) {
         return target.Delete(propertyKey);
       }
@@ -270,8 +271,8 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override EcmaValue Call(EcmaValue thisValue, params EcmaValue[] arguments) {
-      ThrowIfProxyRevoked();
-      RuntimeObject trap = handler.GetMethod(WellKnownPropertyName.Apply);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject trap = handler.GetMethod(WellKnownProperty.Apply);
       if (trap == null) {
         return target.Call(thisValue, arguments);
       }
@@ -279,8 +280,8 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override EcmaValue Construct(EcmaValue[] arguments, RuntimeObject newTarget) {
-      ThrowIfProxyRevoked();
-      RuntimeObject trap = handler.GetMethod(WellKnownPropertyName.Construct);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject trap = handler.GetMethod(WellKnownProperty.Construct);
       if (trap == null) {
         return target.Construct(arguments, newTarget);
       }
@@ -292,8 +293,8 @@ namespace Codeless.Ecma.Runtime {
     }
 
     private bool GetIsExtensible() {
-      ThrowIfProxyRevoked();
-      RuntimeObject trap = handler.GetMethod(WellKnownPropertyName.IsExtensible);
+      RuntimeObject target = ThrowIfProxyRevoked();
+      RuntimeObject trap = handler.GetMethod(WellKnownProperty.IsExtensible);
       bool isExtensible = target.IsExtensible;
       if (trap == null) {
         return isExtensible;
@@ -304,10 +305,19 @@ namespace Codeless.Ecma.Runtime {
       return isExtensible;
     }
 
-    private void ThrowIfProxyRevoked() {
+    private RuntimeObject ThrowIfProxyRevoked() {
       if (target == null) {
         throw new EcmaTypeErrorException(InternalString.Error.ProxyRevoked);
       }
+      return target;
+    }
+    #endregion
+
+    #region Interface
+    void IInspectorMetaProvider.FillInInspectorMetaObject(InspectorMetaObject meta) {
+      meta.EnumerableProperties.Add("[[Handler]]", handler);
+      meta.EnumerableProperties.Add("[[Target]]", target);
+      meta.EnumerableProperties.Add("[[IsRevoked]]", target == null);
     }
     #endregion
 

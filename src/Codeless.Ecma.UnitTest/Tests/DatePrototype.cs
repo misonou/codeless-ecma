@@ -5,7 +5,7 @@ using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class DatePrototype {
+  public class DatePrototype : TestBase {
     [Test, RuntimeFunctionInjection]
     public void GetDate(RuntimeFunction getDate) {
       IsUnconstructableFunctionWLength(getDate, "getDate", 0);
@@ -339,7 +339,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should coerce provided argument", () => {
-        Case((Date.Construct(2016, 6), _), NaN);
+        Case((Date.Construct(2016, 6), Undefined), NaN);
         Case((Date.Construct(2016, 6), Null), Date.Construct(2016, 6, 0).Invoke("getTime"));
         Case((Date.Construct(2016, 6), true), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), false), Date.Construct(2016, 6, 0).Invoke("getTime"));
@@ -382,21 +382,21 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should coerce provided argument", () => {
-        Case((Date.Construct(2016, 6), _), NaN);
+        Case((Date.Construct(2016, 6), Undefined), NaN);
         Case((Date.Construct(2016, 6), Null), Date.Construct(0, 6).Invoke("getTime"));
         Case((Date.Construct(2016, 6), true), Date.Construct(1, 6).Invoke("getTime"));
         Case((Date.Construct(2016, 6), false), Date.Construct(0, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), "   +00200.000E-0002  "), Date.Construct(2, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), CreateObject(valueOf: () => 2)), Date.Construct(2, 6, 1).Invoke("getTime"));
 
-        Case((Date.Construct(2016, 6), 0, _), NaN);
+        Case((Date.Construct(2016, 6), 0, Undefined), NaN);
         Case((Date.Construct(2016, 6), 0, Null), Date.Construct(0, 0).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, true), Date.Construct(0, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, false), Date.Construct(0, 0).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, "   +00200.000E-0002  "), Date.Construct(0, 2).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, CreateObject(valueOf: () => 2)), Date.Construct(0, 2).Invoke("getTime"));
 
-        Case((Date.Construct(2016, 6), 0, 6, _), NaN);
+        Case((Date.Construct(2016, 6), 0, 6, Undefined), NaN);
         Case((Date.Construct(2016, 6), 0, 6, Null), Date.Construct(0, 6, 0).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, 6, true), Date.Construct(0, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, 6, false), Date.Construct(0, 6, 0).Invoke("getTime"));
@@ -446,28 +446,28 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should coerce provided argument", () => {
-        Case((Date.Construct(2016, 6), _), NaN);
+        Case((Date.Construct(2016, 6), Undefined), NaN);
         Case((Date.Construct(2016, 6), Null), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), true), Date.Construct(2016, 6, 1, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), false), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), "   +00200.000E-0002  "), Date.Construct(2016, 6, 1, 2).Invoke("getTime"));
         Case((Date.Construct(2016, 6), CreateObject(valueOf: () => 2)), Date.Construct(2016, 6, 1, 2).Invoke("getTime"));
 
-        Case((Date.Construct(2016, 6), 0, _), NaN);
+        Case((Date.Construct(2016, 6), 0, Undefined), NaN);
         Case((Date.Construct(2016, 6), 0, Null), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, true), Date.Construct(2016, 6, 1, 0, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, false), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, "   +00200.000E-0002  "), Date.Construct(2016, 6, 1, 0, 2).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, CreateObject(valueOf: () => 2)), Date.Construct(2016, 6, 1, 0, 2).Invoke("getTime"));
 
-        Case((Date.Construct(2016, 6), 0, 0, _), NaN);
+        Case((Date.Construct(2016, 6), 0, 0, Undefined), NaN);
         Case((Date.Construct(2016, 6), 0, 0, Null), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, 0, true), Date.Construct(2016, 6, 1, 0, 0, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, 0, false), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, 0, "   +00200.000E-0002  "), Date.Construct(2016, 6, 1, 0, 0, 2).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, 0, CreateObject(valueOf: () => 2)), Date.Construct(2016, 6, 1, 0, 0, 2).Invoke("getTime"));
 
-        Case((Date.Construct(2016, 6), 0, 0, 0, _), NaN);
+        Case((Date.Construct(2016, 6), 0, 0, 0, Undefined), NaN);
         Case((Date.Construct(2016, 6), 0, 0, 0, Null), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, 0, 0, true), Date.Construct(2016, 6, 1, 0, 0, 0, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, 0, 0, false), Date.Construct(2016, 6, 1).Invoke("getTime"));
@@ -510,7 +510,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should coerce provided argument", () => {
-        Case((Date.Construct(2016, 6), _), NaN);
+        Case((Date.Construct(2016, 6), Undefined), NaN);
         Case((Date.Construct(2016, 6), Null), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), true), Date.Construct(2016, 6, 1, 0, 0, 0, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), false), Date.Construct(2016, 6, 1).Invoke("getTime"));
@@ -551,21 +551,21 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should coerce provided argument", () => {
-        Case((Date.Construct(2016, 6), _), NaN);
+        Case((Date.Construct(2016, 6), Undefined), NaN);
         Case((Date.Construct(2016, 6), Null), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), true), Date.Construct(2016, 6, 1, 0, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), false), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), "   +00200.000E-0002  "), Date.Construct(2016, 6, 1, 0, 2).Invoke("getTime"));
         Case((Date.Construct(2016, 6), CreateObject(valueOf: () => 2)), Date.Construct(2016, 6, 1, 0, 2).Invoke("getTime"));
 
-        Case((Date.Construct(2016, 6), 0, _), NaN);
+        Case((Date.Construct(2016, 6), 0, Undefined), NaN);
         Case((Date.Construct(2016, 6), 0, Null), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, true), Date.Construct(2016, 6, 1, 0, 0, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, false), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, "   +00200.000E-0002  "), Date.Construct(2016, 6, 1, 0, 0, 2).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, CreateObject(valueOf: () => 2)), Date.Construct(2016, 6, 1, 0, 0, 2).Invoke("getTime"));
 
-        Case((Date.Construct(2016, 6), 0, 0, _), NaN);
+        Case((Date.Construct(2016, 6), 0, 0, Undefined), NaN);
         Case((Date.Construct(2016, 6), 0, 0, Null), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, 0, true), Date.Construct(2016, 6, 1, 0, 0, 0, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, 0, false), Date.Construct(2016, 6, 1).Invoke("getTime"));
@@ -609,14 +609,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should coerce provided argument", () => {
-        Case((Date.Construct(2016, 6), _), NaN);
+        Case((Date.Construct(2016, 6), Undefined), NaN);
         Case((Date.Construct(2016, 6), Null), Date.Construct(2016, 0).Invoke("getTime"));
         Case((Date.Construct(2016, 6), true), Date.Construct(2016, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), false), Date.Construct(2016, 0).Invoke("getTime"));
         Case((Date.Construct(2016, 6), "   +00200.000E-0002  "), Date.Construct(2016, 2).Invoke("getTime"));
         Case((Date.Construct(2016, 6), CreateObject(valueOf: () => 2)), Date.Construct(2016, 2).Invoke("getTime"));
 
-        Case((Date.Construct(2016, 6), 6, _), NaN);
+        Case((Date.Construct(2016, 6), 6, Undefined), NaN);
         Case((Date.Construct(2016, 6), 6, Null), Date.Construct(2016, 6, 0).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 6, true), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 6, false), Date.Construct(2016, 6, 0).Invoke("getTime"));
@@ -656,13 +656,13 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should coerce provided argument", () => {
-        Case((Date.Construct(2016, 6), _), NaN);
+        Case((Date.Construct(2016, 6), Undefined), NaN);
         Case((Date.Construct(2016, 6), true), Date.Construct(2016, 6, 1, 0, 0, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), false), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), "   +00200.000E-0002  "), Date.Construct(2016, 6, 1, 0, 0, 2).Invoke("getTime"));
         Case((Date.Construct(2016, 6), CreateObject(valueOf: () => 2)), Date.Construct(2016, 6, 1, 0, 0, 2).Invoke("getTime"));
 
-        Case((Date.Construct(2016, 6), 0, _), NaN);
+        Case((Date.Construct(2016, 6), 0, Undefined), NaN);
         Case((Date.Construct(2016, 6), 0, true), Date.Construct(2016, 6, 1, 0, 0, 0, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, false), Date.Construct(2016, 6, 1).Invoke("getTime"));
         Case((Date.Construct(2016, 6), 0, "   +00200.000E-0002  "), Date.Construct(2016, 6, 1, 0, 0, 0, 2).Invoke("getTime"));
@@ -1093,7 +1093,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should throw a TypeError if an invalid `hint` argument is specified", () => {
         Case(Date.Construct(), Throws.TypeError);
-        Case((Date.Construct(), _), Throws.TypeError);
+        Case((Date.Construct(), Undefined), Throws.TypeError);
         Case((Date.Construct(), Null), Throws.TypeError);
         Case((Date.Construct(), ""), Throws.TypeError);
         Case((Date.Construct(), "String"), Throws.TypeError);
@@ -1106,7 +1106,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
     #region Helper
     private static void RequireThisDateObject() {
       It("should throw a TypeError if this value is not a Date object", () => {
-        Case(_, Throws.TypeError);
+        Case(Undefined, Throws.TypeError);
         Case(Null, Throws.TypeError);
         Case(Date.Prototype, Throws.TypeError);
         Case(0, Throws.TypeError);

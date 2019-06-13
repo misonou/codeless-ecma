@@ -5,7 +5,7 @@ using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class ObjectPrototype {
+  public class ObjectPrototype : TestBase {
     [Test]
     public void Properties() {
       That(Object, Has.OwnProperty("prototype", Object.Prototype, EcmaPropertyAttributes.None));
@@ -32,13 +32,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
       Case((Object.Invoke("create", CreateObject(("foo", 42))), "foo"), false);
 
       Symbol sym = new Symbol();
+      EcmaValue returnSym = RuntimeFunction.Create(() => sym);
       Case((CreateObject((sym, 42)), sym), true);
-      Case((CreateObject((sym, 42)), CreateObject(toPrimitive: () => sym)), true);
-      Case((CreateObject((sym, 42)), CreateObject(toString: () => sym, valueOf: null)), true);
-      Case((CreateObject((sym, 42)), CreateObject(valueOf: () => sym, toString: null)), true);
+      Case((CreateObject((sym, 42)), CreateObject((Symbol.ToPrimitive, returnSym))), true);
+      Case((CreateObject((sym, 42)), CreateObject(("toString", returnSym), ("valueOf", Null))), true);
+      Case((CreateObject((sym, 42)), CreateObject(("valueOf", returnSym), ("toString", Null))), true);
 
       EcmaValue o;
-      o = RuntimeFunction.Create(() => { var @this = This; @this["foo"] = 42; return _; }).Construct();
+      o = RuntimeFunction.Create(() => Void(This.ToObject()["foo"] = 42)).Construct();
       Case((o, "foo"), true);
 
       o = new EcmaObject();
@@ -146,10 +147,10 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(isPrototypeOf, "isPrototypeOf", 1);
       IsAbruptedFromToObject(isPrototypeOf);
 
-      EcmaValue userFactory = RuntimeFunction.Create(() => _);
+      EcmaValue userFactory = RuntimeFunction.Create(() => Undefined);
       EcmaValue proto = userFactory.Construct();
 
-      EcmaValue forceUserFactory = RuntimeFunction.Create(() => _);
+      EcmaValue forceUserFactory = RuntimeFunction.Create(() => Undefined);
       forceUserFactory["prototype"] = proto;
 
       Case((proto, forceUserFactory.Construct()), true);
@@ -161,17 +162,18 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(propertyIsEnumerable, "propertyIsEnumerable", 1);
       IsAbruptedFromToObject(propertyIsEnumerable);
 
-      RuntimeFunction factory = RuntimeFunction.Create((v) => { var @this = This; @this["name"] = v; return _; });
+      RuntimeFunction factory = RuntimeFunction.Create(v => Void(This.ToObject()["name"] = v));
       factory.Prototype.Set("rootprop", true);
       EcmaValue obj = factory.Construct("name");
       Case((obj, "name"), true);
       Case((obj, "rootprop"), false, "propertyIsEnumerable method does not consider objects in the prototype chain");
 
       Symbol sym = new Symbol();
+      EcmaValue returnSym = RuntimeFunction.Create(() => sym);
       Case((CreateObject((sym, 42)), sym), true);
-      Case((CreateObject((sym, 42)), CreateObject((Symbol.ToPrimitive, RuntimeFunction.Create(() => sym)))), true);
-      Case((CreateObject((sym, 42)), CreateObject(toString: () => sym, valueOf: null)), true);
-      Case((CreateObject((sym, 42)), CreateObject(valueOf: () => sym, toString: null)), true);
+      Case((CreateObject((sym, 42)), CreateObject((Symbol.ToPrimitive, returnSym))), true);
+      Case((CreateObject((sym, 42)), CreateObject(("toString", returnSym), ("valueOf", Null))), true);
+      Case((CreateObject((sym, 42)), CreateObject(("valueOf", returnSym), ("toString", Null))), true);
     }
 
     [Test, RuntimeFunctionInjection]
@@ -187,7 +189,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(toString, "toString", 0);
 
       EcmaValue obj = new EcmaObject();
-      DefineProperty(obj, Symbol.ToStringTag, get: ThrowTest262Exception.Call);
+      DefineProperty(obj, Symbol.ToStringTag, get: ThrowTest262Exception);
       Case(obj, Throws.Test262);
 
       EcmaValue args = default;
@@ -206,7 +208,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       Case(new EcmaDate(), "[object Date]");
       Case(Object.Call(_, new EcmaDate()), "[object Date]");
 
-      Case(RuntimeFunction.Create(() => _), "[object Function]");
+      Case(RuntimeFunction.Create(() => Undefined), "[object Function]");
 
       Case(Null, "[object Null]");
 
@@ -229,12 +231,12 @@ namespace Codeless.Ecma.UnitTest.Tests {
       Case(Object.Call(_, String.Call("")), "[object String]");
       Case(Object.Call(_, String.Construct("")), "[object String]");
 
-      Case(_, "[object Undefined]");
+      Case(Undefined, "[object Undefined]");
 
       Case(Proxy.Construct(Array.Construct(), Object.Construct()), "[object Array]");
 
       // Non-string values of `@@toStringTag` property are ignored
-      Case(CreateObject((Symbol.ToStringTag, _)), "[object Object]");
+      Case(CreateObject((Symbol.ToStringTag, Undefined)), "[object Object]");
       Case(CreateObject((Symbol.ToStringTag, Null)), "[object Object]");
       Case(CreateObject((Symbol.ToStringTag, Symbol.ToStringTag)), "[object Object]");
       Case(CreateObject((Symbol.ToStringTag, 42)), "[object Object]");

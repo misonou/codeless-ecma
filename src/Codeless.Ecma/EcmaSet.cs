@@ -7,9 +7,6 @@ namespace Codeless.Ecma {
     public EcmaSet()
       : base(WellKnownObject.SetPrototype) { }
 
-    public EcmaSet(RuntimeObject constructor)
-      : base(WellKnownObject.SetPrototype, constructor) { }
-
     protected override WellKnownObject DefaultIteratorPrototype => WellKnownObject.SetIteratorPrototype;
 
     public EcmaSet Add(EcmaValue key) {

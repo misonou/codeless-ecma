@@ -78,6 +78,10 @@ namespace Codeless.Ecma {
       set { attributes = (attributes & ~EcmaPropertyAttributes.Writable) | EcmaPropertyAttributes.HasWritable | (value ? EcmaPropertyAttributes.Writable : 0); }
     }
 
+    public bool HasValue {
+      get { return (attributes & EcmaPropertyAttributes.HasValue) != 0; }
+    }
+
     public EcmaValue Value {
       get {
         return this.IsDataDescriptor ? getter : default;
@@ -116,15 +120,15 @@ namespace Codeless.Ecma {
     public EcmaValue ToValue() {
       RuntimeObject obj = new EcmaObject();
       if (IsDataDescriptor) {
-        obj.CreateDataPropertyOrThrow(WellKnownPropertyName.Value, this.Value);
-        obj.CreateDataPropertyOrThrow(WellKnownPropertyName.Writable, this.Writable);
+        obj.CreateDataPropertyOrThrow(WellKnownProperty.Value, this.Value);
+        obj.CreateDataPropertyOrThrow(WellKnownProperty.Writable, this.Writable);
       }
       if (IsAccessorDescriptor) {
-        obj.CreateDataPropertyOrThrow(WellKnownPropertyName.Get, this.Get);
-        obj.CreateDataPropertyOrThrow(WellKnownPropertyName.Set, this.Set);
+        obj.CreateDataPropertyOrThrow(WellKnownProperty.Get, this.Get);
+        obj.CreateDataPropertyOrThrow(WellKnownProperty.Set, this.Set);
       }
-      obj.CreateDataPropertyOrThrow(WellKnownPropertyName.Enumerable, this.Enumerable);
-      obj.CreateDataPropertyOrThrow(WellKnownPropertyName.Configurable, this.Configurable);
+      obj.CreateDataPropertyOrThrow(WellKnownProperty.Enumerable, this.Enumerable);
+      obj.CreateDataPropertyOrThrow(WellKnownProperty.Configurable, this.Configurable);
       return obj;
     }
 
@@ -132,30 +136,30 @@ namespace Codeless.Ecma {
     public static EcmaPropertyDescriptor FromValue(EcmaValue value) {
       Guard.ArgumentIsObject(value);
       EcmaPropertyDescriptor result = new EcmaPropertyDescriptor();
-      if (value.HasProperty(WellKnownPropertyName.Enumerable)) {
-        result.Enumerable = (bool)value[WellKnownPropertyName.Enumerable];
+      if (value.HasProperty(WellKnownProperty.Enumerable)) {
+        result.Enumerable = (bool)value[WellKnownProperty.Enumerable];
       }
-      if (value.HasProperty(WellKnownPropertyName.Configurable)) {
-        result.Configurable = (bool)value[WellKnownPropertyName.Configurable];
+      if (value.HasProperty(WellKnownProperty.Configurable)) {
+        result.Configurable = (bool)value[WellKnownProperty.Configurable];
       }
-      if (value.HasProperty(WellKnownPropertyName.Value)) {
-        result.Value = value[WellKnownPropertyName.Value];
+      if (value.HasProperty(WellKnownProperty.Value)) {
+        result.Value = value[WellKnownProperty.Value];
       }
-      if (value.HasProperty(WellKnownPropertyName.Writable)) {
-        result.Writable = (bool)value[WellKnownPropertyName.Writable];
+      if (value.HasProperty(WellKnownProperty.Writable)) {
+        result.Writable = (bool)value[WellKnownProperty.Writable];
         if (!result.IsDataDescriptor) {
           result.Value = EcmaValue.Undefined;
         }
       }
-      if (value.HasProperty(WellKnownPropertyName.Get)) {
-        EcmaValue getter = value[WellKnownPropertyName.Get];
+      if (value.HasProperty(WellKnownProperty.Get)) {
+        EcmaValue getter = value[WellKnownProperty.Get];
         if (!getter.IsCallable && getter.Type != EcmaValueType.Undefined) {
           throw new EcmaTypeErrorException(InternalString.Error.SetterMustBeFunction);
         }
         result.Get = getter;
       }
-      if (value.HasProperty(WellKnownPropertyName.Set)) {
-        EcmaValue setter = value[WellKnownPropertyName.Set];
+      if (value.HasProperty(WellKnownProperty.Set)) {
+        EcmaValue setter = value[WellKnownProperty.Set];
         if (!setter.IsCallable && setter.Type != EcmaValueType.Undefined) {
           throw new EcmaTypeErrorException(InternalString.Error.GetterMustBeFunction);
         }
@@ -234,6 +238,22 @@ namespace Codeless.Ecma {
       if ((attributes & EcmaPropertyAttributes.HasWritable) == 0) {
         attributes |= EcmaPropertyAttributes.HasWritable | (IsDataDescriptor ? (sourceAttrs & EcmaPropertyAttributes.Writable) : 0);
       }
+    }
+
+    internal EcmaPropertyDescriptor EnsureSharedValue(RuntimeRealm realm) {
+      bool isGetterShared = getter.Type == SharedIntrinsicObjectBinder.SharedValue;
+      bool isSetterShared = setter.Type == SharedIntrinsicObjectBinder.SharedValue;
+      if (isGetterShared || isSetterShared) {
+        EcmaPropertyDescriptor clone = Clone();
+        if (isGetterShared) {
+          clone.getter = realm.GetRuntimeObject((WellKnownObject)getter.ToInt32());
+        }
+        if (isSetterShared) {
+          clone.setter = realm.GetRuntimeObject((WellKnownObject)setter.ToInt32());
+        }
+        return clone;
+      }
+      return this;
     }
   }
 }

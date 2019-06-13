@@ -16,7 +16,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static string ToString([This] EcmaValue thisValue) {
       Guard.ArgumentIsObject(thisValue);
-      EcmaValue name = thisValue["name"];
+      EcmaValue name = thisValue[WellKnownProperty.Name];
       EcmaValue msg = thisValue["msg"];
       string strName = (name == default) ? Name : name.ToString();
       string strMsg = (msg == default) ? String.Empty : msg.ToString();

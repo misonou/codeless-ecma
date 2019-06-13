@@ -6,7 +6,7 @@ using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class StringPrototype {
+  public class StringPrototype : TestBase {
     [Test]
     public void Properties() {
       That(String.Prototype, Has.OwnProperty("constructor", String, EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
@@ -209,7 +209,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         var obj1 = CreateObject(toString: () => "\u0041", valueOf: () => "_\u0041_");
         var obj2 = CreateObject(toString: () => true);
         var obj3 = CreateObject(toString: () => 42);
-        Case(("lego", obj1, obj2, obj3, _), "legoAtrue42undefined");
+        Case(("lego", obj1, obj2, obj3, Undefined), "legoAtrue42undefined");
       });
 
       It("should not change string value of the this instance", () => {
@@ -503,7 +503,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         int callCount = 0;
         separator[WellKnownSymbol.Match] = RuntimeFunction.Create(() => {
           callCount += 1;
-          args = new EcmaArray(Arguments);
+          args = Arguments;
           thisValue = This;
           return returnVal;
         });
@@ -547,7 +547,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         int callCount = 0;
         separator[WellKnownSymbol.MatchAll] = RuntimeFunction.Create(() => {
           callCount += 1;
-          args = new EcmaArray(Arguments);
+          args = Arguments;
           thisValue = This;
           return returnVal;
         });
@@ -655,14 +655,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should perform observable operations in the correct order", () => {
-        List<string> list = new List<string>();
+        Logs.Clear();
         System.Func<string, EcmaValue, EcmaValue, EcmaValue> createPrimitiveObserver = (name, toString, valueOf) => CreateObject(
-            toString: () => { list.Add("toString:" + name); return toString; },
-            valueOf: () => { list.Add("valueOf:" + name); return valueOf; });
+            toString: Intercept(() => toString, "toString:" + name),
+            valueOf: Intercept(() => valueOf, "valueOf:" + name));
         Case((createPrimitiveObserver("receiver", new EcmaObject(), "abc"),
                 createPrimitiveObserver("maxLength", 11, new EcmaObject()),
                 createPrimitiveObserver("fillString", new EcmaObject(), "def")), "abcdefdefde");
-        That(list, Is.EquivalentTo(new[] { "toString:receiver", "valueOf:receiver", "valueOf:maxLength", "toString:maxLength", "toString:fillString", "valueOf:fillString" }));
+        CollectionAssert.AreEqual(new[] { "toString:receiver", "valueOf:receiver", "valueOf:maxLength", "toString:maxLength", "toString:fillString", "valueOf:fillString" }, Logs);
       });
     }
 
@@ -761,7 +761,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         int callCount = 0;
         separator[WellKnownSymbol.Replace] = RuntimeFunction.Create(() => {
           callCount += 1;
-          args = new EcmaArray(Arguments);
+          args = Arguments;
           thisValue = This;
           return returnVal;
         });
@@ -810,7 +810,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         int callCount = 0;
         separator[WellKnownSymbol.Search] = RuntimeFunction.Create(() => {
           callCount += 1;
-          args = new EcmaArray(Arguments);
+          args = Arguments;
           thisValue = This;
           return returnVal;
         });
@@ -898,7 +898,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         int callCount = 0;
         separator[WellKnownSymbol.Split] = RuntimeFunction.Create(() => {
           callCount += 1;
-          args = new EcmaArray(Arguments);
+          args = Arguments;
           thisValue = This;
           return returnVal;
         });

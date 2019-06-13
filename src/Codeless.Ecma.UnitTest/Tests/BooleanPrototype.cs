@@ -5,7 +5,7 @@ using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class BooleanPrototype {
+  public class BooleanPrototype : TestBase {
     [Test]
     public void Properties() {
       That(Boolean.Prototype, Has.OwnProperty("constructor", Boolean, EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));

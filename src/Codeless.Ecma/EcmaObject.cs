@@ -19,13 +19,13 @@ namespace Codeless.Ecma {
       }
     }
 
-    [IntrinsicMember(FunctionLength = 2)]
+    [IntrinsicMember]
     public static EcmaValue Assign(EcmaValue target, params EcmaValue[] sources) {
       Guard.RequireObjectCoercible(target);
       RuntimeObject obj = ObjectConstructor.Object(null, target).ToObject();
       foreach (EcmaValue source in sources) {
         if (!source.IsNullOrUndefined) {
-          foreach (EcmaPropertyEntry e in source.ToObject().GetEnumerableOwnProperties()) {
+          foreach (EcmaPropertyEntry e in source.ToObject().GetEnumerableOwnProperties(true)) {
             obj.CreateDataPropertyOrThrow(e.Key, e.Value);
           }
         }
@@ -49,7 +49,7 @@ namespace Codeless.Ecma {
     public static EcmaValue DefineProperties(EcmaValue target, EcmaValue properties) {
       Guard.ArgumentIsObject(target);
       RuntimeObject dst = target.ToObject();
-      foreach (EcmaPropertyEntry e in properties.ToObject().GetEnumerableOwnProperties()) {
+      foreach (EcmaPropertyEntry e in properties.ToObject().GetEnumerableOwnProperties(true)) {
         dst.DefinePropertyOrThrow(e.Key, EcmaPropertyDescriptor.FromValue(e.Value));
       }
       return target;
@@ -66,7 +66,7 @@ namespace Codeless.Ecma {
     [IntrinsicMember]
     public static EcmaValue Entries(EcmaValue target) {
       List<EcmaValue> arr = new List<EcmaValue>();
-      foreach (EcmaPropertyEntry e in target.ToObject().GetEnumerableOwnProperties()) {
+      foreach (EcmaPropertyEntry e in target.ToObject().GetEnumerableOwnProperties(false)) {
         arr.Add(e.ToValue());
       }
       return new EcmaArray(arr);
@@ -78,6 +78,20 @@ namespace Codeless.Ecma {
         if (!obj.ToObject().SetIntegrityLevel(RuntimeObjectIntegrityLevel.Frozen)) {
           throw new EcmaTypeErrorException(InternalString.Error.PreventExtensionFailed);
         }
+      }
+      return obj;
+    }
+
+    [IntrinsicMember]
+    public static EcmaValue FromEntries(EcmaValue iterator) {
+      EcmaObject obj = new EcmaObject();
+      foreach (EcmaValue entry in iterator.ForOf()) {
+        if (entry.Type != EcmaValueType.Object) {
+          throw new EcmaTypeErrorException(InternalString.Error.EntryNotObject);
+        }
+        EcmaValue key = entry[0];
+        EcmaValue value = entry[1];
+        obj.CreateDataProperty(EcmaPropertyKey.FromValue(key), value);
       }
       return obj;
     }
@@ -106,17 +120,19 @@ namespace Codeless.Ecma {
 
     [IntrinsicMember]
     public static EcmaValue GetOwnPropertyNames(EcmaValue target) {
-      return new EcmaArray(target.ToObject().GetOwnPropertyKeys().Where(v => !v.IsSymbol).Select(v => v.ToValue()));
+      return new EcmaArray(target.ToObject().GetOwnPropertyKeys().Where(v => !v.IsSymbol).Select(v => v.ToValue()).ToList());
     }
 
     [IntrinsicMember]
     public static EcmaValue GetOwnPropertySymbols(EcmaValue target) {
-      return new EcmaArray(target.ToObject().GetOwnPropertyKeys().Where(v => v.IsSymbol).Select(v => v.ToValue()));
+      return new EcmaArray(target.ToObject().GetOwnPropertyKeys().Where(v => v.IsSymbol).Select(v => v.ToValue()).ToList());
     }
 
     [IntrinsicMember]
     public static EcmaValue GetPrototypeOf(EcmaValue obj) {
-      return ObjectPrototype.GetPrototypeOf(obj);
+      Guard.RequireObjectCoercible(obj);
+      RuntimeObject proto = obj.ToObject().GetPrototypeOf();
+      return proto == null ? EcmaValue.Null : proto;
     }
 
     [IntrinsicMember]
@@ -149,7 +165,7 @@ namespace Codeless.Ecma {
 
     [IntrinsicMember]
     public static EcmaValue Keys(EcmaValue target) {
-      return new EcmaArray(target.ToObject().GetEnumerableOwnProperties().Select(v => v.Key.ToValue()));
+      return new EcmaArray(target.ToObject().GetEnumerableOwnProperties(false).Select(v => v.Key.ToValue()).ToList());
     }
 
     [IntrinsicMember]
@@ -181,13 +197,15 @@ namespace Codeless.Ecma {
       if (obj.Type != EcmaValueType.Object) {
         return obj;
       }
-      obj.ToObject().SetPrototypeOf(proto.ToObject());
+      if (!obj.ToObject().SetPrototypeOf(proto == EcmaValue.Null ? null : proto.ToObject())) {
+        throw new EcmaTypeErrorException(InternalString.Error.SetPrototypeFailed);
+      }
       return obj;
     }
 
     [IntrinsicMember]
     public static EcmaValue Values(EcmaValue target) {
-      return new EcmaArray(target.ToObject().GetEnumerableOwnProperties().Select(v => v.Value));
+      return new EcmaArray(target.ToObject().GetEnumerableOwnProperties(false).Select(v => v.Value).ToList());
     }
   }
 }

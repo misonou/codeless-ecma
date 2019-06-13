@@ -14,9 +14,6 @@ namespace Codeless.Ecma {
     public EcmaDate()
       : this(DateTime.UtcNow) { }
 
-    public EcmaDate(RuntimeObject constructor)
-      : base(WellKnownObject.DatePrototype, constructor) { }
-
     public EcmaDate(DateTime dt)
       : this(EcmaTimestamp.FromNativeDateTime(dt).Value) { }
 

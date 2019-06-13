@@ -2,13 +2,28 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace Codeless.Ecma.UnitTest {
   public static class StaticHelper {
-    public static EcmaValue _ => EcmaValue.Undefined;
+    public static readonly ArrayList Logs = new ArrayList();
 
-    public static readonly RuntimeFunction ThrowTest262Exception = RuntimeFunction.Create(() => throw new Test262Exception());
+    public static readonly Func<EcmaValue> ThrowTest262Exception = () => throw new Test262Exception();
+
+    public static Func<EcmaValue> ThrowTest262WithMessage(string message) {
+      return () => throw new Test262Exception(message);
+    }
+
+    public static EcmaValue CreateObject(object anonymousObject) {
+      EcmaValue obj = new EcmaObject();
+      foreach (PropertyInfo property in anonymousObject.GetType().GetProperties()) {
+        object value = property.GetValue(anonymousObject);
+        obj[property.Name] = new EcmaValue(value);
+      }
+      return obj;
+    }
 
     public static EcmaValue CreateObject(Func<EcmaValue> toString = null, Func<EcmaValue> valueOf = null, Func<EcmaValue> toPrimitive = null) {
       return CreateObject(toString == null ? null : RuntimeFunction.Create(toString), valueOf == null ? null : RuntimeFunction.Create(valueOf), toPrimitive == null ? null : RuntimeFunction.Create(toPrimitive));
@@ -67,25 +82,93 @@ namespace Codeless.Ecma.UnitTest {
       Global.Object.Invoke("defineProperty", obj, propertyKey, new EcmaObject(properties));
     }
 
-    public static Func<EcmaValue> CreateFunction(IList count, string message) {
+    public static EcmaValue CreateProxyCompleteTraps(EcmaValue target, EcmaValue overrides) {
+      EcmaValue handler = CreateObject(new {
+        getPrototypeOf = overrides["getPrototypeOf"] || ThrowTest262WithMessage("[[GetPrototypeOf]] trap called"),
+        setPrototypeOf = overrides["setPrototypeOf"] || ThrowTest262WithMessage("[[SetPrototypeOf]] trap called"),
+        isExtensible = overrides["isExtensible"] || ThrowTest262WithMessage("[[IsExtensible]] trap called"),
+        preventExtensions = overrides["preventExtensions"] || ThrowTest262WithMessage("[[PreventExtensions]] trap called"),
+        getOwnPropertyDescriptor = overrides["getOwnPropertyDescriptor"] || ThrowTest262WithMessage("[[GetOwnProperty]] trap called"),
+        has = overrides["has"] || ThrowTest262WithMessage("[[HasProperty]] trap called"),
+        get = overrides["get"] || ThrowTest262WithMessage("[[Get]] trap called"),
+        set = overrides["set"] || ThrowTest262WithMessage("[[Set]] trap called"),
+        deleteProperty = overrides["deleteProperty"] || ThrowTest262WithMessage("[[Delete]] trap called"),
+        defineProperty = overrides["defineProperty"] || ThrowTest262WithMessage("[[DefineOwnProperty]] trap called"),
+        ownKeys = overrides["ownKeys"] || ThrowTest262WithMessage("[[OwnPropertyKeys]] trap called"),
+        apply = overrides["apply"] || ThrowTest262WithMessage("[[Call]] trap called"),
+        construct = overrides["construct"] || ThrowTest262WithMessage("[[Construct]] trap called"),
+        enumerate = ThrowTest262WithMessage("[[Enumerate]] trap called: this trap has been removed")
+      });
+      return Global.Proxy.Construct(target, handler);
+    }
+
+    public static Func<EcmaValue> Intercept(Func<EcmaValue> fn, string message = null) {
       return () => {
-        count.Add(message);
-        return _;
+        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        return fn();
       };
     }
 
-    public static RuntimeFunction CreateFunction(IList count, Func<EcmaValue> fn) {
-      return RuntimeFunction.Create(() => {
-        count.Add(null);
-        return fn();
-      });
+    public static Func<EcmaValue, EcmaValue> Intercept(Func<EcmaValue, EcmaValue> fn, string message = null) {
+      return (a) => {
+        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        return fn(a);
+      };
     }
 
-    public static RuntimeFunction CreateFunction(IList count, string message, Func<EcmaValue> fn) {
-      return RuntimeFunction.Create(() => {
-        count.Add(message);
-        return fn();
-      });
+    public static Func<EcmaValue, EcmaValue, EcmaValue> Intercept(Func<EcmaValue, EcmaValue, EcmaValue> fn, string message = null) {
+      return (a, b) => {
+        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        return fn(a, b);
+      };
+    }
+
+    public static Func<EcmaValue, EcmaValue, EcmaValue, EcmaValue> Intercept(Func<EcmaValue, EcmaValue, EcmaValue, EcmaValue> fn, string message = null) {
+      return (a, b, c) => {
+        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        return fn(a, b, c);
+      };
+    }
+
+    public static IDisposable TempProperty(EcmaValue obj, EcmaPropertyKey key, EcmaValue value) {
+      return new TempPropertyScope(obj.ToObject(), key, new EcmaPropertyDescriptor(value));
+    }
+
+    public static IDisposable TempProperty(EcmaValue obj, EcmaPropertyKey key, EcmaPropertyDescriptor descriptor) {
+      return new TempPropertyScope(obj.ToObject(), key, descriptor);
+    }
+
+    private class ValueHolder {
+      private EcmaValue value;
+
+      public ValueHolder(EcmaValue value) {
+        this.value = value;
+      }
+
+      public override string ToString() {
+        return value.ToString();
+      }
+    }
+
+    private class TempPropertyScope : IDisposable {
+      private readonly RuntimeObject obj;
+      private readonly EcmaPropertyKey key;
+      private readonly EcmaPropertyDescriptor previous;
+
+      public TempPropertyScope(RuntimeObject obj, EcmaPropertyKey key, EcmaPropertyDescriptor descriptor) {
+        this.obj = obj;
+        this.key = key;
+        this.previous = obj.GetOwnProperty(key);
+        obj.DefinePropertyOrThrow(key, descriptor);
+      }
+
+      public void Dispose() {
+        if (this.previous != null) {
+          obj.DefinePropertyOrThrow(key, previous);
+        } else {
+          obj.DeletePropertyOrThrow(key);
+        }
+      }
     }
   }
 }

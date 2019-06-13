@@ -1,4 +1,4 @@
-﻿using Codeless.Ecma.Runtime;
+using Codeless.Ecma.Runtime;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,8 +7,8 @@ using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class RegExpSS {
-    object undefined = _;
+  public class RegExpSS : TestBase {
+    object undefined = Undefined;
 
     [Test]
     public void Pattern() {
@@ -789,7 +789,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
     public static void VerifyMatch(EcmaValue pattern, EcmaValue flags, EcmaValue input, object[] expected, int index) {
       EcmaValue re = default;
-      That(() => re = RegExp.Construct(pattern, flags), Throws.Nothing, FormatMessage((_, new[] { pattern, flags }), null));
+      That(() => re = RegExp.Construct(pattern, flags), Throws.Nothing, FormatMessage((Undefined, new[] { pattern, flags }), null));
 
       RuntimeFunction fn = (RuntimeFunction)TestContext.CurrentContext.Test.Arguments.FirstOrDefault() as RuntimeFunction;
       if (fn == null || fn.IsIntrinsicFunction(WellKnownObject.RegExpPrototype, "test")) {
@@ -806,7 +806,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
     public static void VerifyMatch(EcmaValue pattern, EcmaValue flags, EcmaValue input, params (object[], int)[] expected) {
       EcmaValue re = default;
-      That(() => re = RegExp.Construct(pattern, flags), Throws.Nothing, FormatMessage((_, new[] { pattern, flags }), null));
+      That(() => re = RegExp.Construct(pattern, flags), Throws.Nothing, FormatMessage((Undefined, new[] { pattern, flags }), null));
 
       EcmaValue actual;
       int i = 0;

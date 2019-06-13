@@ -5,7 +5,7 @@ using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class NumberConstructor {
+  public class NumberConstructor : TestBase {
     [Test, RuntimeFunctionInjection]
     public void Constructor(RuntimeFunction ctor) {
       IsConstructorWLength(ctor, "Number", 1, Number.Prototype);
@@ -22,7 +22,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((_, "\u180E"), NaN);
         Case((_, "\u180EInfinity\u180E"), NaN);
         Case((_, "\u180E-Infinity\u180E"), NaN);
-        Case((_, _), NaN);
+        Case((_, Undefined), NaN);
       });
 
       It("should return the same numeric value", () => {

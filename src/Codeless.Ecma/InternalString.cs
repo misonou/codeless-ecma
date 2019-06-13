@@ -52,6 +52,7 @@ namespace Codeless.Ecma {
       public const string DeletePropertyThrow = "Cannot delete property on #<Object>";
       public const string PrototypeMustBeObjectOrNull = "Object prototype may only be an Object or null";
       public const string PreventExtensionFailed = "Cannot prevent extensions to #<Object>";
+      public const string SetPropertyFailed = "Cannot set property {0} of #<Object>";
       public const string SetPrototypeFailed = "Cannot set prototype of #<Object>";
       public const string SetPropertyNullOrUndefined = "Cannot set property '#<Property>' on null or undefined";
       public const string MustCallAsConstructor = "Constructor #<Object> requires 'new'";
@@ -79,6 +80,9 @@ namespace Codeless.Ecma {
       public const string UnexpectedJSONEnd = "Unexpected end of JSON input";
       public const string UnexpectedJSONToken = "Unexpected token {0} in JSON at position {1}";
       public const string MalformedURI = "URI malformed";
+      public const string EntryNotObject = "Iterator value is not an entry object";
+      public const string ExceedMaximumLength = "Exceed maximum length";
+      public const string ReduceEmptyArray = "Reduce of empty array with no initial value";
     }
   }
 }

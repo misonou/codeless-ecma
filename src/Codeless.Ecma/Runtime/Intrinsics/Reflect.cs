@@ -11,12 +11,15 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static EcmaValue SetPrototypeOf(EcmaValue target, EcmaValue proto) {
-      return target.ToObject().SetPrototypeOf(proto.ToObject());
+      if (proto.Type != EcmaValueType.Null && proto.Type != EcmaValueType.Object) {
+        throw new EcmaTypeErrorException(InternalString.Error.PrototypeMustBeObjectOrNull);
+      }
+      return target.ToObject().SetPrototypeOf(proto == EcmaValue.Null ? null : proto.ToObject());
     }
 
     [IntrinsicMember]
     public static EcmaValue OwnKeys(EcmaValue target) {
-      return new EcmaArray(target.ToObject().GetOwnPropertyKeys().Select(v => v.ToValue()));
+      return new EcmaArray(target.ToObject().GetOwnPropertyKeys().Select(v => v.ToValue()).ToList());
     }
 
     [IntrinsicMember]
@@ -48,7 +51,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static EcmaValue GetOwnPropertyDescriptor(EcmaValue target, EcmaValue key) {
-      return target.ToObject().GetOwnProperty(EcmaPropertyKey.FromValue(key)).ToValue();
+      EcmaPropertyDescriptor descriptor = target.ToObject().GetOwnProperty(EcmaPropertyKey.FromValue(key));
+      return descriptor != null ? descriptor.ToValue() : default;
     }
 
     [IntrinsicMember]

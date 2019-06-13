@@ -74,7 +74,7 @@ namespace Codeless.Ecma.Runtime {
         throw new EcmaTypeErrorException(InternalString.Error.NotConstructor);
       }
       try {
-        return (RuntimeObject)constructThisValue.Invoke(null, new object[] { defaultProto, newTarget });
+        return (RuntimeObject)constructThisValue.Invoke(null, new object[] { newTarget });
       } catch (TargetInvocationException ex) {
         throw ex.InnerException;
       }
@@ -85,7 +85,7 @@ namespace Codeless.Ecma.Runtime {
       if (m.HasAttribute(out attribute) && attribute.FunctionLength >= 0) {
         return attribute.FunctionLength;
       }
-      return m.GetParameters().Count(pi => !Attribute.IsDefined(pi, typeof(ThisAttribute)) && !Attribute.IsDefined(pi, typeof(NewTargetAttribute)) && !Attribute.IsDefined(pi, typeof(ParamArrayAttribute)));
+      return m.GetParameters().Count(pi => !Attribute.IsDefined(pi, typeof(ThisAttribute)) && !Attribute.IsDefined(pi, typeof(NewTargetAttribute)));
     }
   }
 }

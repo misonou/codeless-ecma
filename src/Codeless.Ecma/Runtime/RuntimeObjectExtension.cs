@@ -5,13 +5,12 @@ using System.Text;
 
 namespace Codeless.Ecma.Runtime {
   public static class RuntimeObjectExtension {
-    private static readonly WellKnownPropertyName[] convertToPrimitiveMethodString = { WellKnownPropertyName.ToString, WellKnownPropertyName.ValueOf };
-    private static readonly WellKnownPropertyName[] convertToPrimitiveMethodNumber = { WellKnownPropertyName.ValueOf, WellKnownPropertyName.ToString };
-    private static readonly EcmaPropertyDescriptor sealedProperty = new EcmaPropertyDescriptor { Configurable = false };
-    private static readonly EcmaPropertyDescriptor frozenProperty = new EcmaPropertyDescriptor { Configurable = false, Writable = false };
+    private static readonly EcmaPropertyKey[] convertToPrimitiveMethodString = { WellKnownProperty.ToString, WellKnownProperty.ValueOf };
+    private static readonly EcmaPropertyKey[] convertToPrimitiveMethodNumber = { WellKnownProperty.ValueOf, WellKnownProperty.ToString };
 
     [EcmaSpecification("GetMethod", EcmaSpecificationKind.AbstractOperations)]
     public static RuntimeFunction GetMethod(this RuntimeObject obj, EcmaPropertyKey propertyKey) {
+      Guard.ArgumentNotNull(obj, "obj");
       EcmaValue value = obj.Get(propertyKey, obj);
       if (value.IsNullOrUndefined) {
         return null;
@@ -24,7 +23,7 @@ namespace Codeless.Ecma.Runtime {
 
     [EcmaSpecification("GetIterator", EcmaSpecificationKind.AbstractOperations)]
     public static EcmaIteratorEnumerator GetIterator(this RuntimeObject obj) {
-      // TODO: GetIterator
+      Guard.ArgumentNotNull(obj, "obj");
       RuntimeObject method = obj.GetMethod(Symbol.Iterator);
       EcmaValue iterator = method.Call(obj);
       Guard.ArgumentIsObject(iterator);
@@ -33,16 +32,19 @@ namespace Codeless.Ecma.Runtime {
 
     [EcmaSpecification("CreateDataProperty", EcmaSpecificationKind.AbstractOperations)]
     public static bool CreateDataProperty(this RuntimeObject obj, EcmaPropertyKey propertyKey, EcmaValue value) {
+      Guard.ArgumentNotNull(obj, "obj");
       return obj.DefineOwnProperty(propertyKey, new EcmaPropertyDescriptor(value, EcmaPropertyAttributes.DefaultDataProperty));
     }
 
     [EcmaSpecification("CreateMethodProperty", EcmaSpecificationKind.AbstractOperations)]
     public static bool CreateMethodProperty(this RuntimeObject obj, EcmaPropertyKey propertyKey, EcmaValue value) {
+      Guard.ArgumentNotNull(obj, "obj");
       return obj.DefineOwnProperty(propertyKey, new EcmaPropertyDescriptor(value, EcmaPropertyAttributes.DefaultMethodProperty));
     }
 
     [EcmaSpecification("CreateDataPropertyOrThrow", EcmaSpecificationKind.AbstractOperations)]
     public static bool CreateDataPropertyOrThrow(this RuntimeObject obj, EcmaPropertyKey propertyKey, EcmaValue value) {
+      Guard.ArgumentNotNull(obj, "obj");
       if (!obj.CreateDataProperty(propertyKey, value)) {
         throw new EcmaTypeErrorException(InternalString.Error.CreatePropertyThrow);
       }
@@ -51,6 +53,7 @@ namespace Codeless.Ecma.Runtime {
 
     [EcmaSpecification("DefinePropertyOrThrow", EcmaSpecificationKind.AbstractOperations)]
     public static bool DefinePropertyOrThrow(this RuntimeObject obj, EcmaPropertyKey propertyKey, EcmaPropertyDescriptor descriptor) {
+      Guard.ArgumentNotNull(obj, "obj");
       if (!obj.DefineOwnProperty(propertyKey, descriptor)) {
         throw new EcmaTypeErrorException(InternalString.Error.CreatePropertyThrow);
       }
@@ -59,63 +62,34 @@ namespace Codeless.Ecma.Runtime {
 
     [EcmaSpecification("DeletePropertyOrThrow", EcmaSpecificationKind.AbstractOperations)]
     public static bool DeletePropertyOrThrow(this RuntimeObject obj, EcmaPropertyKey propertyKey) {
+      Guard.ArgumentNotNull(obj, "obj");
       if (!obj.Delete(propertyKey)) {
         throw new EcmaTypeErrorException(InternalString.Error.DeletePropertyThrow);
       }
       return true;
     }
 
-    [EcmaSpecification("TestIntegrityLevel", EcmaSpecificationKind.AbstractOperations)]
-    public static RuntimeObjectIntegrityLevel TestIntegrityLevel(this RuntimeObject obj) {
-      if (obj.IsExtensible) {
-        return RuntimeObjectIntegrityLevel.Default;
-      }
-      foreach (EcmaPropertyKey key in obj.GetOwnPropertyKeys()) {
-        EcmaPropertyDescriptor desc = obj.GetOwnProperty(key);
-        if (desc.Configurable != false) {
-          return RuntimeObjectIntegrityLevel.ExtensionPrevented;
-        }
-        if (desc.IsDataDescriptor && desc.Writable != false) {
-          return RuntimeObjectIntegrityLevel.Sealed;
-        }
-      }
-      return RuntimeObjectIntegrityLevel.Frozen;
-    }
-
-    [EcmaSpecification("SetIntegrityLevel", EcmaSpecificationKind.AbstractOperations)]
-    public static bool SetIntegrityLevel(this RuntimeObject obj, RuntimeObjectIntegrityLevel level) {
-      if (!obj.PreventExtensions()) {
-        return false;
-      }
-      if (obj.IntegrityLevel < level) {
-        switch (level) {
-          case RuntimeObjectIntegrityLevel.Sealed:
-            foreach (EcmaPropertyKey key in obj.GetOwnPropertyKeys()) {
-              obj.DefinePropertyOrThrow(key, sealedProperty);
-            }
-            break;
-          case RuntimeObjectIntegrityLevel.Frozen:
-            foreach (EcmaPropertyKey key in obj.GetOwnPropertyKeys()) {
-              obj.DefinePropertyOrThrow(key, frozenProperty);
-            }
-            break;
-        }
-      }
-      return true;
-    }
-
     [EcmaSpecification("OrdinaryToPrimitive", EcmaSpecificationKind.AbstractOperations)]
     public static EcmaValue OrdinaryToPrimitive(this RuntimeObject obj, EcmaPreferredPrimitiveType kind) {
+      Guard.ArgumentNotNull(obj, "obj");
       EcmaValue result;
-      WellKnownPropertyName[] m = kind == EcmaPreferredPrimitiveType.String ? convertToPrimitiveMethodString : convertToPrimitiveMethodNumber;
+      EcmaPropertyKey[] m = kind == EcmaPreferredPrimitiveType.String ? convertToPrimitiveMethodString : convertToPrimitiveMethodNumber;
       if (TryConvertToPrimitive(obj, m[0], out result) || TryConvertToPrimitive(obj, m[1], out result)) {
         return result;
       }
       throw new EcmaTypeErrorException(InternalString.Error.NotConvertibleToPrimitive);
     }
 
+    public static void SetOrThrow(this RuntimeObject obj, EcmaPropertyKey propertyKey, EcmaValue value) {
+      Guard.ArgumentNotNull(obj, "obj");
+      if (!obj.Set(propertyKey, value)) {
+        throw new EcmaTypeErrorException(InternalString.Error.SetPropertyFailed, propertyKey);
+      }
+    }
+
     public static bool IsWellknownObject(this RuntimeObject obj, WellKnownObject type) {
-      return obj == RuntimeRealm.GetRuntimeObject(type);
+      Guard.ArgumentNotNull(obj, "obj");
+      return obj == obj.Realm.GetRuntimeObject(type);
     }
 
     public static bool IsIntrinsicFunction(this RuntimeObject obj, WellKnownObject type, EcmaPropertyKey name) {
@@ -139,11 +113,13 @@ namespace Codeless.Ecma.Runtime {
       }
     }
 
-    public static IEnumerable<EcmaPropertyEntry> GetEnumerableOwnProperties(this RuntimeObject obj) {
+    public static IEnumerable<EcmaPropertyEntry> GetEnumerableOwnProperties(this RuntimeObject obj, bool enumerateSymbolProp) {
       foreach (EcmaPropertyKey key in obj.GetOwnPropertyKeys()) {
-        EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(key);
-        if (descriptor != null && descriptor.Enumerable) {
-          yield return new EcmaPropertyEntry(key, obj.Get(key));
+        if (enumerateSymbolProp || !key.IsSymbol) {
+          EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(key);
+          if (descriptor != null && descriptor.Enumerable) {
+            yield return new EcmaPropertyEntry(key, obj.Get(key));
+          }
         }
       }
     }

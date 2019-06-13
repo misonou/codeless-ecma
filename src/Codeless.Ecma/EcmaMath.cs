@@ -1,4 +1,4 @@
-﻿using Codeless.Ecma.Runtime.Intrinsics;
+﻿using Codeless.Ecma.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Linq;

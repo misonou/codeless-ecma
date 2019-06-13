@@ -12,9 +12,6 @@ namespace Codeless.Ecma {
   public struct EcmaPropertyKey : IEquatable<EcmaPropertyKey> {
     private readonly EcmaValue value;
 
-    public EcmaPropertyKey(WellKnownPropertyName value)
-      : this(new EcmaValue(new EcmaValueHandle((long)value), WellKnownPropertyNameBinder.Default)) { }
-
     public EcmaPropertyKey(WellKnownSymbol value)
       : this(new EcmaValue(new EcmaValueHandle((long)value), WellKnownSymbolBinder.Default)) { }
 
@@ -34,7 +31,7 @@ namespace Codeless.Ecma {
       : this(value >= 0 ? new EcmaValue(value) : new EcmaValue(value.ToString())) { }
 
     public EcmaPropertyKey(long value)
-      : this(value >= 0 && value <= UInt32.MaxValue ? new EcmaValue(value) : new EcmaValue(value.ToString())) { }
+      : this(value >= 0 && value < UInt32.MaxValue ? new EcmaValue(value) : new EcmaValue(value.ToString())) { }
 
     private EcmaPropertyKey(EcmaValue value)
       : this() {
@@ -89,11 +86,16 @@ namespace Codeless.Ecma {
 
     [EcmaSpecification("ToPropertyKey", EcmaSpecificationKind.AbstractOperations)]
     public static EcmaPropertyKey FromValue(EcmaValue v) {
-      if (v.Type == EcmaValueType.Object) {
-        v = v.ToPrimitive();
-      }
-      if (v.Type == EcmaValueType.Symbol || (v.IsInteger && v.ToNumber() >= 0)) {
-        return new EcmaPropertyKey(v);
+      switch (v.Type) {
+        case EcmaValueType.Object:
+          return FromValue(v.ToPrimitive(EcmaPreferredPrimitiveType.String));
+        case EcmaValueType.Symbol:
+          return new EcmaPropertyKey(v);
+        case EcmaValueType.Number:
+          if (v.IsInteger && v >= 0 && v < UInt32.MaxValue) {
+            return new EcmaPropertyKey(v);
+          }
+          break;
       }
       return new EcmaPropertyKey(v.ToString());
     }
@@ -125,10 +127,6 @@ namespace Codeless.Ecma {
 
     public static bool operator !=(EcmaPropertyKey x, EcmaPropertyKey y) {
       return !x.Equals(y);
-    }
-
-    public static implicit operator EcmaPropertyKey(WellKnownPropertyName value) {
-      return new EcmaPropertyKey(value);
     }
 
     public static implicit operator EcmaPropertyKey(WellKnownSymbol value) {

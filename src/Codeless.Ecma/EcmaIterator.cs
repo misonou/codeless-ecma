@@ -33,7 +33,7 @@ namespace Codeless.Ecma {
       : base(proto) {
       Guard.ArgumentNotNull(iterator, "iterator");
       this.iterator = iterator;
-      this.IteratedObject = RuntimeRealm.GetRuntimeObject(iterator);
+      this.IteratedObject = RuntimeRealm.Current.GetRuntimeObject(iterator);
       this.ResultKind = kind;
     }
 
@@ -64,8 +64,8 @@ namespace Codeless.Ecma {
     [EcmaSpecification("CreateIterResultObject", EcmaSpecificationKind.AbstractOperations)]
     private EcmaValue CreateIterResultObject(EcmaValue value, bool done) {
       EcmaObject o = new EcmaObject();
-      o.CreateDataProperty("value", value);
-      o.CreateDataProperty("done", done);
+      o.CreateDataProperty(WellKnownProperty.Value, value);
+      o.CreateDataProperty(WellKnownProperty.Done, done);
       return o;
     }
 

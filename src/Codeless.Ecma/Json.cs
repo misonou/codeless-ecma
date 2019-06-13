@@ -40,7 +40,7 @@ namespace Codeless.Ecma {
         result = new EcmaJsonWriter(indentString, replacer).Serialize(value);
       } else if (EcmaArray.IsArray(replacer)) {
         HashSet<string> propertyList = new HashSet<string>();
-        for (long i = 0, length = replacer[WellKnownPropertyName.Length].ToLength(); i < length; i++) {
+        for (long i = 0, length = replacer[WellKnownProperty.Length].ToLength(); i < length; i++) {
           EcmaValue item = EcmaValueUtility.UnboxPrimitiveObject(replacer[i]);
           if (item.Type == EcmaValueType.String || item.Type == EcmaValueType.Number) {
             propertyList.Add(item.ToString(true));
@@ -74,7 +74,7 @@ namespace Codeless.Ecma {
       if (value.Type == EcmaValueType.Object) {
         RuntimeObject obj = value.ToObject();
         if (EcmaArray.IsArray(value)) {
-          for (long i = 0, length = value[WellKnownPropertyName.Length].ToLength(); i < length; i++) {
+          for (long i = 0, length = value[WellKnownProperty.Length].ToLength(); i < length; i++) {
             EcmaValue newValue = InternalizeJsonProperty(obj, i, reviver);
             if (newValue.Type == EcmaValueType.Undefined) {
               obj.Delete(i);

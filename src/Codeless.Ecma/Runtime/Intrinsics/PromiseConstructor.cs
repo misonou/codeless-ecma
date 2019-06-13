@@ -23,7 +23,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue Resolve(EcmaValue value) {
       if (value.GetUnderlyingObject() is Promise promise) {
-        return value["constructor"] == RuntimeRealm.GetRuntimeObject(WellKnownObject.PromiseConstructor) ? value : new Promise(promise);
+        return value[WellKnownProperty.Constructor].ToObject().IsWellknownObject(WellKnownObject.PromiseConstructor) ? value : new Promise(promise);
       }
       return new Promise(PromiseState.Fulfilled, value);
     }

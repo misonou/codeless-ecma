@@ -8,39 +8,33 @@ using System.Text;
 namespace Codeless.Ecma.Primitives {
   internal class WellKnownPropertyNameBinder : StringBinder {
     private static readonly Hashtable longDict = new Hashtable();
-    private static readonly string[] strArr;
+    private static readonly List<string> strArr = new List<string>();
 
     public new static readonly WellKnownPropertyNameBinder Default = new WellKnownPropertyNameBinder();
 
     protected WellKnownPropertyNameBinder() { }
 
-    static WellKnownPropertyNameBinder() {
-      string[] names = Enum.GetNames(typeof(WellKnownPropertyName));
-      strArr = new string[names.Length + 1];
-      for (int i = 0; i < names.Length; i++) {
-        string name = String.Intern(names[i].Substring(0, 1).ToLower() + names[i].Substring(1));
-        strArr[i + 1] = name;
-        longDict[name] = new EcmaValueHandle(i + 1);
-      }
-    }
-
     public static bool IsWellKnownPropertyName(string s) {
-      return String.IsInterned(s) != null && longDict[s] != null;
+      return String.IsInterned(s) != null && s.Length < 25;
     }
 
     public override string FromHandle(EcmaValueHandle handle) {
-      int index = (int)handle.Value;
-      if (index >= 0 && index < strArr.Length) {
-        return strArr[index];
-      }
-      throw new ArgumentException("Invalid value", "handle");
+      return strArr[(int)handle.Value];
     }
 
     public override EcmaValueHandle ToHandle(string value) {
       if (longDict[value] is EcmaValueHandle handle) {
         return handle;
       }
-      throw new ArgumentException("Invalid value", "value");
+      lock (longDict) {
+        if (longDict[value] is EcmaValueHandle handle2) {
+          return handle2;
+        }
+        EcmaValueHandle handle3 = new EcmaValueHandle(strArr.Count);
+        longDict[value] = handle3;
+        strArr.Add(value);
+        return handle3;
+      }
     }
   }
 }

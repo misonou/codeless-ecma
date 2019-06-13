@@ -5,9 +5,6 @@ namespace Codeless.Ecma {
     public EcmaMap()
       : base(WellKnownObject.MapPrototype) { }
 
-    public EcmaMap(RuntimeObject constructor)
-      : base(WellKnownObject.MapPrototype, constructor) { }
-
     protected override WellKnownObject DefaultIteratorPrototype => WellKnownObject.MapIteratorPrototype;
 
     public EcmaValue Get(EcmaValue key) {

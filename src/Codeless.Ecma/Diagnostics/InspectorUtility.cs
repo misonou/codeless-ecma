@@ -40,11 +40,13 @@ namespace Codeless.Ecma.Diagnostics {
     private static void Serialize(TextWriter writer, EcmaValue value, bool nested) {
       switch (value.Type) {
         case EcmaValueType.Object:
-          if (value.IsCallable) {
+          if (value.GetUnderlyingObject() is RuntimeObjectProxy) {
+            writer.Write("Proxy {}");
+          } else if (value.IsCallable) {
             if (nested) {
               writer.Write("function");
             } else {
-              writer.Write("function " + value["name"] + "() { [native code] }");
+              writer.Write("function " + value[WellKnownProperty.Name] + "() { [native code] }");
             }
           } else if (EcmaArray.IsArray(value)) {
             SerializeAsArray(writer, value);
@@ -55,14 +57,14 @@ namespace Codeless.Ecma.Diagnostics {
             int count = 0;
             EcmaValue ctor = default;
             try {
-              ctor = value["constructor"];
+              ctor = value[WellKnownProperty.Constructor];
             } catch { }
             if (!nested) {
               try {
                 TextWriter writer2 = new StringWriter();
                 RuntimeObject obj = value.ToObject();
                 if (!ctor.IsNullOrUndefined) {
-                  writer2.Write(ctor["name"]);
+                  writer2.Write(ctor[WellKnownProperty.Name]);
                   if (obj is EcmaMapBase collection) {
                     writer2.Write("(");
                     writer2.Write(collection.Size);
@@ -71,15 +73,33 @@ namespace Codeless.Ecma.Diagnostics {
                   writer2.Write(" ");
                 }
                 writer2.Write("{");
-                foreach (EcmaPropertyKey propertyKey in obj.GetOwnPropertyKeys()) {
-                  EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(propertyKey);
-                  if (descriptor.IsDataDescriptor && descriptor.Enumerable) {
+                if (obj is EcmaSet set) {
+                  set.ForEach((v, k) => {
                     if (++count > 1) {
                       writer2.Write(", ");
                     }
-                    writer2.Write(propertyKey.ToString());
-                    writer2.Write(": ");
-                    Serialize(writer2, descriptor.Value, true);
+                    Serialize(writer2, v, true);
+                  });
+                } else if (obj is EcmaMap map) {
+                  map.ForEach((v, k) => {
+                    if (++count > 1) {
+                      writer2.Write(", ");
+                    }
+                    Serialize(writer2, k, true);
+                    writer2.Write(" => ");
+                    Serialize(writer2, v, true);
+                  });
+                } else {
+                  foreach (EcmaPropertyKey propertyKey in obj.GetOwnPropertyKeys()) {
+                    EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(propertyKey);
+                    if (descriptor != null && descriptor.IsDataDescriptor && descriptor.Enumerable) {
+                      if (++count > 1) {
+                        writer2.Write(", ");
+                      }
+                      writer2.Write(propertyKey.ToString());
+                      writer2.Write(": ");
+                      Serialize(writer2, descriptor.Value, true);
+                    }
                   }
                 }
                 writer2.Write("}");
@@ -87,7 +107,7 @@ namespace Codeless.Ecma.Diagnostics {
                 break;
               } catch { }
             }
-            writer.Write(ctor.IsNullOrUndefined ? "Object" : ctor["name"]);
+            writer.Write(ctor.IsNullOrUndefined ? "Object" : ctor[WellKnownProperty.Name]);
           }
           break;
         default:
@@ -101,23 +121,29 @@ namespace Codeless.Ecma.Diagnostics {
       RuntimeObject obj = value.ToObject();
       int count = 0;
       try {
+        long length = value[WellKnownProperty.Length].ToLength();
+        long prevIndex = -1;
         writer2.Write("[");
-        for (long i = 0, len = value["length"].ToLength(); i < len; i++) {
-          if (++count > 1) {
-            writer2.Write(", ");
-          }
-          EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(i);
-          if (descriptor == null) {
-            Serialize(writer2, EcmaValue.Undefined, true);
-          } else if (descriptor.IsAccessorDescriptor) {
-            writer2.Write("(...)");
-          } else {
-            Serialize(writer2, descriptor.Value, true);
-          }
-        }
         foreach (EcmaPropertyKey propertyKey in obj.GetOwnPropertyKeys()) {
-          if (!propertyKey.IsArrayIndex) {
-            EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(propertyKey);
+          EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(propertyKey);
+          if (descriptor == null) {
+            continue;
+          }
+          long index = propertyKey.IsArrayIndex ? propertyKey.ToArrayIndex() : -1;
+          if (index >= 0 && index < length) {
+            WriteEmpty(writer2, index, prevIndex, ref count);
+            if (++count > 1) {
+              writer2.Write(", ");
+            }
+            if (descriptor.IsAccessorDescriptor) {
+              writer2.Write("(...)");
+            } else {
+              Serialize(writer2, descriptor.Value, true);
+            }
+            prevIndex = index;
+          } else {
+            WriteEmpty(writer2, length, prevIndex, ref count);
+            prevIndex = length;
             if (descriptor.IsDataDescriptor && descriptor.Enumerable) {
               if (++count > 1) {
                 writer2.Write(", ");
@@ -128,10 +154,26 @@ namespace Codeless.Ecma.Diagnostics {
             }
           }
         }
+        WriteEmpty(writer2, length, prevIndex, ref count);
         writer2.Write("]");
         writer.Write(writer2.ToString());
       } catch {
         writer.Write("[...]");
+      }
+    }
+
+    private static void WriteEmpty(TextWriter writer, long cur, long prev, ref int count) {
+      long diff = cur - prev;
+      if (diff > 1) {
+        if (++count > 1) {
+          writer.Write(", ");
+        }
+        if (diff == 2) {
+          writer.Write("empty");
+        } else {
+          writer.Write("empty × ");
+          writer.Write(diff - 1);
+        }
       }
     }
   }

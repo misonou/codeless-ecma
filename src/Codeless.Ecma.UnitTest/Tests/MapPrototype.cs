@@ -4,7 +4,7 @@ using static Codeless.Ecma.Global;
 using static Codeless.Ecma.UnitTest.Assert;
 
 namespace Codeless.Ecma.UnitTest.Tests {
-  public class MapPrototype {
+  public class MapPrototype : TestBase {
     [Test]
     public void ForEach() {
       int count = 0;

@@ -25,7 +25,7 @@ namespace Codeless.Ecma.Native {
             EcmaPropertyAttributes.DefaultDataProperty));
         }
       }
-      DefineOwnPropertyNoChecked(WellKnownPropertyName.Constructor, new EcmaPropertyDescriptor(new Constructor(type.Name), EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
+      DefineOwnPropertyNoChecked(WellKnownProperty.Constructor, new EcmaPropertyDescriptor(new Constructor(type.Name), EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
     }
 
     public static RuntimeObject FromType(Type type) {
