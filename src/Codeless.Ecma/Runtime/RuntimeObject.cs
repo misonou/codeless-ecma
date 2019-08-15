@@ -166,6 +166,9 @@ namespace Codeless.Ecma.Runtime {
         throw new EcmaTypeErrorException(InternalString.Error.NotExtensible);
       }
       for (RuntimeObject p = proto; p != null; p = p.GetPrototypeOf()) {
+        if (p is RuntimeObjectProxy) {
+          break;
+        }
         if (p == this) {
           return false;
         }
@@ -208,7 +211,11 @@ namespace Codeless.Ecma.Runtime {
 
     [EcmaSpecification("OrdinaryHasProperty", EcmaSpecificationKind.InternalMethod)]
     public virtual bool HasProperty(EcmaPropertyKey propertyKey) {
-      return GetProperty(propertyKey) != null;
+      if (GetOwnProperty(propertyKey) != null) {
+        return true;
+      }
+      RuntimeObject parent = GetPrototypeOf();
+      return parent != null ? parent.HasProperty(propertyKey) : false;
     }
 
     public EcmaValue Get(EcmaPropertyKey propertyKey) {

@@ -13,7 +13,7 @@ namespace Codeless.Ecma.Runtime {
     private static readonly ParameterExpression pTarget = Expression.Parameter(typeof(object), "target");
     private static readonly Expression pThisArg = Expression.Property(pRecord, "ThisValue");
     private static readonly Expression pNewTarget = Expression.Property(pRecord, "NewTarget");
-    private static readonly MethodInfo mSliceArguments = ((Func<EcmaValue[], int, EcmaValue[]>)SliceArguments).Method;
+    private static readonly MethodInfo mSliceArguments = ((Func<EcmaValue[], int, EcmaValue[]>)ArrayHelper.Slice).Method;
     private static readonly MethodInfo mCastObject = typeof(NativeRuntimeFunctionCompiler).GetMethod("CastObject", BindingFlags.Static | BindingFlags.NonPublic);
 
     private readonly MethodInfo method;
@@ -152,15 +152,6 @@ namespace Codeless.Ecma.Runtime {
 
     private Expression GetTailArray(int argStartIndex) {
       return Expression.Call(mSliceArguments, pArgs, Expression.Constant(argStartIndex));
-    }
-
-    private static EcmaValue[] SliceArguments(EcmaValue[] src, int index) {
-      if (src.Length == index) {
-        return EcmaValue.EmptyArray;
-      }
-      EcmaValue[] dst = new EcmaValue[src.Length - index];
-      Array.Copy(src, index, dst, 0, dst.Length);
-      return dst;
     }
 
     private static T CastObject<T>(object obj) {

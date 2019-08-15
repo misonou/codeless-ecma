@@ -77,6 +77,9 @@ namespace Codeless.Ecma {
       foreach (EcmaPropertyEntry e in entries) {
         EcmaValue v = TransformValue(value, e.Key, e.Value);
         if (v.Type != EcmaValueType.Undefined) {
+          if (hasEntries) {
+            writer.Write(",");
+          }
           hasEntries = true;
           if (indentString != String.Empty) {
             writer.Write(Environment.NewLine);

@@ -165,9 +165,12 @@ namespace Codeless.Ecma {
       if (this.FallbackMode) {
         return ArrayPrototype.Pop(this);
       }
-      long index = this.Length - 1;
-      EcmaValue item = Get(index);
-      RemoveRange(index, 1);
+      long cur = this.Length;
+      if (cur == 0) {
+        return default;
+      }
+      EcmaValue item = Get(cur - 1);
+      RemoveRange(cur - 1, 1);
       return item;
     }
 
@@ -183,7 +186,7 @@ namespace Codeless.Ecma {
       start = start < 0 ? Math.Max(0, start + len) : Math.Min(start, len);
       end = end < 0 ? Math.Max(0, end + len) : Math.Min(end, len);
 
-      EcmaArray target = (EcmaArray)ArrayPrototype.SpeciesCreate(this, 0);
+      EcmaArray target = (EcmaArray)ArrayPrototype.SpeciesCreate(this, Math.Max(end - start, 0));
       if (start < len && start < end) {
         RemoveRange(start, end - start, true, target);
       }
@@ -196,15 +199,16 @@ namespace Codeless.Ecma {
 
     public EcmaArray Splice(long start, long deleteCount, params EcmaValue[] elements) {
       if (this.FallbackMode) {
-        return ArrayPrototype.Splice(this, start, deleteCount, elements).GetUnderlyingObject<EcmaArray>();
+        EcmaValue[] args = ArrayHelper.Combine(new EcmaValue[] { start, deleteCount }, elements);
+        return ArrayPrototype.Splice(this, args).GetUnderlyingObject<EcmaArray>();
       }
       long len = this.Length;
       start = start < 0 ? Math.Max(0, start + len) : Math.Min(start, len);
       deleteCount = Math.Max(0, Math.Min(deleteCount, len - start));
+      ArrayPrototype.ThrowIfLengthExceeded(len - deleteCount + elements.Length);
 
-      EcmaArray target = (EcmaArray)ArrayPrototype.SpeciesCreate(this, 0);
-      RemoveRange(start, deleteCount, false, target);
-      InsertRange(start, elements);
+      EcmaArray target = (EcmaArray)ArrayPrototype.SpeciesCreate(this, deleteCount);
+      SpliceInternal(start, deleteCount, elements, target);
       return target;
     }
 
@@ -383,7 +387,7 @@ namespace Codeless.Ecma {
         return ArrayPrototype.Find(this, predicate, thisArg);
       }
       if (list != null) {
-        foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(false)) {
+        foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(false, true)) {
           if (predicate.Call(thisArg, entry.Value, entry.Key, this)) {
             return entry.Value;
           }
@@ -401,7 +405,7 @@ namespace Codeless.Ecma {
         return (long)ArrayPrototype.FindIndex(this, predicate, thisArg);
       }
       if (list != null) {
-        foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(false)) {
+        foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(false, true)) {
           if (predicate.Call(thisArg, entry.Value, entry.Key, this)) {
             return entry.Key.ToInt64();
           }
@@ -441,6 +445,15 @@ namespace Codeless.Ecma {
         return new EcmaIterator(EnumerateEntries(false).GetEnumerator(), EcmaIteratorResultKind.Entry, WellKnownObject.ArrayIteratorPrototype);
       }
       return new EcmaIterator(this, EcmaIteratorResultKind.Entry, WellKnownObject.ArrayIteratorPrototype);
+    }
+
+    internal void SliceInternal(long start, long count, EcmaArray target) {
+      RemoveRange(start, count, true, target);
+    }
+
+    internal void SpliceInternal(long start, long deleteCount, EcmaValue[] elements, EcmaArray target) {
+      RemoveRange(start, deleteCount, false, target);
+      InsertRange(start, elements);
     }
 
     public override IEnumerable<EcmaPropertyKey> GetOwnPropertyKeys() {
@@ -522,6 +535,14 @@ namespace Codeless.Ecma {
       return base.SetIntegrityLevel(level);
     }
 
+    public override bool SetPrototypeOf(RuntimeObject proto) {
+      bool result = base.SetPrototypeOf(proto);
+      if (result && proto != null && !proto.IsWellknownObject(WellKnownObject.ArrayPrototype)) {
+        SetFallbackMode();
+      }
+      return result;
+    }
+
     public IEnumerator<EcmaValue> GetEnumerator() {
       if (this.FallbackMode) {
         EcmaArrayEnumerator iterator = new EcmaArrayEnumerator(this);
@@ -570,6 +591,12 @@ namespace Codeless.Ecma {
             EnsureChunkList();
             chunks.AddLast(new ArrayChunk(newLen - curLen, 0));
           }
+        } else {
+          if (newLen < curLen) {
+            for (long i = newLen; i < curLen; i++) {
+              Delete(i);
+            }
+          }
         }
       }
       return base.DefineOwnProperty(WellKnownProperty.Length, descriptor);
@@ -609,7 +636,7 @@ namespace Codeless.Ecma {
       int realIndex = 0;
       if (index >= curLen) {
         node = chunks.Last;
-        offset = (index - curLen + node.Value.Count);
+        offset = index - curLen + node.Value.Count;
         return list.Count;
       }
       for (node = chunks.First; node != null; node = node.Next) {
@@ -641,7 +668,7 @@ namespace Codeless.Ecma {
     }
 
     private long GetVirtIndex(int index) {
-      if (list == null || index >= list.Count) {
+      if (list == null || index < 0 || index >= list.Count) {
         return -1;
       }
       if (chunks == null || chunks.Count == 0) {
@@ -651,7 +678,7 @@ namespace Codeless.Ecma {
       long count = 0;
       foreach (ArrayChunk chunk in chunks) {
         cur += chunk.Offset;
-        if (index < count) {
+        if (index < count + chunk.Count) {
           break;
         }
         cur += chunk.Count;
@@ -662,7 +689,7 @@ namespace Codeless.Ecma {
 
     private bool SetItem(long index, EcmaValue value) {
       if (this.FallbackMode) {
-        throw new InvalidOperationException();
+        return base.DefineOwnProperty(index, new EcmaPropertyDescriptor(value, EcmaPropertyAttributes.DefaultDataProperty));
       }
       if (this.IntegrityLevel >= RuntimeObjectIntegrityLevel.Frozen) {
         return false;
@@ -767,14 +794,24 @@ namespace Codeless.Ecma {
     }
 
     private bool InsertRange(long index, ICollection<EcmaValue> value) {
-      if (this.FallbackMode) {
-        throw new InvalidOperationException();
+      long curLen = this.Length;
+      long addLen = value.Count;
+      ArrayPrototype.ThrowIfLengthExceeded(curLen + addLen);
+      if (!SetLengthDirect(curLen + addLen)) {
+        throw new EcmaTypeErrorException(InternalString.Error.SetPropertyFailed);
       }
-      if (value.Count == 0) {
+      if (addLen == 0) {
         return true;
       }
-      if (!this.IsExtensible || !SetLengthDirect(this.Length + value.Count)) {
-        return false;
+      if (this.FallbackMode) {
+        ArrayPrototype.CopyWithin(this, index + addLen, index, curLen);
+        foreach (EcmaValue item in value) {
+          this.CreateDataPropertyOrThrow(index++, item);
+        }
+        return true;
+      }
+      if (!this.IsExtensible) {
+        throw new EcmaTypeErrorException(InternalString.Error.CreatePropertyThrow);
       }
       if (list == null) {
         list = new List<EcmaValue>();
@@ -811,15 +848,18 @@ namespace Codeless.Ecma {
         return true;
       }
       if (!silent) {
-        if (this.IntegrityLevel >= RuntimeObjectIntegrityLevel.Sealed || !SetLengthDirect(curLen - count)) {
-          return false;
+        if (!SetLengthDirect(curLen - count)) {
+          throw new EcmaTypeErrorException(InternalString.Error.SetPropertyFailed);
+        }
+        if (this.IntegrityLevel >= RuntimeObjectIntegrityLevel.Sealed) {
+          throw new EcmaTypeErrorException(InternalString.Error.DeletePropertyThrow);
         }
       }
       if (chunks == null || chunks.Count == 0) {
         if (index < list.Count) {
           int removeCount = (int)Math.Min(count, list.Count - index);
           if (clone != null) {
-            clone.InsertRange(0, list.GetRange((int)index, removeCount));
+            CopyTo(clone, 0, (int)index, removeCount);
           }
           if (!silent) {
             list.RemoveRange((int)index, removeCount);
@@ -834,6 +874,7 @@ namespace Codeless.Ecma {
       int startIndex = -1;
       int startOffset = -1;
       int endOffset = -1;
+      long targetIndex = 0;
       LinkedListNode<ArrayChunk> startNode = null;
       LinkedListNode<ArrayChunk> node = chunks.First;
       for (; node != null; node = node.Next) {
@@ -848,13 +889,9 @@ namespace Codeless.Ecma {
         if (clone != null) {
           int cloneCount = checked((int)(chunk.Count - Math.Max(0, endOffset)));
           if (node == startNode) {
-            if (startOffset < 0) {
-              clone.Length = -startOffset + Math.Min(0, endOffset);
-            }
-            clone.InsertRange(clone.Length, list.GetRange(startIndex, cloneCount - (startIndex - realIndex)));
+            targetIndex = CopyTo(clone, startOffset < 0 ? Math.Min(0, endOffset) - startOffset : 0, startIndex, cloneCount - (startIndex - realIndex));
           } else {
-            clone.Length += chunk.Offset + Math.Min(0, endOffset);
-            clone.InsertRange(clone.Length, list.GetRange(realIndex, cloneCount));
+            targetIndex = CopyTo(clone, targetIndex + chunk.Offset + Math.Min(0, endOffset), realIndex, cloneCount);
           }
         }
         if (until < cur + chunk.Count) {
@@ -872,7 +909,7 @@ namespace Codeless.Ecma {
           node.Value.Offset = startNode.Value.Offset + startOffset;
           node = node.Previous;
         } else {
-          node.Value.Offset += endOffset + startNode.Value.Offset + startOffset;
+          node.Value.Offset = startNode.Value.Offset + startOffset - endOffset;
           node = node.Previous;
         }
         if (startNode != null) {
@@ -928,11 +965,12 @@ namespace Codeless.Ecma {
       }
       List<EcmaValue>.Enumerator t = list.GetEnumerator();
       if (chunks == null || chunks.Count == 0) {
+        int curLen = list.Count;
         for (int j = (int)i; i < len; i++, j++) {
           if (IsCollectionModified(t)) {
             goto start;
           }
-          yield return new KeyValuePair<EcmaValue, EcmaValue>(i, list[j]);
+          yield return new KeyValuePair<EcmaValue, EcmaValue>(i, j < curLen ? list[j] : EcmaValue.Undefined);
         }
       } else {
         int j = GetRealIndex(i, out LinkedListNode<ArrayChunk> node, out long offset);
@@ -972,6 +1010,13 @@ namespace Codeless.Ecma {
       } catch (InvalidOperationException) {
         return true;
       }
+    }
+
+    private long CopyTo(EcmaArray target, long index, int sourceIndex, int count) {
+      for (int until = sourceIndex + count; sourceIndex < until; sourceIndex++, index++) {
+        target.SetItem(index, list[sourceIndex]);
+      }
+      return index;
     }
 
     #region Interface

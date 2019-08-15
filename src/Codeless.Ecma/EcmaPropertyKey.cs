@@ -20,7 +20,7 @@ namespace Codeless.Ecma {
 
     public EcmaPropertyKey(string value)
       : this() {
-      if (UInt32.TryParse(value, out uint number)) {
+      if (UInt32.TryParse(value, out uint number) && number < UInt32.MaxValue) {
         this.value = number;
       } else {
         this.value = value;

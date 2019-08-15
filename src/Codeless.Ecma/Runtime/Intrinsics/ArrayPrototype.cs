@@ -158,37 +158,40 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       RuntimeObject obj = thisValue.ToObject();
       long len = obj.Get(WellKnownProperty.Length).ToLength();
       long from = GetBoundIndex(start, len, 0);
-      long until = GetBoundIndex(end, len, len);
-      if (obj is EcmaArray arr) {
-        return arr.Slice(from, until);
+      long count = Math.Max(GetBoundIndex(end, len, len) - from, 0);
+
+      RuntimeObject target = SpeciesCreate(thisValue, count);
+      if (obj is EcmaArray arr && target is EcmaArray other && !arr.FallbackMode && !other.FallbackMode) {
+        arr.SliceInternal(from, count, other);
+        return target;
       }
-      RuntimeObject target = SpeciesCreate(thisValue, Math.Max(until - from, 0));
-      int i = 0;
-      while (from < until) {
-        if (obj.HasProperty(from)) {
-          target.CreateDataPropertyOrThrow(i++, obj.Get(from++));
+      for (long i = 0; i < count; i++) {
+        if (obj.HasProperty(from + i)) {
+          target.CreateDataPropertyOrThrow(i, obj.Get(from + i));
         }
       }
-      target.SetOrThrow(WellKnownProperty.Length, i);
+      target.SetOrThrow(WellKnownProperty.Length, count);
       return target;
     }
 
-    [IntrinsicMember]
-    public static EcmaValue Splice([This] EcmaValue thisValue, EcmaValue start, EcmaValue? count, params EcmaValue[] elements) {
+    [IntrinsicMember(FunctionLength = 2)]
+    public static EcmaValue Splice([This] EcmaValue thisValue, params EcmaValue[] args) {
       RuntimeObject obj = thisValue.ToObject();
+      int argLength = args.Length;
       long len = obj.Get(WellKnownProperty.Length).ToLength();
-      long from = GetBoundIndex(start, len, 0);
-      long insertCount = elements.Length;
-      long deleteCount = count.HasValue ? GetBoundIndex(count.Value, len - from, 0) : 0;
+      long from = argLength > 0 ? GetBoundIndex(args[0], len, 0) : 0;
+      long insertCount = argLength > 1 ? argLength - 2 : 0;
+      long deleteCount = argLength > 1 ? Math.Min(Math.Max(0, args[1].ToLength()), len - from) : argLength > 0 ? len - from : 0;
       long newLen = len + insertCount - deleteCount;
       ThrowIfLengthExceeded(newLen);
-      if (obj is EcmaArray arr) {
-        return arr.Splice(from, deleteCount, elements);
-      }
 
       RuntimeObject target = SpeciesCreate(thisValue, deleteCount);
+      if (obj is EcmaArray arr && target is EcmaArray other && !arr.FallbackMode && !other.FallbackMode) {
+        arr.SpliceInternal(from, deleteCount, ArrayHelper.Slice(args, 2), other);
+        return target;
+      }
       for (long i = 0; i < deleteCount; i++) {
-        if (obj.HasProperty(i)) {
+        if (obj.HasProperty(from + i)) {
           target.CreateDataPropertyOrThrow(i, obj.Get(from + i));
         }
       }
@@ -203,11 +206,11 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       } else if (insertCount > deleteCount) {
         CopyWithinInternal(obj, len - 1, newLen - 1, -moveCount);
       }
-      for (long i = 1; i < elements.Length; i++) {
-        obj.SetOrThrow(from + i - 1, elements[i]);
+      for (long i = 2, j = from; i < argLength; i++, j++) {
+        obj.SetOrThrow(j, args[i]);
       }
       obj.SetOrThrow(WellKnownProperty.Length, newLen);
-      return thisValue;
+      return target;
     }
 
     [IntrinsicMember]
@@ -309,19 +312,23 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return target;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue IndexOf([This] EcmaValue thisValue, EcmaValue searchElement, EcmaValue? fromIndex) {
       RuntimeObject obj = thisValue.ToObject();
       long length = obj.Get(WellKnownProperty.Length).ToLength();
       if (length == 0) {
         return -1;
       }
-      long from = fromIndex.HasValue ? (long)fromIndex : 0;
-      if (from >= length) {
-        return -1;
-      }
-      if (from < 0) {
-        from = Math.Max(0, from + length);
+      long from = 0;
+      if (fromIndex.HasValue) {
+        EcmaValue fromValue = fromIndex.Value.ToNumber();
+        if (fromValue >= length) {
+          return -1;
+        }
+        from = fromValue.ToInt64();
+        if (from < 0) {
+          from = Math.Max(0, from + length);
+        }
       }
       if (obj is EcmaArray arr && !arr.FallbackMode) {
         return arr.IndexOf(searchElement, from);
@@ -334,16 +341,27 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return -1;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue LastIndexOf([This] EcmaValue thisValue, EcmaValue searchElement, EcmaValue? fromIndex) {
       RuntimeObject obj = thisValue.ToObject();
       long length = obj.Get(WellKnownProperty.Length).ToLength();
       if (length == 0) {
         return -1;
       }
-      long from = fromIndex.HasValue ? Math.Min(length - 1, (long)fromIndex.Value) : length - 1;
-      if (from < 0) {
-        from += length;
+      long from = length - 1;
+      if (fromIndex.HasValue) {
+        EcmaValue fromValue = fromIndex.Value.ToNumber();
+        if (fromValue == EcmaValue.NegativeInfinity) {
+          return -1;
+        }
+        if (fromValue >= length) {
+          from = length - 1;
+        } else {
+          from = fromValue.ToInt64();
+          if (from < 0) {
+            from = Math.Max(0, from + length);
+          }
+        }
       }
       if (obj is EcmaArray arr && !arr.FallbackMode) {
         return arr.LastIndexOf(searchElement, from);
@@ -439,7 +457,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return thisValue;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue Find([This] EcmaValue thisValue, EcmaValue predicate, EcmaValue thisArg) {
       RuntimeObject obj = thisValue.ToObject();
       long length = obj.Get(WellKnownProperty.Length).ToLength();
@@ -456,7 +474,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return default;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue FindIndex([This] EcmaValue thisValue, EcmaValue predicate, EcmaValue thisArg) {
       RuntimeObject obj = thisValue.ToObject();
       long length = obj.Get(WellKnownProperty.Length).ToLength();
@@ -484,26 +502,30 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return thisValue;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue Includes([This] EcmaValue thisValue, EcmaValue searchElement, EcmaValue? fromIndex) {
       RuntimeObject obj = thisValue.ToObject();
       long length = obj.Get(WellKnownProperty.Length).ToLength();
       if (length == 0) {
-        return -1;
+        return false;
       }
-      long from = fromIndex.HasValue ? (long)fromIndex : 0;
-      if (from >= length) {
-        return -1;
-      }
-      if (from < 0) {
-        from = Math.Max(0, from + length);
+      long from = 0;
+      if (fromIndex.HasValue) {
+        EcmaValue fromValue = fromIndex.Value.ToNumber();
+        if (fromValue >= length) {
+          return false;
+        }
+        from = fromValue.ToInt64();
+        if (from < 0) {
+          from = Math.Max(0, from + length);
+        }
       }
       for (long i = from; i < length; i++) {
         if (obj.Get(i).Equals(searchElement, EcmaValueComparison.SameValueZero)) {
-          return i;
+          return true;
         }
       }
-      return -1;
+      return false;
     }
 
     [IntrinsicMember]

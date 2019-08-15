@@ -132,6 +132,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ArrayHelper.cs" />
     <Compile Include="AttributeHelper.cs" />
     <Compile Include="Diagnostics\InspectorMetaObjectEntry.cs" />
     <Compile Include="Diagnostics\IInspectorMetaProvider.cs" />

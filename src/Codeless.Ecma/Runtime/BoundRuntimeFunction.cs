@@ -19,17 +19,7 @@ namespace Codeless.Ecma.Runtime {
     public EcmaValue[] BoundArgs { get; }
 
     public override EcmaValue Call(EcmaValue thisValue, params EcmaValue[] arguments) {
-      Guard.ArgumentNotNull(arguments, "arguments");
-      EcmaValue[] boundArgs = this.BoundArgs;
-      EcmaValue[] args;
-      if (arguments.Length == 0) {
-        args = boundArgs;
-      } else {
-        args = new EcmaValue[boundArgs.Length + arguments.Length];
-        Array.Copy(boundArgs, args, boundArgs.Length);
-        Array.Copy(arguments, 0, args, boundArgs.Length, arguments.Length);
-      }
-      return this.TargetFunction.Call(this.BoundThis, args);
+      return this.TargetFunction.Call(this.BoundThis, ArrayHelper.Combine(this.BoundArgs, arguments));
     }
   }
 }

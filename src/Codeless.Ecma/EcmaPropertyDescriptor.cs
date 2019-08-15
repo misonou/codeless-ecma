@@ -60,7 +60,7 @@ namespace Codeless.Ecma {
     }
 
     public bool IsDataDescriptor {
-      get { return (attributes & EcmaPropertyAttributes.HasValue) != 0; }
+      get { return (attributes & (EcmaPropertyAttributes.HasValue | EcmaPropertyAttributes.HasWritable)) != 0; }
     }
 
     public bool Enumerable {
@@ -147,9 +147,6 @@ namespace Codeless.Ecma {
       }
       if (value.HasProperty(WellKnownProperty.Writable)) {
         result.Writable = (bool)value[WellKnownProperty.Writable];
-        if (!result.IsDataDescriptor) {
-          result.Value = EcmaValue.Undefined;
-        }
       }
       if (value.HasProperty(WellKnownProperty.Get)) {
         EcmaValue getter = value[WellKnownProperty.Get];
@@ -168,7 +165,7 @@ namespace Codeless.Ecma {
       if (result.IsAccessorDescriptor && result.IsDataDescriptor) {
         throw new EcmaTypeErrorException(InternalString.Error.InvalidDescriptor);
       }
-      result.CompleteDescriptor(false);
+      result.CompleteDescriptorAttributes(frozenProperty.attributes);
       return result;
     }
 
@@ -179,7 +176,7 @@ namespace Codeless.Ecma {
           return false;
         }
         descriptor = (EcmaPropertyDescriptor)descriptor.MemberwiseClone();
-        descriptor.CompleteDescriptor(true);
+        descriptor.CompleteDescriptorAttributes(defaultProperty.attributes);
         return true;
       }
       if (!current.Configurable) {
@@ -210,36 +207,6 @@ namespace Codeless.Ecma {
       return true;
     }
 
-    public void CompleteDescriptor(bool defaultAttribute) {
-      CompleteDescriptor(defaultAttribute ? defaultProperty : frozenProperty);
-    }
-
-    [EcmaSpecification("CompletePropertyDescriptor", EcmaSpecificationKind.AbstractOperations)]
-    public void CompleteDescriptor(EcmaPropertyDescriptor current) {
-      EcmaPropertyAttributes sourceAttrs = current.attributes;
-      if (!IsDataDescriptor) {
-        if (current.IsAccessorDescriptor) {
-          if ((attributes & EcmaPropertyAttributes.HasGetter) == 0) {
-            this.Get = current.Get;
-          }
-          if ((attributes & EcmaPropertyAttributes.HasSetter) == 0) {
-            this.Set = current.Set;
-          }
-        } else if (!IsAccessorDescriptor) {
-          this.Value = current.Value;
-        }
-      }
-      if ((attributes & EcmaPropertyAttributes.HasConfigurable) == 0) {
-        attributes |= EcmaPropertyAttributes.HasConfigurable | (sourceAttrs & EcmaPropertyAttributes.Configurable);
-      }
-      if ((attributes & EcmaPropertyAttributes.HasEnumerable) == 0) {
-        attributes |= EcmaPropertyAttributes.HasEnumerable | (sourceAttrs & EcmaPropertyAttributes.Enumerable);
-      }
-      if ((attributes & EcmaPropertyAttributes.HasWritable) == 0) {
-        attributes |= EcmaPropertyAttributes.HasWritable | (IsDataDescriptor ? (sourceAttrs & EcmaPropertyAttributes.Writable) : 0);
-      }
-    }
-
     internal EcmaPropertyDescriptor EnsureSharedValue(RuntimeRealm realm) {
       bool isGetterShared = getter.Type == SharedIntrinsicObjectBinder.SharedValue;
       bool isSetterShared = setter.Type == SharedIntrinsicObjectBinder.SharedValue;
@@ -254,6 +221,35 @@ namespace Codeless.Ecma {
         return clone;
       }
       return this;
+    }
+
+    [EcmaSpecification("CompletePropertyDescriptor", EcmaSpecificationKind.AbstractOperations)]
+    private void CompleteDescriptor(EcmaPropertyDescriptor current) {
+      EcmaPropertyAttributes sourceAttrs = current.attributes;
+      if (!IsDataDescriptor && current.IsAccessorDescriptor) {
+        if ((attributes & EcmaPropertyAttributes.HasGetter) == 0) {
+          this.Get = current.Get;
+        }
+        if ((attributes & EcmaPropertyAttributes.HasSetter) == 0) {
+          this.Set = current.Set;
+        }
+      }
+      if (!IsAccessorDescriptor && (attributes & EcmaPropertyAttributes.HasValue) == 0) {
+        this.Value = current.Value;
+      }
+      CompleteDescriptorAttributes(sourceAttrs);
+    }
+
+    private void CompleteDescriptorAttributes(EcmaPropertyAttributes sourceAttrs) {
+      if ((attributes & EcmaPropertyAttributes.HasConfigurable) == 0) {
+        attributes |= EcmaPropertyAttributes.HasConfigurable | (sourceAttrs & EcmaPropertyAttributes.Configurable);
+      }
+      if ((attributes & EcmaPropertyAttributes.HasEnumerable) == 0) {
+        attributes |= EcmaPropertyAttributes.HasEnumerable | (sourceAttrs & EcmaPropertyAttributes.Enumerable);
+      }
+      if ((attributes & EcmaPropertyAttributes.HasWritable) == 0) {
+        attributes |= EcmaPropertyAttributes.HasWritable | (IsDataDescriptor ? (sourceAttrs & EcmaPropertyAttributes.Writable) : 0);
+      }
     }
   }
 }
