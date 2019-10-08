@@ -297,7 +297,7 @@ namespace Codeless.Ecma.Runtime {
                       }
                       break;
                     case MemberTypes.Property:
-                      DefineIntrinsicDataProperty(ht, name, ((PropertyInfo)member).GetValue(null), propAttr.Attributes);
+                      DefineIntrinsicDataProperty(ht, name, ((PropertyInfo)member).GetValue(null, null), propAttr.Attributes);
                       break;
                     case MemberTypes.Field:
                       DefineIntrinsicDataProperty(ht, name, ((FieldInfo)member).GetValue(null), propAttr.Attributes);

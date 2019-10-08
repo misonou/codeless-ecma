@@ -54,7 +54,7 @@
             <param name="input">A string to test against.</param>
             <returns></returns>
         </member>
-        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,Codeless.Ecma.EcmaRegexMatchEvaluator)">
+        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,Codeless.Ecma.Runtime.RuntimeFunction)">
             <summary>
             Replaces occurences of substrings that matches the pattern by the value returned from the invocation of pipe function argument.
             </summary>
@@ -62,7 +62,7 @@
             <param name="replacement">A pipe function argument.</param>
             <returns></returns>
         </member>
-        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,System.Text.RegularExpressions.MatchEvaluator)">
+        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,Codeless.Ecma.EcmaRegExpReplaceCallback)">
             <summary>
             Replaces occurences of substrings that matches the pattern by the value returned from the invocation of native method.
             </summary>
@@ -78,60 +78,13 @@
             <param name="replacement">Replacement string.</param>
             <returns></returns>
         </member>
-        <member name="M:Codeless.Ecma.EcmaRegExp.TryParse(System.String,Codeless.Ecma.EcmaRegExp@)">
+        <member name="M:Codeless.Ecma.EcmaRegExp.Parse(System.String,System.String)">
             <summary>
             Parses the given string into an instance of the <see cref="T:Codeless.Ecma.EcmaRegExp"/> class if the string represents a valid ECMAScript-compatible regular expression.
             </summary>
-            <param name="str">A string representing a valid ECMAScript-compatible regular expression.</param>
-            <param name="re">A reference to a variable that the parsed regular expression object is set to.</param>
+            <param name="pattern">A string representing a valid ECMAScript-compatible regular expression.</param>
+            <param name="flags">A string representing valid regular expression flags.</param>
             <returns>Returns *true* if the given string represents a valid ECMAScript-compatible regular expression; or *false* otherwise.</returns>
-        </member>
-        <member name="T:System.Collections.Generic.IReadOnlyDictionary`2">
-            <summary>
-            Represents a generic read-only collection of key/value pairs.
-            </summary>
-            <typeparam name="TKey">The type of keys in the read-only dictionary.</typeparam>
-            <typeparam name="TValue">The type of values in the read-only dictionary.</typeparam>
-        </member>
-        <member name="M:System.Collections.Generic.IReadOnlyDictionary`2.ContainsKey(`0)">
-            <summary>
-            Determines whether the read-only dictionary contains an element that has the specified key.
-            </summary>
-            <param name="key">The key to locate.</param>
-            <returns>*true* if the read-only dictionary contains an element that has the specified key; otherwise, *false*.</returns>
-        </member>
-        <member name="M:System.Collections.Generic.IReadOnlyDictionary`2.TryGetValue(`0,`1@)">
-            <summary>
-            Gets the value that is associated with the specified key.
-            </summary>
-            <param name="key">The key to locate.</param>
-            <param name="value">When this method returns, the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter. This parameter is passed uninitialized.</param>
-            <returns>*true* if the object that implements the <see cref="T:System.Collections.Generic.IReadOnlyDictionary`2"/> interface contains an element that has the specified key; otherwise, *false*.</returns>
-        </member>
-        <member name="P:System.Collections.Generic.IReadOnlyDictionary`2.Keys">
-            <summary>
-            Gets an enumerable collection that contains the keys in the read-only dictionary.
-            </summary>
-            <remarks>
-            The order of the keys in the enumerable collection is unspecified, but the implementation must guarantee that the keys 
-            are in the same order as the corresponding values in the enumerable collection that is returned by the <see cref="P:System.Collections.Generic.IReadOnlyDictionary`2.Values"/> property.
-            </remarks>
-        </member>
-        <member name="P:System.Collections.Generic.IReadOnlyDictionary`2.Item(`0)">
-            <summary>
-            Gets the element that has the specified key in the read-only dictionary.
-            </summary>
-            <param name="key">The key to locate.</param>
-            <returns>The element that has the specified key in the read-only dictionary.</returns>
-        </member>
-        <member name="P:System.Collections.Generic.IReadOnlyDictionary`2.Values">
-            <summary>
-            Gets an enumerable collection that contains the values in the read-only dictionary.
-            </summary>
-            <remarks>
-            The order of the values in the enumerable collection is unspecified, but the implementation must guarantee that the values 
-            are in the same order as the corresponding keys in the enumerable collection that is returned by the <see cref="P:System.Collections.Generic.IReadOnlyDictionary`2.Keys"/> property.
-            </remarks>
         </member>
     </members>
 </doc>

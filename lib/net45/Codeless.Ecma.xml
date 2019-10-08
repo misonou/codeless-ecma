@@ -54,7 +54,7 @@
             <param name="input">A string to test against.</param>
             <returns></returns>
         </member>
-        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,Codeless.Ecma.EcmaRegexMatchEvaluator)">
+        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,Codeless.Ecma.Runtime.RuntimeFunction)">
             <summary>
             Replaces occurences of substrings that matches the pattern by the value returned from the invocation of pipe function argument.
             </summary>
@@ -62,7 +62,7 @@
             <param name="replacement">A pipe function argument.</param>
             <returns></returns>
         </member>
-        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,System.Text.RegularExpressions.MatchEvaluator)">
+        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,Codeless.Ecma.EcmaRegExpReplaceCallback)">
             <summary>
             Replaces occurences of substrings that matches the pattern by the value returned from the invocation of native method.
             </summary>
@@ -78,12 +78,12 @@
             <param name="replacement">Replacement string.</param>
             <returns></returns>
         </member>
-        <member name="M:Codeless.Ecma.EcmaRegExp.TryParse(System.String,Codeless.Ecma.EcmaRegExp@)">
+        <member name="M:Codeless.Ecma.EcmaRegExp.Parse(System.String,System.String)">
             <summary>
             Parses the given string into an instance of the <see cref="T:Codeless.Ecma.EcmaRegExp"/> class if the string represents a valid ECMAScript-compatible regular expression.
             </summary>
-            <param name="str">A string representing a valid ECMAScript-compatible regular expression.</param>
-            <param name="re">A reference to a variable that the parsed regular expression object is set to.</param>
+            <param name="pattern">A string representing a valid ECMAScript-compatible regular expression.</param>
+            <param name="flags">A string representing valid regular expression flags.</param>
             <returns>Returns *true* if the given string represents a valid ECMAScript-compatible regular expression; or *false* otherwise.</returns>
         </member>
     </members>

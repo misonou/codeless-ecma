@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>Codeless.Ecma</id>
-        <version>0.1.0-alpha</version>
+        <version>0.1.0</version>
         <authors>misonou</authors>
         <projectUrl>https://github.com/misonou/codeless-ecma</projectUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -10,7 +10,16 @@
         <copyright>MIT</copyright>
         <language>en-US</language>
         <dependencies>
-            <dependency id="Newtonsoft.Json" version="9.0.1" />
+            <group targetFramework=".NETFramework3.5">
+                <dependency id="Newtonsoft.Json" version="9.0.1" />
+                <dependency id="System.Threading.dll" version="1.0.2856.0" />
+            </group>
+            <group targetFramework=".NETFramework4.0">
+                <dependency id="Newtonsoft.Json" version="9.0.1" />
+            </group>
+            <group targetFramework=".NETFramework4.5">
+                <dependency id="Newtonsoft.Json" version="9.0.1" />
+            </group>
         </dependencies>
     </metadata>
     <files>
