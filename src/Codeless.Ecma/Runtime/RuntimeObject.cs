@@ -21,19 +21,21 @@ namespace Codeless.Ecma.Runtime {
     private static readonly EcmaValue[] hintString = { "default", "string", "number" };
     private static readonly EcmaPropertyDescriptor sealedProperty = new EcmaPropertyDescriptor { Configurable = false };
     private static readonly EcmaPropertyDescriptor frozenProperty = new EcmaPropertyDescriptor { Configurable = false, Writable = false };
+    [ThreadStatic]
+    private static RuntimeRealm currentRealm;
 
     private Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> dictionary;
     private EcmaPropertyKeyCollection keys;
     private RuntimeObject prototype;
 
     public RuntimeObject(WellKnownObject defaultProto) {
-      this.Realm = RuntimeRealm.Current;
+      this.Realm = currentRealm ?? RuntimeRealm.Current;
       this.prototype = this.Realm.GetRuntimeObject(defaultProto);
     }
 
     public RuntimeObject(WellKnownObject defaultProto, RuntimeObject constructor) {
-      this.Realm = RuntimeRealm.Current;
       this.prototype = GetPrototypeFromConstructor(constructor, defaultProto);
+      this.Realm = prototype != null ? prototype.Realm : RuntimeRealm.Current;
     }
 
     protected RuntimeObject(WellKnownObject defaultProto, bool shared) {
@@ -52,7 +54,7 @@ namespace Codeless.Ecma.Runtime {
 
     public RuntimeObjectIntegrityLevel IntegrityLevel { get; private set; }
 
-    public RuntimeRealm Realm { get; private set; }
+    public RuntimeRealm Realm { get; protected set; }
 
     protected virtual string ToStringTag => InternalString.ObjectTag.Object;
 
@@ -92,9 +94,18 @@ namespace Codeless.Ecma.Runtime {
     }
 
     [EcmaSpecification("OrdinaryCreateFromConstructor", EcmaSpecificationKind.AbstractOperations)]
-    public static T CreateFromConstructor<T>(RuntimeObject constructor) where T : RuntimeObject, new() {
-      T obj = new T();
-      obj.prototype = GetPrototypeFromConstructor(constructor, 0) ?? obj.prototype;
+    public static T CreateFromConstructor<T>(RuntimeObject constructor, WellKnownObject defaultProto) where T : RuntimeObject, new() {
+      RuntimeObject proto = GetPrototypeFromConstructor(constructor, defaultProto);
+      if (proto != null) {
+        currentRealm = proto.Realm;
+      }
+      T obj;
+      try {
+        obj = new T();
+      } finally {
+        currentRealm = null;
+      }
+      obj.prototype = proto;
       return obj;
     }
 
@@ -155,7 +166,7 @@ namespace Codeless.Ecma.Runtime {
 
     [EcmaSpecification("OrdinarySetPrototypeOf", EcmaSpecificationKind.InternalMethod)]
     public virtual bool SetPrototypeOf(RuntimeObject proto) {
-      EcmaValue v = new EcmaValue(proto);
+      EcmaValue v = proto == null ? EcmaValue.Null : proto;
       if (v.Type != EcmaValueType.Null && v.Type != EcmaValueType.Object) {
         throw new EcmaTypeErrorException(InternalString.Error.PrototypeMustBeObjectOrNull);
       }
@@ -163,7 +174,7 @@ namespace Codeless.Ecma.Runtime {
         return true;
       }
       if (!this.IsExtensible) {
-        throw new EcmaTypeErrorException(InternalString.Error.NotExtensible);
+        return false;
       }
       for (RuntimeObject p = proto; p != null; p = p.GetPrototypeOf()) {
         if (p is RuntimeObjectProxy) {
@@ -305,7 +316,7 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public EcmaValue Invoke(EcmaPropertyKey propertyKey, params EcmaValue[] arguments) {
-      RuntimeFunction fn = this.GetMethod(propertyKey);
+      RuntimeObject fn = this.GetMethod(propertyKey);
       if (fn == null) {
         throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
       }
@@ -409,7 +420,7 @@ namespace Codeless.Ecma.Runtime {
 
     [EcmaSpecification("ToPrimitive", EcmaSpecificationKind.AbstractOperations)]
     protected EcmaValue ToPrimitive(EcmaPreferredPrimitiveType kind) {
-      RuntimeFunction exoticToPrim = this.GetMethod(WellKnownSymbol.ToPrimitive);
+      RuntimeObject exoticToPrim = this.GetMethod(WellKnownSymbol.ToPrimitive);
       if (exoticToPrim != null) {
         EcmaValue result = exoticToPrim.Call(new EcmaValue(this), hintString[(int)kind]);
         if (result.Type == EcmaValueType.Object) {

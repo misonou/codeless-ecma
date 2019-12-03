@@ -791,7 +791,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       EcmaValue re = default;
       That(() => re = RegExp.Construct(pattern, flags), Throws.Nothing, FormatMessage((Undefined, new[] { pattern, flags }), null));
 
-      RuntimeFunction fn = (RuntimeFunction)TestContext.CurrentContext.Test.Arguments.FirstOrDefault() as RuntimeFunction;
+      RuntimeObject fn = TestContext.CurrentContext.Test.Arguments.FirstOrDefault() as RuntimeObject;
       if (fn == null || fn.IsIntrinsicFunction(WellKnownObject.RegExpPrototype, "test")) {
         fn = re.ToObject().GetMethod("exec");
       }

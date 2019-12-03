@@ -10,6 +10,7 @@ namespace Codeless.Ecma.Runtime {
       Guard.ArgumentNotNull(fn, "fn");
       Guard.ArgumentNotNull(args, "args");
       this.TargetFunction = fn;
+      this.Realm = fn.Realm;
       this.BoundThis = thisValue;
       this.BoundArgs = args;
     }
@@ -20,6 +21,13 @@ namespace Codeless.Ecma.Runtime {
 
     public override EcmaValue Call(EcmaValue thisValue, params EcmaValue[] arguments) {
       return this.TargetFunction.Call(this.BoundThis, ArrayHelper.Combine(this.BoundArgs, arguments));
+    }
+
+    public override EcmaValue Construct(EcmaValue[] arguments, RuntimeObject newTarget) {
+      if (newTarget == this) {
+        newTarget = this.TargetFunction;
+      }
+      return this.TargetFunction.Construct(ArrayHelper.Combine(this.BoundArgs, arguments), newTarget);
     }
   }
 }

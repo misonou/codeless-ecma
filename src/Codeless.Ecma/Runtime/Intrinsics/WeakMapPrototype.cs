@@ -19,7 +19,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Get([This] EcmaValue thisValue, EcmaValue key) {
       EcmaWeakMap map = thisValue.GetUnderlyingObject<EcmaWeakMap>();
       if (key.Type != EcmaValueType.Object) {
-        return false;
+        return default;
       }
       return map.Get(key.ToObject());
     }

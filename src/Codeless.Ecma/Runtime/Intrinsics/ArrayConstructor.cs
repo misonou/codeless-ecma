@@ -31,7 +31,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember(FunctionLength = 0)]
     public static EcmaValue Of([This] EcmaValue thisValue, params EcmaValue[] elements) {
-      if (!thisValue.IsCallable || !((RuntimeFunction)thisValue.GetUnderlyingObject()).IsConstructor) {
+      if (!thisValue.IsCallable || !thisValue.ToObject().IsConstructor) {
         return new EcmaArray(elements);
       }
       RuntimeObject arr = thisValue.Construct(elements.Length).ToObject();
@@ -51,7 +51,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       bool usingIterator = items.GetMethod(WellKnownSymbol.Iterator) != null;
       long initialLen = usingIterator ? 0 : arrayLike[WellKnownProperty.Length].ToLength();
       RuntimeObject arr;
-      if (thisValue.IsCallable && ((RuntimeFunction)thisValue.GetUnderlyingObject()).IsConstructor) {
+      if (thisValue.IsCallable && thisValue.ToObject().IsConstructor) {
         arr = thisValue.Construct(usingIterator ? EcmaValue.EmptyArray : new EcmaValue[] { initialLen }).ToObject();
       } else {
         arr = new EcmaArray(initialLen);

@@ -12,7 +12,7 @@ namespace Codeless.Ecma {
     private readonly bool unicode;
     private readonly bool global;
     private readonly string inputString;
-    private RegExpPrototype.ExecCallback callback;
+    private bool done;
     private IEcmaRegExpResult result;
 
     public EcmaRegExpStringEnumerator(EcmaValue re, string inputString) {
@@ -20,7 +20,6 @@ namespace Codeless.Ecma {
       this.global = re[WellKnownProperty.Global].ToBoolean();
       this.unicode = re[WellKnownProperty.Unicode].ToBoolean();
       this.inputString = inputString;
-      this.callback = RegExpPrototype.CreateExecCallback(re);
     }
 
     public KeyValuePair<EcmaValue, EcmaValue> Current {
@@ -28,13 +27,13 @@ namespace Codeless.Ecma {
     }
 
     public bool MoveNext() {
-      if (callback == null) {
+      if (done) {
         return false;
       }
-      result = callback(inputString);
+      result = RegExpPrototype.CreateExecCallback(re)(inputString);
       bool success = result != null;
       if (!global || !success) {
-        callback = null;
+        done = true;
       }
       if (success && result.Value.Length == 0) {
         RegExpPrototype.AdvanceStringIndex(re, inputString, unicode);

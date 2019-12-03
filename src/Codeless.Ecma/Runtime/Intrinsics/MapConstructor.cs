@@ -4,6 +4,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.MapConstructor)]
   internal static class MapConstructor {
     [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(EcmaMap))]
+    [IntrinsicMember(FunctionLength = 0)]
     public static EcmaValue Map([This] EcmaValue thisValue, EcmaValue iterable) {
       if (!iterable.IsNullOrUndefined) {
         EcmaValue adder = thisValue[WellKnownProperty.Set];

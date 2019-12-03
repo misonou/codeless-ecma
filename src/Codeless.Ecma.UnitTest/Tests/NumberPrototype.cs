@@ -229,7 +229,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((false, 1), Throws.TypeError);
         Case((Null, 1), Throws.TypeError);
         Case((Undefined, 1), Throws.TypeError);
-        Case((SymbolConstructor.Symbol("1"), 1), Throws.TypeError);
+        Case((new Symbol("1"), 1), Throws.TypeError);
         Case((EcmaArray.Of(), 1), Throws.TypeError);
       });
 
@@ -430,7 +430,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((false, 1), Throws.TypeError);
         Case((Null, 1), Throws.TypeError);
         Case((Undefined, 1), Throws.TypeError);
-        Case((SymbolConstructor.Symbol("1"), 1), Throws.TypeError);
+        Case((new Symbol("1"), 1), Throws.TypeError);
         Case((EcmaArray.Of(), 1), Throws.TypeError);
       });
 

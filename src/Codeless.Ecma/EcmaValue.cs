@@ -139,9 +139,14 @@ namespace Codeless.Ecma {
 
     [DebuggerStepThrough]
     public EcmaValue(string value) {
-      IEcmaValueBinder binder = WellKnownPropertyNameBinder.IsWellKnownPropertyName(value) ? WellKnownPropertyNameBinder.Default : PrimitiveBinderWrapper<string>.GetBinder(value, StringBinder.Default);
-      this.handle = binder.ToHandle(value);
-      this.binder_ = binder;
+      if (value == null) {
+        this.handle = default;
+        this.binder_ = default;
+      } else {
+        IEcmaValueBinder binder = WellKnownPropertyNameBinder.IsWellKnownPropertyName(value) ? WellKnownPropertyNameBinder.Default : PrimitiveBinderWrapper<string>.GetBinder(value, StringBinder.Default);
+        this.handle = binder.ToHandle(value);
+        this.binder_ = binder;
+      }
     }
 
     [DebuggerStepThrough]
@@ -628,6 +633,13 @@ namespace Codeless.Ecma {
 
     public double ToDouble() {
       return binder.ToDouble(handle);
+    }
+
+    public Symbol ToSymbol() {
+      if (this.Type == EcmaValueType.Symbol) {
+        return (Symbol)GetUnderlyingObject();
+      }
+      throw new EcmaTypeErrorException(InternalString.Error.NotSymbol);
     }
 
     public IEnumerator<EcmaPropertyKey> GetEnumerator() {

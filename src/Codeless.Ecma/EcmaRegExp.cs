@@ -216,7 +216,7 @@ namespace Codeless.Ecma {
     /// <param name="input">Input string.</param>
     /// <param name="replacement">A pipe function argument.</param>
     /// <returns></returns>
-    public string Replace(string input, RuntimeFunction replacement) {
+    public string Replace(string input, RuntimeObject replacement) {
       return ReplaceInternal(input, m => RegExpPrototype.InvokeReplacementCallback(replacement, new MatchResult(this, input, m, null, 0)));
     }
 
@@ -740,9 +740,9 @@ namespace Codeless.Ecma {
     private class MatchEvaluatorClass {
       private readonly EcmaRegExp re;
       private readonly string input;
-      private readonly RuntimeFunction replacement;
+      private readonly RuntimeObject replacement;
 
-      public MatchEvaluatorClass(EcmaRegExp re, string input, RuntimeFunction replacement) {
+      public MatchEvaluatorClass(EcmaRegExp re, string input, RuntimeObject replacement) {
         this.re = re;
         this.input = input;
         this.replacement = replacement;

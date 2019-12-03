@@ -7,9 +7,12 @@ using System.Text;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.FunctionConstructor)]
   internal static class FunctionConstructor {
-    [IntrinsicConstructor]
-    public static EcmaValue Function([NewTarget] RuntimeObject constructor) {
-      throw new NotImplementedException();
+    [IntrinsicConstructor(ObjectType = typeof(ScriptFunction))]
+    public static EcmaValue Function([NewTarget] RuntimeObject constructor, [This] EcmaValue thisValue, params EcmaValue[] args) {
+      if (args.Length > 0) {
+        throw new NotImplementedException();
+      }
+      return thisValue;
     }
   }
 }

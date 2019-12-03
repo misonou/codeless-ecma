@@ -39,7 +39,7 @@ namespace Codeless.Ecma.Runtime {
       } else if (method.HasAttribute(out IntrinsicMemberAttribute _)) {
         constraint = NativeRuntimeFunctionConstraint.DenyConstruct;
       } else {
-        SetPrototypeInternal(new EcmaObject(), EcmaPropertyAttributes.Writable);
+        SetPrototypeInternal(new EcmaObject());
       }
       constructThisValue = createFromConstructor.MakeGenericMethod(runtimeObjectType ?? typeof(EcmaObject));
     }
@@ -70,11 +70,8 @@ namespace Codeless.Ecma.Runtime {
     }
 
     protected override RuntimeObject ConstructThisValue(RuntimeObject newTarget) {
-      if (constraint == NativeRuntimeFunctionConstraint.DenyConstruct) {
-        throw new EcmaTypeErrorException(InternalString.Error.NotConstructor);
-      }
       try {
-        return (RuntimeObject)constructThisValue.Invoke(null, new object[] { newTarget });
+        return (RuntimeObject)constructThisValue.Invoke(null, new object[] { newTarget, defaultProto });
       } catch (TargetInvocationException ex) {
         throw ex.InnerException;
       }

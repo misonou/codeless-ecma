@@ -36,6 +36,7 @@ namespace Codeless.Ecma {
       public const string MapIterator = "Map Iterator";
       public const string SetIterator = "Set Iterator";
       public const string RegExpStringIterator = "RegExp String Iterator";
+      public const string StringIterator = "String Iterator";
       public const string Null = "Null";
     }
 
@@ -43,7 +44,9 @@ namespace Codeless.Ecma {
       public const string NotObject = "#<Object> is not an Object";
       public const string NotConstructor = "#<Object> is not a constructor";
       public const string NotFunction = "#<Object> is not a function";
+      public const string NotSymbol = "#<Object> is not a symbol";
       public const string NotExtensible = "#<Object> is not extensible";
+      public const string NotIterable = "#<Object> is not iterable";
       public const string NotCoercibleAsObject = "Cannot convert value to an Object";
       public const string NotConvertibleToPrimitive = "Cannot convert object to primitive value";
       public const string SymbolNotConvertibleToNumber = "Cannot convert a Symbol value to a number";

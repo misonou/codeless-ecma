@@ -140,8 +140,10 @@
     <Compile Include="Diagnostics\InspectorMetaObjectEntryCollection.cs" />
     <Compile Include="Diagnostics\VisualStudio\RuntimeObjectDebuggerProxy.cs" />
     <Compile Include="EcmaArray.cs" />
+    <Compile Include="Runtime\ScriptFunction.cs" />
     <Compile Include="EcmaJsonReader.cs" />
     <Compile Include="EcmaRegExpStringEnumerator.cs" />
+    <Compile Include="EcmaStringEnumerator.cs" />
     <Compile Include="EcmaTimestamp.cs" />
     <Compile Include="EcmaValueUtility.cs" />
     <Compile Include="EcmaDate.cs" />
@@ -159,6 +161,7 @@
     <Compile Include="EcmaPropertyDescriptor.cs" />
     <Compile Include="Native\INativeObjectWrapper.cs" />
     <Compile Include="Native\ReflectedNativeObject.cs" />
+    <Compile Include="New.cs" />
     <Compile Include="Primitives\NullBinder.cs" />
     <Compile Include="Primitives\PrimitiveBinderWrapper.cs" />
     <Compile Include="Primitives\PrimitiveBinder.cs" />
@@ -177,6 +180,7 @@
     <Compile Include="Runtime\Intrinsics\SetIteratorPrototype.cs" />
     <Compile Include="Runtime\Intrinsics\RegExpConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\RegExpPrototype.cs" />
+    <Compile Include="Runtime\Intrinsics\StringIteratorPrototype.cs" />
     <Compile Include="Runtime\NativeRuntimeFunction.cs" />
     <Compile Include="Runtime\Intrinsics\BooleanConstructor.cs" />
     <Compile Include="Runtime\Intrinsics\BooleanPrototype.cs" />

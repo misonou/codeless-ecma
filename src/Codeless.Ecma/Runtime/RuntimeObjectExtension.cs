@@ -9,14 +9,14 @@ namespace Codeless.Ecma.Runtime {
     private static readonly EcmaPropertyKey[] convertToPrimitiveMethodNumber = { WellKnownProperty.ValueOf, WellKnownProperty.ToString };
 
     [EcmaSpecification("GetMethod", EcmaSpecificationKind.AbstractOperations)]
-    public static RuntimeFunction GetMethod(this RuntimeObject obj, EcmaPropertyKey propertyKey) {
+    public static RuntimeObject GetMethod(this RuntimeObject obj, EcmaPropertyKey propertyKey) {
       Guard.ArgumentNotNull(obj, "obj");
       EcmaValue value = obj.Get(propertyKey, obj);
       if (value.IsNullOrUndefined) {
         return null;
       }
-      if (value.ToObject() is RuntimeFunction fn) {
-        return fn;
+      if (value.IsCallable) {
+        return value.ToObject();
       }
       throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
     }
@@ -25,6 +25,9 @@ namespace Codeless.Ecma.Runtime {
     public static EcmaIteratorEnumerator GetIterator(this RuntimeObject obj) {
       Guard.ArgumentNotNull(obj, "obj");
       RuntimeObject method = obj.GetMethod(Symbol.Iterator);
+      if (method == null) {
+        throw new EcmaTypeErrorException(InternalString.Error.NotIterable);
+      }
       EcmaValue iterator = method.Call(obj);
       Guard.ArgumentIsObject(iterator);
       return new EcmaIteratorEnumerator(iterator);

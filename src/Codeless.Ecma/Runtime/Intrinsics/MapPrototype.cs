@@ -27,14 +27,14 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return map.Entries();
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue ForEach([This] EcmaValue thisValue, EcmaValue callback, EcmaValue thisArg) {
       EcmaMap map = thisValue.GetUnderlyingObject<EcmaMap>();
       Guard.ArgumentIsCallable(callback);
       IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> iterator = map.GetEnumerator();
       while (iterator.MoveNext()) {
         KeyValuePair<EcmaValue, EcmaValue> entry = iterator.Current;
-        callback.Call(thisArg, entry.Value, entry.Key);
+        callback.Call(thisArg, entry.Value, entry.Key, map);
       }
       return default;
     }

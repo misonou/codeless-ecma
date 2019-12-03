@@ -53,5 +53,10 @@ namespace Codeless.Ecma.Primitives {
     public override string ToString(Symbol value) {
       return value.ToString();
     }
+
+    public override bool TryGet(Symbol target, EcmaPropertyKey name, out EcmaValue value) {
+      value = ToRuntimeObject(target).Get(name);
+      return true;
+    }
   }
 }

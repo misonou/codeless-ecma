@@ -8,7 +8,6 @@ namespace Codeless.Ecma.Runtime {
   public class IntrinsicMemberAttribute : Attribute {
     public IntrinsicMemberAttribute() {
       this.FunctionLength = -1;
-      this.Attributes = EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Enumerable | EcmaPropertyAttributes.Configurable;
     }
 
     public IntrinsicMemberAttribute(EcmaPropertyAttributes attributes) {
@@ -38,7 +37,7 @@ namespace Codeless.Ecma.Runtime {
 
     public string Name { get; private set; }
     public WellKnownSymbol Symbol { get; private set; }
-    public EcmaPropertyAttributes Attributes { get; private set; }
+    public EcmaPropertyAttributes? Attributes { get; private set; }
 
     public int FunctionLength { get; set; }
     public bool Getter { get; set; }

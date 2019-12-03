@@ -259,28 +259,46 @@ namespace Codeless.Ecma {
       return this;
     }
 
-    public void ForEach(RuntimeFunction callback) {
+    public void ForEach(Action<EcmaValue> callback) {
       ForEach(callback, EcmaValue.Undefined);
     }
 
-    public void ForEach(RuntimeFunction callback, EcmaValue thisArg) {
+    public void ForEach(Action<EcmaValue, long> callback) {
+      ForEach(callback, EcmaValue.Undefined);
+    }
+
+    public void ForEach(Action<EcmaValue, long, EcmaArray> callback) {
+      ForEach(callback, EcmaValue.Undefined);
+    }
+
+    public void ForEach(EcmaValue callback, EcmaValue thisArg) {
       if (this.FallbackMode) {
         ArrayPrototype.ForEach(this, callback, thisArg);
         return;
       }
+      Guard.ArgumentIsCallable(callback);
       foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
         callback.Call(thisArg, entry.Value, entry.Key, this);
       }
     }
 
-    public bool Some(RuntimeFunction callback) {
+    public bool Some(Func<EcmaValue, bool> callback) {
       return Some(callback, EcmaValue.Undefined);
     }
 
-    public bool Some(RuntimeFunction callback, EcmaValue thisArg) {
+    public bool Some(Func<EcmaValue, long, bool> callback) {
+      return Some(callback, EcmaValue.Undefined);
+    }
+
+    public bool Some(Func<EcmaValue, long, EcmaArray, bool> callback) {
+      return Some(callback, EcmaValue.Undefined);
+    }
+
+    public bool Some(EcmaValue callback, EcmaValue thisArg) {
       if (this.FallbackMode) {
         return (bool)ArrayPrototype.Some(this, callback, thisArg);
       }
+      Guard.ArgumentIsCallable(callback);
       if (list != null) {
         foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
           if (callback.Call(thisArg, entry.Value, entry.Key, this)) {
@@ -291,14 +309,23 @@ namespace Codeless.Ecma {
       return false;
     }
 
-    public bool Every(RuntimeFunction callback) {
+    public bool Every(Func<EcmaValue, bool> callback) {
       return Every(callback, EcmaValue.Undefined);
     }
 
-    public bool Every(RuntimeFunction callback, EcmaValue thisArg) {
+    public bool Every(Func<EcmaValue, long, bool> callback) {
+      return Every(callback, EcmaValue.Undefined);
+    }
+
+    public bool Every(Func<EcmaValue, long, EcmaArray, bool> callback) {
+      return Every(callback, EcmaValue.Undefined);
+    }
+
+    public bool Every(EcmaValue callback, EcmaValue thisArg) {
       if (this.FallbackMode) {
         return (bool)ArrayPrototype.Every(this, callback, thisArg);
       }
+      Guard.ArgumentIsCallable(callback);
       if (list != null) {
         foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true, true)) {
           if (!(bool)callback.Call(thisArg, entry.Value, entry.Key, this)) {
@@ -309,14 +336,23 @@ namespace Codeless.Ecma {
       return true;
     }
 
-    public EcmaValue Filter(RuntimeFunction callback) {
+    public EcmaArray Filter(Func<EcmaValue, bool> callback) {
       return Filter(callback, EcmaValue.Undefined);
     }
 
-    public EcmaArray Filter(RuntimeFunction callback, EcmaValue thisArg) {
+    public EcmaArray Filter(Func<EcmaValue, long, bool> callback) {
+      return Filter(callback, EcmaValue.Undefined);
+    }
+
+    public EcmaArray Filter(Func<EcmaValue, long, EcmaArray, bool> callback) {
+      return Filter(callback, EcmaValue.Undefined);
+    }
+
+    public EcmaArray Filter(EcmaValue callback, EcmaValue thisArg) {
       if (this.FallbackMode) {
         return ArrayPrototype.Filter(this, callback, thisArg).GetUnderlyingObject<EcmaArray>();
       }
+      Guard.ArgumentIsCallable(callback);
       List<EcmaValue> arr = new List<EcmaValue>();
       if (list != null) {
         foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
@@ -328,14 +364,23 @@ namespace Codeless.Ecma {
       return new EcmaArray(arr);
     }
 
-    public EcmaValue Map(RuntimeFunction callback) {
+    public EcmaArray Map(Func<EcmaValue, EcmaValue> callback) {
       return Map(callback, EcmaValue.Undefined);
     }
 
-    public EcmaArray Map(RuntimeFunction callback, EcmaValue thisArg) {
+    public EcmaArray Map(Func<EcmaValue, long, EcmaValue> callback) {
+      return Map(callback, EcmaValue.Undefined);
+    }
+
+    public EcmaArray Map(Func<EcmaValue, long, EcmaArray, EcmaValue> callback) {
+      return Map(callback, EcmaValue.Undefined);
+    }
+
+    public EcmaArray Map(EcmaValue callback, EcmaValue thisArg) {
       if (this.FallbackMode) {
         return ArrayPrototype.Map(this, callback, thisArg).GetUnderlyingObject<EcmaArray>();
       }
+      Guard.ArgumentIsCallable(callback);
       List<EcmaValue> arr = new List<EcmaValue>();
       if (list != null) {
         foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
@@ -347,13 +392,38 @@ namespace Codeless.Ecma {
       return new EcmaArray(arr);
     }
 
-    public EcmaValue Reduce(RuntimeFunction callback) {
+    public EcmaValue Reduce<T>(Func<T, EcmaValue, T> callback) {
+      return Reduce(new DelegateRuntimeFunction(callback));
+    }
+
+    public EcmaValue Reduce<T>(Func<T, EcmaValue, T> callback, T initialValue) {
+      return Reduce(new DelegateRuntimeFunction(callback), new EcmaValue(initialValue));
+    }
+
+    public EcmaValue Reduce<T>(Func<T, EcmaValue, long, T> callback) {
+      return Reduce(new DelegateRuntimeFunction(callback));
+    }
+
+    public EcmaValue Reduce<T>(Func<T, EcmaValue, long, T> callback, T initialValue) {
+      return Reduce(new DelegateRuntimeFunction(callback), new EcmaValue(initialValue));
+    }
+
+    public EcmaValue Reduce<T>(Func<T, EcmaValue, long, EcmaArray, T> callback) {
+      return Reduce(new DelegateRuntimeFunction(callback));
+    }
+
+    public EcmaValue Reduce<T>(Func<T, EcmaValue, long, EcmaArray, T> callback, T initialValue) {
+      return Reduce(new DelegateRuntimeFunction(callback), new EcmaValue(initialValue));
+    }
+
+    public EcmaValue Reduce(EcmaValue callback) {
       if (this.FallbackMode) {
         return ArrayPrototype.Reduce(this, callback, null);
       }
       if (list == null || list.Count == 0) {
         throw new EcmaTypeErrorException(InternalString.Error.ReduceEmptyArray);
       }
+      Guard.ArgumentIsCallable(callback);
       bool reduce = false;
       EcmaValue initialValue = default;
       foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
@@ -366,10 +436,11 @@ namespace Codeless.Ecma {
       return initialValue;
     }
 
-    public EcmaValue Reduce(RuntimeFunction callback, EcmaValue initialValue) {
+    public EcmaValue Reduce(EcmaValue callback, EcmaValue initialValue) {
       if (this.FallbackMode) {
         return ArrayPrototype.Reduce(this, callback, initialValue);
       }
+      Guard.ArgumentIsCallable(callback);
       if (list != null) {
         foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
           initialValue = callback.Call(EcmaValue.Undefined, initialValue, entry.Value, entry.Key, this);
@@ -378,14 +449,23 @@ namespace Codeless.Ecma {
       return initialValue;
     }
 
-    public EcmaValue Find(RuntimeFunction predicate) {
+    public EcmaValue Find(Func<EcmaValue, bool> predicate) {
       return Find(predicate, EcmaValue.Undefined);
     }
 
-    public EcmaValue Find(RuntimeFunction predicate, EcmaValue thisArg) {
+    public EcmaValue Find(Func<EcmaValue, long, bool> predicate) {
+      return Find(predicate, EcmaValue.Undefined);
+    }
+
+    public EcmaValue Find(Func<EcmaValue, long, EcmaArray, bool> predicate) {
+      return Find(predicate, EcmaValue.Undefined);
+    }
+
+    public EcmaValue Find(EcmaValue predicate, EcmaValue thisArg) {
       if (this.FallbackMode) {
         return ArrayPrototype.Find(this, predicate, thisArg);
       }
+      Guard.ArgumentIsCallable(predicate);
       if (list != null) {
         foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(false, true)) {
           if (predicate.Call(thisArg, entry.Value, entry.Key, this)) {
@@ -396,14 +476,23 @@ namespace Codeless.Ecma {
       return default;
     }
 
-    public long FindIndex(RuntimeFunction predicate) {
+    public long FindIndex(Func<EcmaValue, bool> predicate) {
       return FindIndex(predicate, EcmaValue.Undefined);
     }
 
-    public long FindIndex(RuntimeFunction predicate, EcmaValue thisArg) {
+    public long FindIndex(Func<EcmaValue, long, bool> predicate) {
+      return FindIndex(predicate, EcmaValue.Undefined);
+    }
+
+    public long FindIndex(Func<EcmaValue, long, EcmaArray, bool> predicate) {
+      return FindIndex(predicate, EcmaValue.Undefined);
+    }
+
+    public long FindIndex(EcmaValue predicate, EcmaValue thisArg) {
       if (this.FallbackMode) {
         return (long)ArrayPrototype.FindIndex(this, predicate, thisArg);
       }
+      Guard.ArgumentIsCallable(predicate);
       if (list != null) {
         foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(false, true)) {
           if (predicate.Call(thisArg, entry.Value, entry.Key, this)) {
@@ -424,6 +513,30 @@ namespace Codeless.Ecma {
 
     public EcmaArray Concat(params EcmaValue[] elements) {
       return ArrayPrototype.Concat(this, elements).GetUnderlyingObject<EcmaArray>();
+    }
+
+    public EcmaArray Flat() {
+      return Flat(1);
+    }
+
+    public EcmaArray Flat(int depth) {
+      return ArrayPrototype.Flat(this, depth).GetUnderlyingObject<EcmaArray>();
+    }
+
+    public EcmaArray FlatMap(Func<EcmaValue, EcmaValue> callback) {
+      return FlatMap(callback, EcmaValue.Undefined);
+    }
+
+    public EcmaArray FlatMap(Func<EcmaValue, long, EcmaValue> callback) {
+      return FlatMap(callback, EcmaValue.Undefined);
+    }
+
+    public EcmaArray FlatMap(Func<EcmaValue, long, EcmaArray, EcmaValue> callback) {
+      return FlatMap(callback, EcmaValue.Undefined);
+    }
+
+    public EcmaArray FlatMap(EcmaValue callback, EcmaValue thisArg) {
+      return ArrayPrototype.FlatMap(this, callback, thisArg).GetUnderlyingObject<EcmaArray>();
     }
 
     public EcmaIterator Keys() {

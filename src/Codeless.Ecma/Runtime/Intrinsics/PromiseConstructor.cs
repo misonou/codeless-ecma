@@ -11,7 +11,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (!executor.IsCallable) {
         throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
       }
-      promise.InitWithCallback(executor.GetUnderlyingObject<RuntimeFunction>());
+      promise.InitWithCallback(executor.ToObject());
       return thisValue;
     }
 

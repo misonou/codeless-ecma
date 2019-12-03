@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma {
+  public delegate EcmaValue JsonReplacer(EcmaValue holder, EcmaPropertyKey propertyKey, EcmaValue value);
+
   [IntrinsicObject(WellKnownObject.Json, Global = true, Name = "JSON")]
   public static class Json {
     [IntrinsicMember(WellKnownSymbol.ToStringTag, EcmaPropertyAttributes.Configurable)]
@@ -16,7 +18,7 @@ namespace Codeless.Ecma {
       return new EcmaJsonWriter().Serialize(value);
     }
 
-    public static string Stringify(EcmaValue value, RuntimeFunction replacer, string indentString) {
+    public static string Stringify(EcmaValue value, JsonReplacer replacer, string indentString) {
       return new EcmaJsonWriter(indentString, replacer).Serialize(value);
     }
 

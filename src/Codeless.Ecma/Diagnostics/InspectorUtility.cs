@@ -1,4 +1,5 @@
 ﻿using Codeless.Ecma.Runtime;
+using Codeless.Ecma.Runtime.Intrinsics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -46,7 +47,7 @@ namespace Codeless.Ecma.Diagnostics {
             if (nested) {
               writer.Write("function");
             } else {
-              writer.Write("function " + value[WellKnownProperty.Name] + "() { [native code] }");
+              writer.Write(FunctionPrototype.ToString(value));
             }
           } else if (EcmaArray.IsArray(value)) {
             SerializeAsArray(writer, value);

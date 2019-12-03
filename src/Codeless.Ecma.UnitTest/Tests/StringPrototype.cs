@@ -407,6 +407,13 @@ namespace Codeless.Ecma.UnitTest.Tests {
     }
 
     [Test, RuntimeFunctionInjection]
+    public void Iterator(RuntimeFunction iterator) {
+      IsUnconstructableFunctionWLength(iterator, "[Symbol.iterator]", 0);
+      IsAbruptedFromToPrimitive(iterator);
+      IsAbruptedFromToObject(iterator);
+    }
+
+    [Test, RuntimeFunctionInjection]
     public void LastIndexOf(RuntimeFunction lastIndexOf) {
       IsUnconstructableFunctionWLength(lastIndexOf, "lastIndexOf", 1);
       IsAbruptedFromToPrimitive(lastIndexOf);

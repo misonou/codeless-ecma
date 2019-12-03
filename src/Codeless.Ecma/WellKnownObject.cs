@@ -76,6 +76,7 @@ namespace Codeless.Ecma {
     DataViewPrototype,
     SharedArrayBuffer,
     SharedArrayBufferPrototype,
+    StringIteratorPrototype,
     MaxValue
   }
 }

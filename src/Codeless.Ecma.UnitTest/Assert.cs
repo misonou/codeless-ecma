@@ -16,6 +16,7 @@ namespace Codeless.Ecma.UnitTest {
 
     public static void It(string message, Action tests) {
       try {
+        StaticHelper.Logs.Clear();
         Assert.message = "It " + message;
         tests();
       } finally {
@@ -27,15 +28,25 @@ namespace Codeless.Ecma.UnitTest {
       That(fn, Is.TypeOf("function"));
       That(fn, Has.OwnProperty("name", name, EcmaPropertyAttributes.Configurable));
       That(fn, Has.OwnProperty("length", functionLength, EcmaPropertyAttributes.Configurable));
-      That(fn, Has.OwnProperty("prototype", prototype, EcmaPropertyAttributes.None));
+      if (prototype != null) {
+        That(fn, Has.OwnProperty("prototype", prototype, EcmaPropertyAttributes.None));
+      } else {
+        That(Global.Object.Invoke("getOwnPropertyDescriptor", fn, "prototype"), Is.Undefined);
+      }
       That(Global.Object.Invoke("getPrototypeOf", fn), Is.EqualTo(Global.Function.Prototype));
     }
 
     public static void IsUnconstructableFunctionWLength(EcmaValue fn, string name, int functionLength) {
       That(fn, Is.TypeOf("function"));
       That(fn["prototype"], Is.Undefined);
-      That(fn, Has.OwnProperty("name", name, EcmaPropertyAttributes.Configurable));
+      if (name != null) {
+        That(fn, Has.OwnProperty("name", name, EcmaPropertyAttributes.Configurable));
+      } else {
+        That(Global.Object.Invoke("getOwnPropertyDescriptor", fn, "name"), Is.Undefined);
+      }
       That(fn, Has.OwnProperty("length", functionLength, EcmaPropertyAttributes.Configurable));
+      That(Global.Object.Invoke("getPrototypeOf", fn), Is.EqualTo(Global.Function.Prototype));
+      That(Global.Object.Invoke("getOwnPropertyDescriptor", fn, "prototype"), Is.Undefined);
       That(() => fn.Construct(), Throws.TypeError);
     }
 
@@ -60,6 +71,22 @@ namespace Codeless.Ecma.UnitTest {
         String.Format("Function should be returning abrupt record from ToObject(this value)");
       That(() => fn is BoundRuntimeFunction ? fn.Call(default, EcmaValue.Undefined) : fn.Call(EcmaValue.Undefined), Throws.TypeError, message);
       That(() => fn is BoundRuntimeFunction ? fn.Call(default, EcmaValue.Null) : fn.Call(EcmaValue.Null), Throws.TypeError, message);
+    }
+
+    public static void VerifyIteratorResult(EcmaValue result, bool done, Action<EcmaValue> action) {
+      VerifyIteratorResult(result, done, (object)action);
+    }
+
+    public static void VerifyIteratorResult(EcmaValue result, bool done, object value = default) {
+      That(result, Is.TypeOf("object"), "iterator return must be an Object");
+      That(result["done"], Is.EqualTo(done), "expected iteration done: {0}", done);
+      if (!done) {
+        if (value is Delegate d) {
+          d.DynamicInvoke(result["value"]);
+        } else {
+          That(result["value"], value is System.Array arr ? Is.EquivalentTo(arr) : Is.EqualTo(value), "expected iteration result");
+        }
+      }
     }
 
     public static void Case(EcmaValue thisArg, object condition, string message = null) {

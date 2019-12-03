@@ -353,7 +353,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Match([This] EcmaValue value, EcmaValue searcher) {
       Guard.RequireObjectCoercible(value);
       if (!searcher.IsNullOrUndefined) {
-        RuntimeFunction handler = searcher.ToObject().GetMethod(WellKnownSymbol.Match);
+        RuntimeObject handler = searcher.ToObject().GetMethod(WellKnownSymbol.Match);
         if (handler != null) {
           return handler.Call(searcher, value);
         }
@@ -367,7 +367,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue MatchAll([This] EcmaValue value, EcmaValue searcher) {
       Guard.RequireObjectCoercible(value);
       if (!searcher.IsNullOrUndefined) {
-        RuntimeFunction handler = searcher.ToObject().GetMethod(WellKnownSymbol.MatchAll);
+        RuntimeObject handler = searcher.ToObject().GetMethod(WellKnownSymbol.MatchAll);
         if (handler != null) {
           return handler.Call(searcher, value);
         }
@@ -381,7 +381,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Replace([This] EcmaValue value, EcmaValue searcher, EcmaValue replacement) {
       Guard.RequireObjectCoercible(value);
       if (!searcher.IsNullOrUndefined) {
-        RuntimeFunction handler = searcher.ToObject().GetMethod(WellKnownSymbol.Replace);
+        RuntimeObject handler = searcher.ToObject().GetMethod(WellKnownSymbol.Replace);
         if (handler != null) {
           return handler.Call(searcher, value, replacement);
         }
@@ -400,7 +400,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Search([This] EcmaValue value, EcmaValue searcher) {
       Guard.RequireObjectCoercible(value);
       if (!searcher.IsNullOrUndefined) {
-        RuntimeFunction handler = searcher.ToObject().GetMethod(WellKnownSymbol.Search);
+        RuntimeObject handler = searcher.ToObject().GetMethod(WellKnownSymbol.Search);
         if (handler != null) {
           return handler.Call(searcher, value);
         }
@@ -414,7 +414,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Split([This] EcmaValue value, EcmaValue searcher, EcmaValue limit) {
       Guard.RequireObjectCoercible(value);
       if (!searcher.IsNullOrUndefined) {
-        RuntimeFunction handler = searcher.ToObject().GetMethod(WellKnownSymbol.Split);
+        RuntimeObject handler = searcher.ToObject().GetMethod(WellKnownSymbol.Split);
         if (handler != null) {
           return handler.Call(searcher, value, limit);
         }
@@ -434,6 +434,12 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         return new EcmaArray(result.Select(v => new EcmaValue(v)).ToList());
       }
       return new EcmaArray(result.Take(count).Select(v => new EcmaValue(v)).ToList());
+    }
+
+    [IntrinsicMember(WellKnownSymbol.Iterator)]
+    public static EcmaValue Iterator([This] EcmaValue value) {
+      Guard.RequireObjectCoercible(value);
+      return new EcmaIterator(new EcmaStringEnumerator(value.ToString(true)), EcmaIteratorResultKind.Value, WellKnownObject.StringIteratorPrototype);
     }
 
     private static string MapLowerSpecialCase(char ch) {

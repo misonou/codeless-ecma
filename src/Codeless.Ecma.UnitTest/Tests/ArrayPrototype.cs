@@ -424,20 +424,20 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return a valid iterator with the array's numeric properties", () => {
         EcmaValue iterator = entries.Call(EcmaArray.Of("a", "b", "c"));
-        CheckIteratorResult(iterator.Invoke("next"), false, new EcmaValue[] { 0, "a" });
-        CheckIteratorResult(iterator.Invoke("next"), false, new EcmaValue[] { 1, "b" });
-        CheckIteratorResult(iterator.Invoke("next"), false, new EcmaValue[] { 2, "c" });
-        CheckIteratorResult(iterator.Invoke("next"), true);
+        VerifyIteratorResult(iterator.Invoke("next"), false, new EcmaValue[] { 0, "a" });
+        VerifyIteratorResult(iterator.Invoke("next"), false, new EcmaValue[] { 1, "b" });
+        VerifyIteratorResult(iterator.Invoke("next"), false, new EcmaValue[] { 2, "c" });
+        VerifyIteratorResult(iterator.Invoke("next"), true);
       });
 
       It("should see new items via iteration until iterator is done", () => {
         EcmaArray arr = new EcmaArray();
         EcmaValue iterator = entries.Call(arr);
         arr.Push("a");
-        CheckIteratorResult(iterator.Invoke("next"), false, new EcmaValue[] { 0, "a" });
-        CheckIteratorResult(iterator.Invoke("next"), true);
+        VerifyIteratorResult(iterator.Invoke("next"), false, new EcmaValue[] { 0, "a" });
+        VerifyIteratorResult(iterator.Invoke("next"), true);
         arr.Push("b");
-        CheckIteratorResult(iterator.Invoke("next"), true);
+        VerifyIteratorResult(iterator.Invoke("next"), true);
       });
     }
 
@@ -1149,20 +1149,20 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return a valid iterator with the array's numeric properties", () => {
         EcmaValue iterator = keys.Call(EcmaArray.Of("a", "b", "c"));
-        CheckIteratorResult(iterator.Invoke("next"), false, 0);
-        CheckIteratorResult(iterator.Invoke("next"), false, 1);
-        CheckIteratorResult(iterator.Invoke("next"), false, 2);
-        CheckIteratorResult(iterator.Invoke("next"), true);
+        VerifyIteratorResult(iterator.Invoke("next"), false, 0);
+        VerifyIteratorResult(iterator.Invoke("next"), false, 1);
+        VerifyIteratorResult(iterator.Invoke("next"), false, 2);
+        VerifyIteratorResult(iterator.Invoke("next"), true);
       });
 
       It("should see new items via iteration until iterator is done", () => {
         EcmaArray arr = new EcmaArray();
         EcmaValue iterator = keys.Call(arr);
         arr.Push("a");
-        CheckIteratorResult(iterator.Invoke("next"), false, 0);
-        CheckIteratorResult(iterator.Invoke("next"), true);
+        VerifyIteratorResult(iterator.Invoke("next"), false, 0);
+        VerifyIteratorResult(iterator.Invoke("next"), true);
         arr.Push("b");
-        CheckIteratorResult(iterator.Invoke("next"), true);
+        VerifyIteratorResult(iterator.Invoke("next"), true);
       });
     }
 
@@ -2637,29 +2637,21 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return a valid iterator with the array's numeric properties", () => {
         EcmaValue iterator = values.Call(EcmaArray.Of("a", "b", "c"));
-        CheckIteratorResult(iterator.Invoke("next"), false, "a");
-        CheckIteratorResult(iterator.Invoke("next"), false, "b");
-        CheckIteratorResult(iterator.Invoke("next"), false, "c");
-        CheckIteratorResult(iterator.Invoke("next"), true);
+        VerifyIteratorResult(iterator.Invoke("next"), false, "a");
+        VerifyIteratorResult(iterator.Invoke("next"), false, "b");
+        VerifyIteratorResult(iterator.Invoke("next"), false, "c");
+        VerifyIteratorResult(iterator.Invoke("next"), true);
       });
 
       It("should see new items via iteration until iterator is done", () => {
         EcmaArray arr = new EcmaArray();
         EcmaValue iterator = values.Call(arr);
         arr.Push("a");
-        CheckIteratorResult(iterator.Invoke("next"), false, "a");
-        CheckIteratorResult(iterator.Invoke("next"), true);
+        VerifyIteratorResult(iterator.Invoke("next"), false, "a");
+        VerifyIteratorResult(iterator.Invoke("next"), true);
         arr.Push("b");
-        CheckIteratorResult(iterator.Invoke("next"), true);
+        VerifyIteratorResult(iterator.Invoke("next"), true);
       });
-    }
-
-    private static void CheckIteratorResult(EcmaValue result, bool done, object value = default) {
-      That(result, Is.TypeOf("object"), "iterator return must be an Object");
-      That(result["done"], Is.EqualTo(done), "expected iteration done: {0}", done);
-      if (!done) {
-        That(result["value"], value is System.Array arr ? Is.EquivalentTo(arr) : Is.EqualTo(value), "expected iteration result");
-      }
     }
   }
 }

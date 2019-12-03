@@ -24,6 +24,7 @@ namespace Codeless.Ecma.Runtime {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private static readonly RuntimeObject[] sharedIntrinsics = new RuntimeObject[(int)WellKnownObject.MaxValue];
     private static readonly bool inited;
+    private static int accum;
     [ThreadStatic]
     private static RuntimeRealm current;
 
@@ -49,6 +50,8 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public EventHandler<RuntimeExceptionEventArgs> ExceptionThrown = delegate { };
+
+    public int ID { get; } = Interlocked.Increment(ref accum);
 
     public bool Disposed {
       get { return disposed; }
@@ -206,6 +209,8 @@ namespace Codeless.Ecma.Runtime {
         case WellKnownObject.ArrayIteratorPrototype:
         case WellKnownObject.MapIteratorPrototype:
         case WellKnownObject.SetIteratorPrototype:
+        case WellKnownObject.StringIteratorPrototype:
+        case WellKnownObject.RegExpStringIteratorPrototype:
           return WellKnownObject.IteratorPrototype;
         case WellKnownObject.ObjectPrototype:
           return 0;
@@ -275,7 +280,7 @@ namespace Codeless.Ecma.Runtime {
                 hp[WellKnownProperty.Constructor] = CreateSharedDescriptor(objectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
                 ht[WellKnownProperty.Prototype] = CreateSharedDescriptor(objectProto, EcmaPropertyAttributes.None);
               }
-              DefineIntrinsicFunction(globals, ctorName, objectType);
+              DefineIntrinsicFunction(globals, ctorName, objectType, EcmaPropertyAttributes.DefaultMethodProperty);
             } else {
               object[] propAttrs = member.GetCustomAttributes(typeof(IntrinsicMemberAttribute), false);
               if (propAttrs.Length > 0) {
@@ -284,23 +289,23 @@ namespace Codeless.Ecma.Runtime {
                   switch (member.MemberType) {
                     case MemberTypes.Method:
                       if (propAttr.Getter) {
-                        DefineIntrinsicAccessorProperty(ht, name, objectIndex, propAttr.Attributes, true);
+                        DefineIntrinsicAccessorProperty(ht, name, objectIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty), true);
                       } else if (propAttr.Setter) {
-                        DefineIntrinsicAccessorProperty(ht, name, objectIndex, propAttr.Attributes, false);
+                        DefineIntrinsicAccessorProperty(ht, name, objectIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty), false);
                       } else if (((MethodInfo)member).IsStatic) {
-                        DefineIntrinsicFunction(ht, name, objectIndex);
+                        DefineIntrinsicFunction(ht, name, objectIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
                         if (propAttr.Global) {
-                          DefineIntrinsicFunction(globals, name, objectIndex);
+                          DefineIntrinsicFunction(globals, name, objectIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
                         }
                       } else {
-                        DefineIntrinsicFunction(hp, name, objectIndex);
+                        DefineIntrinsicFunction(hp, name, objectIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
                       }
                       break;
                     case MemberTypes.Property:
-                      DefineIntrinsicDataProperty(ht, name, ((PropertyInfo)member).GetValue(null, null), propAttr.Attributes);
+                      DefineIntrinsicDataProperty(ht, name, ((PropertyInfo)member).GetValue(null, null), propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty));
                       break;
                     case MemberTypes.Field:
-                      DefineIntrinsicDataProperty(ht, name, ((FieldInfo)member).GetValue(null), propAttr.Attributes);
+                      DefineIntrinsicDataProperty(ht, name, ((FieldInfo)member).GetValue(null), propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty));
                       break;
                   }
                 }
@@ -347,8 +352,8 @@ namespace Codeless.Ecma.Runtime {
       }
     }
 
-    private static void DefineIntrinsicFunction(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, int sharedIndex) {
-      ht[name] = CreateSharedDescriptor(sharedIndex, EcmaPropertyAttributes.DefaultMethodProperty);
+    private static void DefineIntrinsicFunction(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, int sharedIndex, EcmaPropertyAttributes attributes) {
+      ht[name] = CreateSharedDescriptor(sharedIndex, attributes);
     }
 
     private static IntrinsicFunction CreateIntrinsicFunction(string runtimeName, MemberInfo member, WellKnownObject objectType, EcmaPropertyKey name) {

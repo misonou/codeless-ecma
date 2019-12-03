@@ -15,7 +15,7 @@ namespace Codeless.Ecma.Primitives {
     protected WellKnownPropertyNameBinder() { }
 
     public static bool IsWellKnownPropertyName(string s) {
-      return String.IsInterned(s) != null && s.Length < 25;
+      return s != null && String.IsInterned(s) != null && s.Length < 25;
     }
 
     public override string FromHandle(EcmaValueHandle handle) {

@@ -242,7 +242,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       long len = obj.Get(WellKnownProperty.Length).ToLength();
       Guard.ArgumentIsCallable(callback);
       if (obj is EcmaArray arr && !arr.FallbackMode) {
-        return arr.Filter((RuntimeFunction)callback.GetUnderlyingObject(), thisArg);
+        return arr.Filter(callback.ToObject(), thisArg);
       }
       RuntimeObject target = SpeciesCreate(thisArg, 0);
       for (long i = 0, j = 0; i < len; i++) {
@@ -262,7 +262,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       long len = obj.Get(WellKnownProperty.Length).ToLength();
       Guard.ArgumentIsCallable(callback);
       if (obj is EcmaArray arr && !arr.FallbackMode) {
-        return arr.Some((RuntimeFunction)callback.GetUnderlyingObject(), thisArg);
+        return arr.Some(callback.ToObject(), thisArg);
       }
       for (long i = 0; i < len; i++) {
         if (obj.HasProperty(i)) {
@@ -281,7 +281,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       long len = obj.Get(WellKnownProperty.Length).ToLength();
       Guard.ArgumentIsCallable(callback);
       if (obj is EcmaArray arr && !arr.FallbackMode) {
-        return arr.Every((RuntimeFunction)callback.GetUnderlyingObject(), thisArg);
+        return arr.Every(callback.ToObject(), thisArg);
       }
       for (long i = 0; i < len; i++) {
         if (obj.HasProperty(i)) {
@@ -300,7 +300,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       long len = obj.Get(WellKnownProperty.Length).ToLength();
       Guard.ArgumentIsCallable(callback);
       if (obj is EcmaArray arr && !arr.FallbackMode) {
-        return arr.Map((RuntimeFunction)callback.GetUnderlyingObject(), thisArg);
+        return arr.Map(callback.ToObject(), thisArg);
       }
       RuntimeObject target = SpeciesCreate(thisArg, 0);
       for (long i = 0; i < len; i++) {
@@ -383,7 +383,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         throw new EcmaTypeErrorException("");
       }
       if (obj is EcmaArray arr && !arr.FallbackMode) {
-        return arr.Reduce((RuntimeFunction)callback.GetUnderlyingObject(), initialValue.GetValueOrDefault());
+        return arr.Reduce(callback.ToObject(), initialValue.GetValueOrDefault());
       }
       long i = 0;
       EcmaValue value = default;
@@ -463,7 +463,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       long length = obj.Get(WellKnownProperty.Length).ToLength();
       Guard.ArgumentIsCallable(predicate);
       if (obj is EcmaArray arr && !arr.FallbackMode) {
-        return arr.Find((RuntimeFunction)predicate.GetUnderlyingObject(), thisArg);
+        return arr.Find(predicate.ToObject(), thisArg);
       }
       for (long i = 0; i < length; i++) {
         EcmaValue value = obj.Get(i);
@@ -480,7 +480,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       long length = obj.Get(WellKnownProperty.Length).ToLength();
       Guard.ArgumentIsCallable(predicate);
       if (obj is EcmaArray arr && !arr.FallbackMode) {
-        return arr.FindIndex((RuntimeFunction)predicate.GetUnderlyingObject(), thisArg);
+        return arr.FindIndex(predicate.ToObject(), thisArg);
       }
       for (int i = 0; i < length; i++) {
         if (predicate.Call(thisArg, obj.Get(i), i, thisValue)) {
@@ -542,7 +542,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       long length = obj.Get(WellKnownProperty.Length).ToLength();
       Guard.ArgumentIsCallable(callback);
       if (obj is EcmaArray arr && !arr.FallbackMode) {
-        arr.ForEach((RuntimeFunction)callback.GetUnderlyingObject(), thisArg);
+        arr.ForEach(callback.ToObject(), thisArg);
         return default;
       }
       for (long i = 0; i < length; i++) {
@@ -584,6 +584,26 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         target.CreateDataPropertyOrThrow(i++, item);
       }
       target.SetOrThrow(WellKnownProperty.Length, i);
+      return target;
+    }
+
+    [IntrinsicMember(FunctionLength = 0)]
+    public static EcmaValue Flat([This] EcmaValue thisValue, EcmaValue depth) {
+      Guard.RequireObjectCoercible(thisValue);
+      long sourceLen = thisValue["length"].ToLength();
+      long depthNum = depth != default ? depth.ToInteger().ToInt64() : 1;
+      RuntimeObject target = SpeciesCreate(thisValue, 0);
+      FlattenIntoArray(target, thisValue, sourceLen, 0, depthNum, default, default);
+      return target;
+    }
+
+    [IntrinsicMember(FunctionLength = 1)]
+    public static EcmaValue FlatMap([This] EcmaValue thisValue, EcmaValue mapperFn, EcmaValue thisArg) {
+      Guard.RequireObjectCoercible(thisValue);
+      long sourceLen = thisValue["length"].ToLength();
+      Guard.ArgumentIsCallable(mapperFn);
+      RuntimeObject target = SpeciesCreate(thisValue, 0);
+      FlattenIntoArray(target, thisValue, sourceLen, 0, 1, mapperFn, thisArg);
       return target;
     }
 
@@ -690,6 +710,28 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         from += step;
         to += step;
       }
+    }
+
+    private static long FlattenIntoArray(RuntimeObject obj, EcmaValue source, long sourceLen, long start, long depth, EcmaValue mapperFn, EcmaValue thisArg) {
+      long targetIndex = start;
+      long sourceIndex = 0;
+      while (sourceIndex < sourceLen) {
+        if (source.HasProperty(sourceIndex)) {
+          EcmaValue element = source[sourceIndex];
+          if (mapperFn != default) {
+            element = mapperFn.Call(thisArg, element, sourceIndex, source);
+          }
+          if (depth > 0 && EcmaArray.IsArray(element)) {
+            targetIndex = FlattenIntoArray(obj, element, element["length"].ToLength(), targetIndex, depth - 1, default, default);
+          } else {
+            ThrowIfLengthExceeded(targetIndex + 1);
+            obj.CreateDataPropertyOrThrow(targetIndex, element);
+            targetIndex++;
+          }
+        }
+        sourceIndex++;
+      }
+      return targetIndex;
     }
   }
 }

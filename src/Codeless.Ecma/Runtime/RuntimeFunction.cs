@@ -30,6 +30,10 @@ namespace Codeless.Ecma.Runtime {
       return current.FunctionObject;
     }
 
+    public static RuntimeFunction Create(Action fn) {
+      return new DelegateRuntimeFunction(fn);
+    }
+
     public static RuntimeFunction Create(Action<EcmaValue> fn) {
       return new DelegateRuntimeFunction(fn);
     }
@@ -58,6 +62,10 @@ namespace Codeless.Ecma.Runtime {
       return new DelegateRuntimeFunction(fn);
     }
 
+    public static RuntimeFunction Create(Func<EcmaValue, EcmaValue, EcmaValue, EcmaValue, EcmaValue> fn) {
+      return new DelegateRuntimeFunction(fn);
+    }
+
     public RuntimeFunction Bind(EcmaValue thisArg, params EcmaValue[] arguments) {
       return new BoundRuntimeFunction(this, thisArg, arguments);
     }
@@ -71,6 +79,13 @@ namespace Codeless.Ecma.Runtime {
 
     public override EcmaValue Construct(EcmaValue[] arguments, RuntimeObject newTarget) {
       Guard.ArgumentNotNull(arguments, "arguments");
+      Guard.ArgumentNotNull(newTarget, "newTarget");
+      if (!this.IsConstructor) {
+        throw new EcmaTypeErrorException(InternalString.Error.NotConstructor);
+      }
+      if (!newTarget.IsConstructor) {
+        throw new EcmaTypeErrorException(InternalString.Error.NotConstructor);
+      }
       RuntimeObject thisValue = ConstructThisValue(newTarget);
       using (RuntimeFunctionInvocation invocation = new RuntimeFunctionInvocation(this, arguments) { ThisValue = thisValue, NewTarget = newTarget }) {
         EcmaValue returnValue = Invoke(invocation, arguments);
@@ -86,14 +101,18 @@ namespace Codeless.Ecma.Runtime {
       throw new EcmaTypeErrorException(InternalString.Error.IllegalInvocation);
     }
 
+    protected void InitProperty(int length) {
+      DefineOwnPropertyNoChecked(WellKnownProperty.Length, new EcmaPropertyDescriptor(length, EcmaPropertyAttributes.Configurable));
+    }
+
     protected void InitProperty(string name, int length) {
       DefineOwnPropertyNoChecked(WellKnownProperty.Length, new EcmaPropertyDescriptor(length, EcmaPropertyAttributes.Configurable));
       DefineOwnPropertyNoChecked(WellKnownProperty.Name, new EcmaPropertyDescriptor(name, EcmaPropertyAttributes.Configurable));
     }
 
-    protected void SetPrototypeInternal(RuntimeObject proto, EcmaPropertyAttributes protoAttributes) {
+    protected void SetPrototypeInternal(RuntimeObject proto) {
       proto.DefineOwnProperty(WellKnownProperty.Constructor, new EcmaPropertyDescriptor(this, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
-      DefineOwnProperty(WellKnownProperty.Prototype, new EcmaPropertyDescriptor(proto, protoAttributes));
+      DefineOwnProperty(WellKnownProperty.Prototype, new EcmaPropertyDescriptor(proto, EcmaPropertyAttributes.Writable));
     }
 
     public static implicit operator RuntimeFunction(Delegate del) {

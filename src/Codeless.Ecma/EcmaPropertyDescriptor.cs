@@ -119,13 +119,12 @@ namespace Codeless.Ecma {
     [EcmaSpecification("FromPropertyDescriptor", EcmaSpecificationKind.AbstractOperations)]
     public EcmaValue ToValue() {
       RuntimeObject obj = new EcmaObject();
-      if (IsDataDescriptor) {
-        obj.CreateDataPropertyOrThrow(WellKnownProperty.Value, this.Value);
-        obj.CreateDataPropertyOrThrow(WellKnownProperty.Writable, this.Writable);
-      }
       if (IsAccessorDescriptor) {
         obj.CreateDataPropertyOrThrow(WellKnownProperty.Get, this.Get);
         obj.CreateDataPropertyOrThrow(WellKnownProperty.Set, this.Set);
+      } else {
+        obj.CreateDataPropertyOrThrow(WellKnownProperty.Value, this.Value);
+        obj.CreateDataPropertyOrThrow(WellKnownProperty.Writable, this.Writable);
       }
       obj.CreateDataPropertyOrThrow(WellKnownProperty.Enumerable, this.Enumerable);
       obj.CreateDataPropertyOrThrow(WellKnownProperty.Configurable, this.Configurable);
@@ -190,7 +189,7 @@ namespace Codeless.Ecma {
         }
       } else if (current.IsDataDescriptor) {
         if (!current.Configurable && !current.Writable) {
-          if (descriptor.Writable == true || !descriptor.Value.Equals(current.Value, EcmaValueComparison.SameValue)) {
+          if (descriptor.Writable == true || ((descriptor.attributes & EcmaPropertyAttributes.HasValue) != 0 && !descriptor.Value.Equals(current.Value, EcmaValueComparison.SameValue))) {
             return false;
           }
         }
@@ -247,8 +246,8 @@ namespace Codeless.Ecma {
       if ((attributes & EcmaPropertyAttributes.HasEnumerable) == 0) {
         attributes |= EcmaPropertyAttributes.HasEnumerable | (sourceAttrs & EcmaPropertyAttributes.Enumerable);
       }
-      if ((attributes & EcmaPropertyAttributes.HasWritable) == 0) {
-        attributes |= EcmaPropertyAttributes.HasWritable | (IsDataDescriptor ? (sourceAttrs & EcmaPropertyAttributes.Writable) : 0);
+      if ((attributes & EcmaPropertyAttributes.HasWritable) == 0 && IsDataDescriptor) {
+        attributes |= EcmaPropertyAttributes.HasWritable | (sourceAttrs & EcmaPropertyAttributes.Writable);
       }
     }
   }

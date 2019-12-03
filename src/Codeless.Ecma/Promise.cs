@@ -108,7 +108,7 @@ namespace Codeless.Ecma {
       return promise;
     }
 
-    internal void InitWithCallback(RuntimeFunction callback) {
+    internal void InitWithCallback(RuntimeObject callback) {
       Guard.ArgumentNotNull(callback, "callback");
       callback.Call(EcmaValue.Undefined,
         RuntimeFunction.Create((Action<EcmaValue>)this.Resolve),

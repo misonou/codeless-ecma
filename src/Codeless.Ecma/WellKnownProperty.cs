@@ -45,5 +45,6 @@
     public static readonly EcmaPropertyKey Flags = new EcmaPropertyKey("flags");
     public static readonly EcmaPropertyKey Source = new EcmaPropertyKey("source");
     public static readonly EcmaPropertyKey Input = new EcmaPropertyKey("input");
+    public static readonly EcmaPropertyKey Description = new EcmaPropertyKey("description");
   }
 }

@@ -10,7 +10,12 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(WellKnownSymbol.ToStringTag, EcmaPropertyAttributes.Configurable)]
     public static string ToStringTag = InternalString.ObjectTag.Symbol;
 
-    [IntrinsicMember(WellKnownSymbol.ToPrimitive)]
+    [IntrinsicMember(EcmaPropertyAttributes.Configurable, Getter = true)]
+    public static EcmaValue Description([This] EcmaValue thisValue) {
+      return ValueOf(thisValue).ToSymbol().Description;
+    }
+
+    [IntrinsicMember(WellKnownSymbol.ToPrimitive, EcmaPropertyAttributes.Configurable, FunctionLength = 1)]
     public static EcmaValue ToPrimitive([This] EcmaValue thisValue) {
       return ValueOf(thisValue);
     }

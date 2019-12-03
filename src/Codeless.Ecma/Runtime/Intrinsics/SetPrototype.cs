@@ -33,14 +33,14 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return map.Entries();
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue ForEach([This] EcmaValue thisValue, EcmaValue callback, EcmaValue thisArg) {
       EcmaSet map = thisValue.GetUnderlyingObject<EcmaSet>();
       Guard.ArgumentIsCallable(callback);
       IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> iterator = map.GetEnumerator();
       while (iterator.MoveNext()) {
         KeyValuePair<EcmaValue, EcmaValue> entry = iterator.Current;
-        callback.Call(thisArg, entry.Value, entry.Key);
+        callback.Call(thisArg, entry.Value, entry.Key, map);
       }
       return default;
     }
@@ -51,19 +51,14 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return map.Has(value);
     }
 
-    [IntrinsicMember]
-    public static EcmaValue Keys([This] EcmaValue thisValue) {
-      EcmaSet map = thisValue.GetUnderlyingObject<EcmaSet>();
-      return map.Keys();
-    }
-
-    [IntrinsicMember(Getter = true)]
+    [IntrinsicMember(EcmaPropertyAttributes.Configurable, Getter = true)]
     public static EcmaValue Size([This] EcmaValue thisValue) {
       EcmaSet map = thisValue.GetUnderlyingObject<EcmaSet>();
       return map.Size;
     }
 
     [IntrinsicMember]
+    [IntrinsicMember("keys")]
     [IntrinsicMember(WellKnownSymbol.Iterator)]
     public static EcmaValue Values([This] EcmaValue thisValue) {
       EcmaSet map = thisValue.GetUnderlyingObject<EcmaSet>();

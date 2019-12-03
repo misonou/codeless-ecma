@@ -10,11 +10,11 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       PromiseCallback c2 = null;
       if (!onfulfill.IsNullOrUndefined) {
         Guard.ArgumentIsCallable(onfulfill);
-        c1 = v => onfulfill.GetUnderlyingObject<RuntimeFunction>().Call(EcmaValue.Undefined, v);
+        c1 = v => onfulfill.Call(EcmaValue.Undefined, v);
       }
       if (!onreject.IsNullOrUndefined) {
         Guard.ArgumentIsCallable(onreject);
-        c2 = v => onreject.GetUnderlyingObject<RuntimeFunction>().Call(EcmaValue.Undefined, v);
+        c2 = v => onreject.Call(EcmaValue.Undefined, v);
       }
       return new Promise(promise, c1, c2);
     }
@@ -25,7 +25,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       PromiseCallback callback = null;
       if (!onreject.IsNullOrUndefined) {
         Guard.ArgumentIsCallable(onreject);
-        callback = v => onreject.GetUnderlyingObject<RuntimeFunction>().Call(EcmaValue.Undefined, v);
+        callback = v => onreject.Call(EcmaValue.Undefined, v);
       }
       return new Promise(promise, null, callback);
     }
@@ -36,7 +36,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       PromiseCallback callback = null;
       if (!onfinally.IsNullOrUndefined) {
         Guard.ArgumentIsCallable(onfinally);
-        callback = v => onfinally.GetUnderlyingObject<RuntimeFunction>().Call(EcmaValue.Undefined, v);
+        callback = v => onfinally.Call(EcmaValue.Undefined, v);
       }
       return new Promise(promise, null, null, callback);
     }

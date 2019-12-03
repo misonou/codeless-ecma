@@ -38,7 +38,7 @@ namespace Codeless.Ecma {
       if (proto.Type != EcmaValueType.Object && proto.Type != EcmaValueType.Null) {
         throw new EcmaTypeErrorException(InternalString.Error.PrototypeMustBeObjectOrNull);
       }
-      RuntimeObject obj = Create(proto.ToObject());
+      RuntimeObject obj = Create(proto == EcmaValue.Null ? null : proto.ToObject());
       if (properties == default) {
         return obj;
       }

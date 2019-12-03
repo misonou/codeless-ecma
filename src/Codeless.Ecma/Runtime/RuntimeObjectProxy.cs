@@ -22,6 +22,10 @@ namespace Codeless.Ecma.Runtime {
 
     public override bool IsExtensible => GetIsExtensible();
 
+    public override bool IsCallable => ThrowIfProxyRevoked().IsCallable;
+
+    public override bool IsConstructor => ThrowIfProxyRevoked().IsConstructor;
+
     protected override string ToStringTag {
       get {
         RuntimeObject target = ThrowIfProxyRevoked();
@@ -42,6 +46,7 @@ namespace Codeless.Ecma.Runtime {
       }
       this.target = target;
       this.handler = handler;
+      this.Realm = target.Realm;
     }
 
     #region Proxy overriden methods
@@ -326,6 +331,7 @@ namespace Codeless.Ecma.Runtime {
       private RuntimeObjectProxy proxy;
 
       public RevokeFunction(RuntimeObjectProxy proxy) {
+        InitProperty(0);
         this.proxy = proxy;
       }
 

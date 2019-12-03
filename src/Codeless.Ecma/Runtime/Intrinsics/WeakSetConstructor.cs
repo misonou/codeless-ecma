@@ -4,6 +4,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.WeakSetConstructor)]
   internal static class WeakSetConstructor {
     [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(EcmaWeakSet))]
+    [IntrinsicMember(FunctionLength = 0)]
     public static EcmaValue WeakSet([This] EcmaValue thisValue, EcmaValue iterable) {
       if (!iterable.IsNullOrUndefined) {
         EcmaValue adder = thisValue[WellKnownProperty.Add];

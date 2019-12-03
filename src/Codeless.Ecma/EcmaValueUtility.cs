@@ -160,7 +160,7 @@ namespace Codeless.Ecma {
         case TypeCode.Single:
           return Expression.ConvertChecked(Expression.Call(value, "ToDouble", Type.EmptyTypes), typeof(float));
         case TypeCode.String:
-          return Expression.Call(value, "ToString", Type.EmptyTypes);
+          return Expression.Call(value, "ToString", Type.EmptyTypes, Expression.Constant(true));
         case TypeCode.UInt16:
           return Expression.Call(value, "ToUInt16", Type.EmptyTypes);
         case TypeCode.UInt32:
@@ -176,6 +176,12 @@ namespace Codeless.Ecma {
       }
       if (conversionType == typeof(RuntimeObject)) {
         return Expression.Call(value, "ToObject", Type.EmptyTypes);
+      }
+      if (conversionType == typeof(Symbol)) {
+        return Expression.Call(value, "ToSymbol", Type.EmptyTypes);
+      }
+      if (conversionType == typeof(EcmaPropertyKey)) {
+        return Expression.Call(typeof(EcmaPropertyKey), "FromValue", Type.EmptyTypes, value);
       }
       return Expression.Convert(Expression.Call(typeof(EcmaValueUtility), "ConvertToUnknownType", Type.EmptyTypes, value, Expression.Constant(conversionType)), conversionType);
     }

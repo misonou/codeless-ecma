@@ -10,7 +10,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicConstructor]
     public static EcmaValue Object([NewTarget] RuntimeObject constructor, EcmaValue value) {
       if (constructor != null && !constructor.IsWellknownObject(WellKnownObject.ObjectConstructor)) {
-        return RuntimeObject.CreateFromConstructor<EcmaObject>(constructor);
+        return RuntimeObject.CreateFromConstructor<EcmaObject>(constructor, 0);
       }
       switch (value.Type) {
         case EcmaValueType.Boolean:
@@ -20,7 +20,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         case EcmaValueType.String:
           return new PrimitiveObject(value, WellKnownObject.StringPrototype);
         case EcmaValueType.Symbol:
-          return new Symbol(value.GetUnderlyingObject<Symbol>().Description);
+          return new PrimitiveObject(value, WellKnownObject.SymbolPrototype);
         case EcmaValueType.Object:
           return value;
       }

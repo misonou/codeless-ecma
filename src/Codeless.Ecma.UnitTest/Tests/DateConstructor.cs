@@ -74,6 +74,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
         That(Date.Construct() - Date.Construct(Date.Call(Date, Undefined)).Invoke("getTime"), Is.AtLeast(-1000).And.AtMost(1000));
         That(Date.Construct() - Date.Construct(Date.Call(Date, Null)).Invoke("getTime"), Is.AtLeast(-1000).And.AtMost(1000));
       });
+
+      It("should derive [[Prototype]] value from realm of newTarget", () => {
+        RuntimeRealm realm = new RuntimeRealm();
+        EcmaValue fn = realm.GetRuntimeObject(WellKnownObject.FunctionConstructor).Construct();
+        fn["prototype"] = Null;
+        EcmaValue other = Reflect.Invoke("construct", ctor, EcmaArray.Of(), fn);
+        That(Object.Invoke("getPrototypeOf", other), Is.EqualTo(realm.GetRuntimeObject(WellKnownObject.DatePrototype)));
+      });
     }
 
     [Test, RuntimeFunctionInjection]

@@ -46,10 +46,9 @@ namespace Codeless.Ecma {
     }
 
     public Symbol()
-      : this(String.Empty) { }
+      : this(null) { }
 
     public Symbol(string description) {
-      Guard.ArgumentNotNull(description, "description");
       this.Description = description;
     }
 
