@@ -114,6 +114,10 @@ namespace Codeless.Ecma {
       throw new InvalidCastException();
     }
 
+    public static EcmaValue GetValueFromException(Exception ex) {
+      return ex is EcmaException ex1 ? ex1.ToValue() : new EcmaError(ex);
+    }
+
     public static Expression ConvertToEcmaValueExpression(Expression value) {
       Guard.ArgumentNotNull(value, "value");
       if (value.Type == typeof(EcmaValue)) {

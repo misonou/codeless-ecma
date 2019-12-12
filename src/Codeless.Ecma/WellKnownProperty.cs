@@ -46,5 +46,10 @@
     public static readonly EcmaPropertyKey Source = new EcmaPropertyKey("source");
     public static readonly EcmaPropertyKey Input = new EcmaPropertyKey("input");
     public static readonly EcmaPropertyKey Description = new EcmaPropertyKey("description");
+    public static readonly EcmaPropertyKey Stack = new EcmaPropertyKey("stack");
+    public static readonly EcmaPropertyKey Then = new EcmaPropertyKey("then");
+    public static readonly EcmaPropertyKey Status = new EcmaPropertyKey("status");
+    public static readonly EcmaPropertyKey Reason = new EcmaPropertyKey("reason");
+    public static readonly EcmaPropertyKey Resolve = new EcmaPropertyKey("resolve");
   }
 }

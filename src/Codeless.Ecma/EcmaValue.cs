@@ -336,6 +336,11 @@ namespace Codeless.Ecma {
     }
 
     [DebuggerStepThrough]
+    public EcmaValue Call() {
+      return binder.Call(handle, Undefined, EmptyArray);
+    }
+
+    [DebuggerStepThrough]
     public EcmaValue Call(EcmaValue thisArgs, params EcmaValue[] arguments) {
       return binder.Call(handle, thisArgs, arguments);
     }

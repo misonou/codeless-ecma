@@ -35,6 +35,10 @@ namespace Codeless.Ecma {
       throw new InvalidOperationException("Iterator cannot be reset");
     }
 
+    public void Done() {
+      this.done = true;
+    }
+
     public IEnumerator<EcmaValue> GetEnumerator() {
       return this;
     }

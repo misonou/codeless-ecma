@@ -1,4 +1,6 @@
-﻿using Codeless.Ecma.Runtime.Intrinsics;
+﻿using Codeless.Ecma.Diagnostics;
+using Codeless.Ecma.Runtime;
+using Codeless.Ecma.Runtime.Intrinsics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,14 +19,18 @@ namespace Codeless.Ecma {
 
   public abstract class EcmaException : Exception {
     internal EcmaException(string message)
-      : base(message) { }
+      : base(message) {
+      this.CallSite = RuntimeFunctionInvocation.Current;
+    }
 
     public virtual EcmaNativeErrorType ErrorType {
       get { return EcmaNativeErrorType.Invalid; }
     }
 
-    public EcmaValue ToValue() {
-      return ErrorConstructor.CreateError(this);
+    public RuntimeFunctionInvocation CallSite { get; }
+
+    public virtual EcmaValue ToValue() {
+      return new EcmaError(this);
     }
   }
 
@@ -97,6 +103,27 @@ namespace Codeless.Ecma {
 
     public override EcmaNativeErrorType ErrorType {
       get { return EcmaNativeErrorType.UriError; }
+    }
+  }
+
+  public class EcmaRuntimeException : EcmaException {
+    private readonly EcmaValue value;
+
+    public EcmaRuntimeException(EcmaValue value)
+      : base(ToString(value)) {
+      this.value = value;
+    }
+
+    public override EcmaValue ToValue() {
+      return value;
+    }
+
+    private static string ToString(EcmaValue value) {
+      try {
+        return InspectorUtility.WriteValue(value);
+      } catch {
+        return "<EcmaValue>";
+      }
     }
   }
 }

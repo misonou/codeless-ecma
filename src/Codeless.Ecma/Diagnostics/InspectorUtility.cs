@@ -90,6 +90,20 @@ namespace Codeless.Ecma.Diagnostics {
                     writer2.Write(" => ");
                     Serialize(writer2, v, true);
                   });
+                } else if (obj is Promise promise) {
+                  switch (promise.State) {
+                    case PromiseState.Pending:
+                      writer2.Write("<pending>");
+                      break;
+                    case PromiseState.Fulfilled:
+                      writer2.Write("<resolved>: ");
+                      Serialize(writer2, promise.Value, true);
+                      break;
+                    case PromiseState.Rejected:
+                      writer2.Write("<rejected>: ");
+                      Serialize(writer2, promise.Value, true);
+                      break;
+                  }
                 } else {
                   foreach (EcmaPropertyKey propertyKey in obj.GetOwnPropertyKeys()) {
                     EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(propertyKey);

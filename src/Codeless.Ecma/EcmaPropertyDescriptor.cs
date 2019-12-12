@@ -17,6 +17,7 @@ namespace Codeless.Ecma {
     HasConfigurable = 64,
     HasEnumerable = 128,
     HasWritable = 256,
+    LazyInitialize = 512,
     DefaultDataProperty = Writable | Enumerable | Configurable,
     DefaultMethodProperty = Writable | Configurable
   }
@@ -41,7 +42,11 @@ namespace Codeless.Ecma {
 
     public EcmaPropertyDescriptor(EcmaValue data, EcmaPropertyAttributes attributes)
       : this(attributes) {
-      this.Value = data;
+      if ((attributes & EcmaPropertyAttributes.LazyInitialize) != 0) {
+        getter = data;
+      } else {
+        this.Value = data;
+      }
     }
 
     public EcmaPropertyDescriptor(EcmaValue getter, EcmaValue setter) {
@@ -60,7 +65,7 @@ namespace Codeless.Ecma {
     }
 
     public bool IsDataDescriptor {
-      get { return (attributes & (EcmaPropertyAttributes.HasValue | EcmaPropertyAttributes.HasWritable)) != 0; }
+      get { return (attributes & (EcmaPropertyAttributes.HasValue | EcmaPropertyAttributes.HasWritable | EcmaPropertyAttributes.LazyInitialize)) != 0; }
     }
 
     public bool Enumerable {
@@ -84,10 +89,14 @@ namespace Codeless.Ecma {
 
     public EcmaValue Value {
       get {
+        if ((attributes & EcmaPropertyAttributes.LazyInitialize) != 0) {
+          getter = getter.Call(EcmaValue.Undefined);
+          attributes = attributes | EcmaPropertyAttributes.HasValue & ~EcmaPropertyAttributes.LazyInitialize;
+        }
         return this.IsDataDescriptor ? getter : default;
       }
       set {
-        attributes |= EcmaPropertyAttributes.HasValue;
+        attributes = attributes | EcmaPropertyAttributes.HasValue & ~EcmaPropertyAttributes.LazyInitialize;
         getter = value;
       }
     }

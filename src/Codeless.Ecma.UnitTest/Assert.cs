@@ -19,12 +19,13 @@ namespace Codeless.Ecma.UnitTest {
         StaticHelper.Logs.Clear();
         Assert.message = "It " + message;
         tests();
+        RuntimeExecution.ContinueUntilEnd();
       } finally {
         Assert.message = null;
       }
     }
 
-    public static void IsConstructorWLength(EcmaValue fn, string name, int functionLength, RuntimeObject prototype) {
+    public static void IsConstructorWLength(EcmaValue fn, string name, int functionLength, RuntimeObject prototype, RuntimeObject fnProto = null) {
       That(fn, Is.TypeOf("function"));
       That(fn, Has.OwnProperty("name", name, EcmaPropertyAttributes.Configurable));
       That(fn, Has.OwnProperty("length", functionLength, EcmaPropertyAttributes.Configurable));
@@ -33,17 +34,13 @@ namespace Codeless.Ecma.UnitTest {
       } else {
         That(Global.Object.Invoke("getOwnPropertyDescriptor", fn, "prototype"), Is.Undefined);
       }
-      That(Global.Object.Invoke("getPrototypeOf", fn), Is.EqualTo(Global.Function.Prototype));
+      That(Global.Object.Invoke("getPrototypeOf", fn), Is.EqualTo(fnProto ?? Global.Function.Prototype));
     }
 
     public static void IsUnconstructableFunctionWLength(EcmaValue fn, string name, int functionLength) {
       That(fn, Is.TypeOf("function"));
       That(fn["prototype"], Is.Undefined);
-      if (name != null) {
-        That(fn, Has.OwnProperty("name", name, EcmaPropertyAttributes.Configurable));
-      } else {
-        That(Global.Object.Invoke("getOwnPropertyDescriptor", fn, "name"), Is.Undefined);
-      }
+      That(fn, Has.OwnProperty("name", name ?? String.Empty, EcmaPropertyAttributes.Configurable));
       That(fn, Has.OwnProperty("length", functionLength, EcmaPropertyAttributes.Configurable));
       That(Global.Object.Invoke("getPrototypeOf", fn), Is.EqualTo(Global.Function.Prototype));
       That(Global.Object.Invoke("getOwnPropertyDescriptor", fn, "prototype"), Is.Undefined);
@@ -87,6 +84,18 @@ namespace Codeless.Ecma.UnitTest {
           That(result["value"], value is System.Array arr ? Is.EquivalentTo(arr) : Is.EqualTo(value), "expected iteration result");
         }
       }
+    }
+
+    public static void VerifyPromiseSettled(Array sequence = null, int count = 0) {
+      RuntimeExecution.ContinueUntilEnd();
+      if (sequence != null) {
+        That(StaticHelper.Logs, Is.EquivalentTo(sequence));
+      } else if (count > 0) {
+        That(StaticHelper.Logs.Count, Is.EqualTo(count));
+      } else {
+        That(StaticHelper.Logs.Count, Is.GreaterThanOrEqualTo(1), "Promise should be fulfilled or rejected");
+      }
+      StaticHelper.Logs.Clear();
     }
 
     public static void Case(EcmaValue thisArg, object condition, string message = null) {

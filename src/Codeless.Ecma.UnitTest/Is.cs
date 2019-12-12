@@ -13,6 +13,10 @@ namespace Codeless.Ecma.UnitTest {
       return new TypeOfConstraint(typeOfStr);
     }
 
+    public static IConstraint InstanceOf(EcmaValue expected) {
+      return new InstanceOfConstraint(expected);
+    }
+
     public new static IConstraint EqualTo(object expected) {
       return NUnit.Framework.Is.EqualTo(expected).Using<object>((a, b) => EcmaValue.Equals(new EcmaValue(a), new EcmaValue(b), EcmaValueComparison.SameValue));
     }

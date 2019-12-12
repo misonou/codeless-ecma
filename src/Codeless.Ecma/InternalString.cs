@@ -38,6 +38,8 @@ namespace Codeless.Ecma {
       public const string RegExpStringIterator = "RegExp String Iterator";
       public const string StringIterator = "String Iterator";
       public const string Null = "Null";
+      public const string Error = "Error";
+      public const string Promise = "Promise";
     }
 
     public static class Error {
@@ -86,6 +88,12 @@ namespace Codeless.Ecma {
       public const string EntryNotObject = "Iterator value is not an entry object";
       public const string ExceedMaximumLength = "Exceed maximum length";
       public const string ReduceEmptyArray = "Reduce of empty array with no initial value";
+      public const string PromiseSelfResolution = "Chaining cycle detected for promise #<Promise>";
+      public const string ExecutorInitialized = "Promise executor has already been invoked with non-undefined arguments";
+      public const string ResolverNotCallable = "Promise resolve or reject function is not callable";
+      public const string SuperConstructorNotCalled = "Must call super constructor in derived class before accessing 'this' or returning from derived constructor";
+      public const string SuperConstructorAlreadyCalled = "Super constructor may only be called once";
+      public const string UnexpectedSuper = "'super' keyword unexpected here";
     }
   }
 }

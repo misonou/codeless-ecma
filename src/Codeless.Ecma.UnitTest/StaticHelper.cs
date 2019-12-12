@@ -10,6 +10,12 @@ namespace Codeless.Ecma.UnitTest {
   public static class StaticHelper {
     public static readonly ArrayList Logs = new ArrayList();
 
+    public static readonly Func<EcmaValue> Noop = () => EcmaValue.Undefined;
+
+    public static readonly Action UnexpectedFulfill = () => NUnit.Framework.Assert.Fail("Promise should not be fulfilled");
+
+    public static readonly Action UnexpectedReject = () => NUnit.Framework.Assert.Fail("Promise should not be rejected");
+
     public static readonly Func<EcmaValue> ThrowTest262Exception = () => throw new Test262Exception();
 
     public static Func<EcmaValue> ThrowTest262WithMessage(string message) {
@@ -100,6 +106,27 @@ namespace Codeless.Ecma.UnitTest {
         enumerate = ThrowTest262WithMessage("[[Enumerate]] trap called: this trap has been removed")
       });
       return Global.Proxy.Construct(target, handler);
+    }
+
+    public static Action Intercept(Action fn, string message = null) {
+      return () => {
+        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        fn();
+      };
+    }
+
+    public static Action<EcmaValue> Intercept(Action<EcmaValue> fn, string message = null) {
+      return (a) => {
+        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        fn(a);
+      };
+    }
+
+    public static Action<EcmaValue, EcmaValue> Intercept(Action<EcmaValue, EcmaValue> fn, string message = null) {
+      return (a, b) => {
+        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        fn(a, b);
+      };
     }
 
     public static Func<EcmaValue> Intercept(Func<EcmaValue> fn, string message = null) {

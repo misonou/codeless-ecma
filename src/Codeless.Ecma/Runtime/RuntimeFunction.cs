@@ -14,6 +14,8 @@ namespace Codeless.Ecma.Runtime {
 
     public bool ContainsUseStrict { get; protected set; }
 
+    public RuntimeObject HomeObject { get; set; }
+
     public override sealed bool IsCallable => true;
 
     protected override string ToStringTag => InternalString.ObjectTag.Function;
@@ -66,13 +68,21 @@ namespace Codeless.Ecma.Runtime {
       return new DelegateRuntimeFunction(fn);
     }
 
+    public RuntimeFunction AsDerivedClassConstructorOf(RuntimeObject super) {
+      RuntimeObject proto = Create(GetPrototypeFromConstructor(super, WellKnownObject.ObjectPrototype));
+      SetPrototypeOf(super);
+      SetPrototypeInternal(proto);
+      this.HomeObject = this;
+      return this;
+    }
+
     public RuntimeFunction Bind(EcmaValue thisArg, params EcmaValue[] arguments) {
       return new BoundRuntimeFunction(this, thisArg, arguments);
     }
 
     public override EcmaValue Call(EcmaValue thisValue, params EcmaValue[] arguments) {
       Guard.ArgumentNotNull(arguments, "arguments");
-      using (RuntimeFunctionInvocation invocation = new RuntimeFunctionInvocation(this, arguments) { ThisValue = thisValue }) {
+      using (RuntimeFunctionInvocation invocation = new RuntimeFunctionInvocation(this, thisValue, arguments)) {
         return Invoke(invocation, arguments);
       }
     }
@@ -86,10 +96,19 @@ namespace Codeless.Ecma.Runtime {
       if (!newTarget.IsConstructor) {
         throw new EcmaTypeErrorException(InternalString.Error.NotConstructor);
       }
-      RuntimeObject thisValue = ConstructThisValue(newTarget);
-      using (RuntimeFunctionInvocation invocation = new RuntimeFunctionInvocation(this, arguments) { ThisValue = thisValue, NewTarget = newTarget }) {
+      RuntimeObject thisValue = default;
+      if (this.HomeObject == null) {
+        thisValue = ConstructThisValue(newTarget);
+      }
+      using (RuntimeFunctionInvocation invocation = new RuntimeFunctionInvocation(this, thisValue, arguments, newTarget)) {
         EcmaValue returnValue = Invoke(invocation, arguments);
-        return returnValue.Type == EcmaValueType.Object ? returnValue : thisValue;
+        if (returnValue.Type == EcmaValueType.Object) {
+          return returnValue;
+        }
+        if (invocation.Super != null && !invocation.Super.ConstructorInvoked) {
+          throw new EcmaReferenceErrorException(InternalString.Error.SuperConstructorNotCalled);
+        }
+        return invocation.ThisValue;
       }
     }
 
@@ -101,11 +120,8 @@ namespace Codeless.Ecma.Runtime {
       throw new EcmaTypeErrorException(InternalString.Error.IllegalInvocation);
     }
 
-    protected void InitProperty(int length) {
-      DefineOwnPropertyNoChecked(WellKnownProperty.Length, new EcmaPropertyDescriptor(length, EcmaPropertyAttributes.Configurable));
-    }
-
     protected void InitProperty(string name, int length) {
+      Guard.ArgumentNotNull(name, "name");
       DefineOwnPropertyNoChecked(WellKnownProperty.Length, new EcmaPropertyDescriptor(length, EcmaPropertyAttributes.Configurable));
       DefineOwnPropertyNoChecked(WellKnownProperty.Name, new EcmaPropertyDescriptor(name, EcmaPropertyAttributes.Configurable));
     }

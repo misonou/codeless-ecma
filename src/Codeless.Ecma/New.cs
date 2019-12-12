@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Codeless.Ecma {
   public static class New {
-    public static EcmaValue Target {
+    public static RuntimeObject Target {
       get {
         RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
         if (invocation != null && invocation.NewTarget != null) {

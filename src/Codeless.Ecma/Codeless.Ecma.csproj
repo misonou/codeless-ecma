@@ -28,7 +28,7 @@
     <DefineConstants>TRACE;NET35</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>7.3</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Net40|AnyCPU'">
@@ -40,7 +40,7 @@
     <DefineConstants>TRACE;NET40;DYNAMIC</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>7.3</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Net45|AnyCPU'">
@@ -52,7 +52,7 @@
     <DefineConstants>TRACE;NET45;DYNAMIC</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>7.3</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net35|AnyCPU'">
@@ -64,7 +64,7 @@
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>7.3</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net40|AnyCPU'">
@@ -76,7 +76,7 @@
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>7.3</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net45|AnyCPU'">
@@ -88,15 +88,15 @@
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>7.3</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>7.3</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>7.3</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net35|AnyCPU' Or '$(Configuration)|$(Platform)' == 'Release-Net35|AnyCPU'">
@@ -140,6 +140,11 @@
     <Compile Include="Diagnostics\InspectorMetaObjectEntryCollection.cs" />
     <Compile Include="Diagnostics\VisualStudio\RuntimeObjectDebuggerProxy.cs" />
     <Compile Include="EcmaArray.cs" />
+    <Compile Include="EcmaError.cs" />
+    <Compile Include="PromiseAggregateHandler.cs" />
+    <Compile Include="PromiseAggregator.cs" />
+    <Compile Include="PromiseCapability.cs" />
+    <Compile Include="Runtime\RuntimeExecution.cs" />
     <Compile Include="Runtime\ScriptFunction.cs" />
     <Compile Include="EcmaJsonReader.cs" />
     <Compile Include="EcmaRegExpStringEnumerator.cs" />
@@ -191,6 +196,7 @@
     <Compile Include="Runtime\NativeRuntimeFunctionCompiler.cs" />
     <Compile Include="Runtime\Intrinsics\FunctionConstructor.cs" />
     <Compile Include="Runtime\SharedIntrinsicObjectBinder.cs" />
+    <Compile Include="Runtime\SuperAccessor.cs" />
     <Compile Include="Runtime\ThisAttribute.cs" />
     <Compile Include="Runtime\Intrinsics\FunctionPrototype.cs" />
     <Compile Include="Runtime\RuntimeRealm.cs" />

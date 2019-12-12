@@ -3,42 +3,86 @@
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.PromisePrototype)]
   internal static class PromisePrototype {
+    [IntrinsicMember(WellKnownSymbol.ToStringTag, EcmaPropertyAttributes.Configurable)]
+    public const string ToStringTag = InternalString.ObjectTag.Promise;
+
     [IntrinsicMember]
     public static EcmaValue Then([This] EcmaValue thisValue, EcmaValue onfulfill, EcmaValue onreject) {
       Promise promise = thisValue.GetUnderlyingObject<Promise>();
+      RuntimeObject constructor = RuntimeObject.GetSpeciesConstructor(promise, WellKnownObject.PromiseConstructor);
       PromiseCallback c1 = null;
       PromiseCallback c2 = null;
-      if (!onfulfill.IsNullOrUndefined) {
-        Guard.ArgumentIsCallable(onfulfill);
+      if (onfulfill.IsCallable) {
         c1 = v => onfulfill.Call(EcmaValue.Undefined, v);
       }
-      if (!onreject.IsNullOrUndefined) {
-        Guard.ArgumentIsCallable(onreject);
+      if (onreject.IsCallable) {
         c2 = v => onreject.Call(EcmaValue.Undefined, v);
       }
-      return new Promise(promise, c1, c2);
+      PromiseCapability capability =  PromiseCapability.CreateFromConstructor(constructor);
+      if (capability.Promise.GetUnderlyingObject() is Promise p) {
+        p.InitWithCallback(promise, c1, c2);
+      } else {
+        capability.OnFulfill = c1;
+        capability.OnReject = c2;
+        promise.ContinueWith(capability.HandleCompletedPromise);
+      }
+      return capability.Promise;
     }
 
     [IntrinsicMember]
     public static EcmaValue Catch([This] EcmaValue thisValue, EcmaValue onreject) {
-      Promise promise = thisValue.GetUnderlyingObject<Promise>();
-      PromiseCallback callback = null;
-      if (!onreject.IsNullOrUndefined) {
-        Guard.ArgumentIsCallable(onreject);
-        callback = v => onreject.Call(EcmaValue.Undefined, v);
-      }
-      return new Promise(promise, null, callback);
+      return thisValue.Invoke(WellKnownProperty.Then, EcmaValue.Undefined, onreject);
     }
 
     [IntrinsicMember]
     public static EcmaValue Finally([This] EcmaValue thisValue, EcmaValue onfinally) {
-      Promise promise = thisValue.GetUnderlyingObject<Promise>();
-      PromiseCallback callback = null;
-      if (!onfinally.IsNullOrUndefined) {
-        Guard.ArgumentIsCallable(onfinally);
-        callback = v => onfinally.Call(EcmaValue.Undefined, v);
+      Guard.ArgumentIsObject(thisValue);
+      EcmaValue constructor = RuntimeObject.GetSpeciesConstructor(thisValue.ToObject(), WellKnownObject.PromiseConstructor);
+      if (onfinally.IsCallable) {
+        FinallyCallbackHandler h = new FinallyCallbackHandler(constructor, onfinally);
+        return thisValue.Invoke(WellKnownProperty.Then, (PromiseCallback)h.ResolveHandler, (PromiseCallback)h.RejectHandler);
       }
-      return new Promise(promise, null, null, callback);
+      return thisValue.Invoke(WellKnownProperty.Then, onfinally, onfinally);
+    }
+
+    private class FinallyCallbackHandler {
+      private readonly EcmaValue constructor;
+      private readonly EcmaValue onfinally;
+      private EcmaValue originalValue;
+
+      public FinallyCallbackHandler(EcmaValue constructor, EcmaValue onfinally) {
+        this.constructor = constructor;
+        this.onfinally = onfinally;
+      }
+
+      [IntrinsicMember(null)]
+      [EcmaSpecification("Then Finally Functions", EcmaSpecificationKind.AbstractOperations)]
+      public EcmaValue ResolveHandler(EcmaValue value) {
+        originalValue = value;
+        EcmaValue result = onfinally.Call();
+        EcmaValue promise = PromiseConstructor.Resolve(constructor, result);
+        return promise.Invoke("then", (PromiseCallback)ResolveOriginalValue);
+      }
+
+      [IntrinsicMember(null)]
+      [EcmaSpecification("Catch Finally Functions", EcmaSpecificationKind.AbstractOperations)]
+      public EcmaValue RejectHandler(EcmaValue value) {
+        originalValue = value;
+        EcmaValue result = onfinally.Call();
+        EcmaValue promise = PromiseConstructor.Resolve(constructor, result);
+        return promise.Invoke("then", (PromiseCallback)ThrowOriginalValue);
+      }
+
+      [IntrinsicMember(null)]
+      private EcmaValue ResolveOriginalValue(EcmaValue _) {
+        return originalValue;
+      }
+
+      [IntrinsicMember(null)]
+      private EcmaValue ThrowOriginalValue(EcmaValue _) {
+        Global.Throw(originalValue);
+        return EcmaValue.Undefined;
+      }
     }
   }
 }

@@ -338,7 +338,7 @@ namespace Codeless.Ecma.Runtime {
 
     [EcmaSpecification("Construct", EcmaSpecificationKind.InternalMethod)]
     public virtual EcmaValue Construct(EcmaValue[] arguments, RuntimeObject newTarget) {
-      throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
+      throw new EcmaTypeErrorException(InternalString.Error.NotConstructor);
     }
 
     [EcmaSpecification("SetIntegrityLevel", EcmaSpecificationKind.AbstractOperations)]

@@ -17,7 +17,7 @@ namespace Codeless.Ecma.Runtime {
 
     public IntrinsicMemberAttribute(string name)
       : this() {
-      this.Name = name;
+      this.Name = name ?? String.Empty;
     }
 
     public IntrinsicMemberAttribute(WellKnownSymbol symbol)
@@ -27,7 +27,7 @@ namespace Codeless.Ecma.Runtime {
 
     public IntrinsicMemberAttribute(string name, EcmaPropertyAttributes attributes)
       : this(attributes) {
-      this.Name = name;
+      this.Name = name ?? String.Empty;
     }
 
     public IntrinsicMemberAttribute(WellKnownSymbol symbol, EcmaPropertyAttributes attributes)

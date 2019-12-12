@@ -25,6 +25,9 @@ namespace Codeless.Ecma {
     public static EcmaValue This {
       get {
         RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
+        if (invocation != null && invocation.NewTarget != null && invocation.Super != null && !invocation.Super.ConstructorInvoked) {
+          throw new EcmaReferenceErrorException(InternalString.Error.SuperConstructorNotCalled);
+        }
         return invocation != null ? invocation.ThisValue : GlobalThis;
       }
     }
@@ -33,6 +36,16 @@ namespace Codeless.Ecma {
       get {
         RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
         return invocation != null ? invocation.Arguments : default;
+      }
+    }
+
+    public static SuperAccessor Super {
+      get {
+        RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
+        if (invocation == null || invocation.Super == null) {
+          throw new EcmaSyntaxErrorException(InternalString.Error.UnexpectedSuper);
+        }
+        return invocation.Super;
       }
     }
 
@@ -76,12 +89,26 @@ namespace Codeless.Ecma {
 
     public static RuntimeFunction WeakSet => (RuntimeFunction)WellKnownObject.WeakSetConstructor;
 
+    public static RuntimeFunction RangeError => (RuntimeFunction)WellKnownObject.RangeError;
+
+    public static RuntimeFunction ReferenceError => (RuntimeFunction)WellKnownObject.ReferenceError;
+
+    public static RuntimeFunction SyntaxError => (RuntimeFunction)WellKnownObject.SyntaxError;
+
+    public static RuntimeFunction TypeError => (RuntimeFunction)WellKnownObject.TypeError;
+
+    public static RuntimeFunction UriError => (RuntimeFunction)WellKnownObject.UriError;
+
     public static EcmaValue Void(params EcmaValue[] exp) {
       return EcmaValue.Undefined;
     }
 
     public static EcmaValue Return(params EcmaValue[] exp) {
       return exp == null || exp.Length == 0 ? EcmaValue.Undefined : exp[exp.Length - 1];
+    }
+
+    public static EcmaValue Throw(EcmaValue value) {
+      throw new EcmaRuntimeException(value);
     }
 
     [EcmaSpecification("typeof", EcmaSpecificationKind.RuntimeSemantics)]
@@ -165,6 +192,46 @@ namespace Codeless.Ecma {
     [IntrinsicMember]
     public static EcmaValue Unescape(EcmaValue str) {
       return Decode(str.ToString(true), "", false, false);
+    }
+
+    [IntrinsicMember]
+    public static EcmaValue SetTimeout(EcmaValue fn, EcmaValue milliseconds, params EcmaValue[] args) {
+      int timeout = milliseconds == default ? 0 : milliseconds.ToNumber().ToInt32();
+      if (timeout > 0) {
+        timeout = 0;
+      }
+      if (timeout >= 0) {
+        timeout = System.Math.Max(4, timeout);
+      }
+      RuntimeExecutionHandle handle = RuntimeExecution.Enqueue(() => fn.Call(Undefined, args), timeout, RuntimeExecutionFlags.Cancellable);
+      return handle.Id;
+    }
+
+    [IntrinsicMember]
+    public static EcmaValue SetInterval(EcmaValue fn, EcmaValue milliseconds, params EcmaValue[] args) {
+      int timeout = milliseconds == default ? 0 : milliseconds.ToNumber().ToInt32();
+      if (timeout > 0) {
+        timeout = 0;
+      }
+      if (timeout >= 0) {
+        timeout = System.Math.Max(4, timeout);
+      }
+      RuntimeExecutionHandle handle = RuntimeExecution.Enqueue(() => fn.Call(Undefined, args), timeout, RuntimeExecutionFlags.Cancellable | RuntimeExecutionFlags.Recurring);
+      return handle.Id;
+    }
+
+    [IntrinsicMember]
+    public static EcmaValue ClearTimeout(EcmaValue id) {
+      RuntimeExecutionHandle handle = new RuntimeExecutionHandle(id == default ? 0 : id.ToNumber().ToInt32());
+      RuntimeExecution.Cancel(handle);
+      return EcmaValue.Undefined;
+    }
+
+    [IntrinsicMember]
+    public static EcmaValue ClearInterval(EcmaValue id) {
+      RuntimeExecutionHandle handle = new RuntimeExecutionHandle(id == default ? 0 : id.ToNumber().ToInt32());
+      RuntimeExecution.Cancel(handle);
+      return EcmaValue.Undefined;
     }
 
     private static void CheckLoneSurrogate(string inputString) {

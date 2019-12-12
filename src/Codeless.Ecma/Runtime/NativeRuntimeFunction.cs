@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -17,6 +18,7 @@ namespace Codeless.Ecma.Runtime {
   internal class NativeRuntimeFunction : RuntimeFunction {
     private static readonly ConcurrentDictionary<MethodInfo, RuntimeFunctionDelegate> dictionary = new ConcurrentDictionary<MethodInfo, RuntimeFunctionDelegate>();
     private static readonly MethodInfo createFromConstructor = typeof(RuntimeObject).GetMethod("CreateFromConstructor");
+    private static readonly MethodInfo createFromConstructorDefault = createFromConstructor.MakeGenericMethod(typeof(EcmaObject));
 
     private readonly NativeRuntimeFunctionConstraint constraint;
     private readonly WellKnownObject defaultProto = WellKnownObject.ObjectPrototype;
@@ -27,7 +29,6 @@ namespace Codeless.Ecma.Runtime {
     public NativeRuntimeFunction(string name, MethodInfo method) {
       Guard.ArgumentNotNull(method, "method");
       this.method = method;
-      InitProperty(name, GetFuncLength(method));
 
       Type runtimeObjectType = null;
       if (method.HasAttribute(out IntrinsicConstructorAttribute attribute)) {
@@ -36,18 +37,26 @@ namespace Codeless.Ecma.Runtime {
         if (method.DeclaringType.HasAttribute(out IntrinsicObjectAttribute a1)) {
           defaultProto = RuntimeRealm.GetPrototypeOf(a1.ObjectType);
         }
-      } else if (method.HasAttribute(out IntrinsicMemberAttribute _)) {
+      } else if (method.HasAttribute(out IntrinsicMemberAttribute a2)) {
         constraint = NativeRuntimeFunctionConstraint.DenyConstruct;
+        if (name == null) {
+          name = a2.Name;
+        }
       } else {
         SetPrototypeInternal(new EcmaObject());
+        if (name == null) {
+          name = "";
+        }
       }
-      constructThisValue = createFromConstructor.MakeGenericMethod(runtimeObjectType ?? typeof(EcmaObject));
+      InitProperty(name, GetFuncLength(method));
+      constructThisValue = runtimeObjectType == null || runtimeObjectType == typeof(EcmaObject) ? createFromConstructorDefault : createFromConstructor.MakeGenericMethod(runtimeObjectType);
     }
 
     public override bool IsConstructor {
       get { return constraint != NativeRuntimeFunctionConstraint.DenyConstruct; }
     }
 
+    [DebuggerStepThrough]
     public override EcmaValue Call(EcmaValue thisValue, params EcmaValue[] arguments) {
       if (constraint == NativeRuntimeFunctionConstraint.AlwaysConstruct) {
         return base.Construct(arguments, this);
@@ -58,10 +67,12 @@ namespace Codeless.Ecma.Runtime {
       return base.Call(thisValue, arguments);
     }
 
+    [DebuggerStepThrough]
     protected override EcmaValue Invoke(RuntimeFunctionInvocation invocation, EcmaValue[] arguments) {
       return GetDelegate()(invocation, arguments, method.IsStatic ? null : invocation.ThisValue.GetUnderlyingObject());
     }
 
+    [DebuggerStepThrough]
     protected RuntimeFunctionDelegate GetDelegate() {
       if (fn == null) {
         fn = dictionary.GetOrAdd(method, NativeRuntimeFunctionCompiler.Compile);

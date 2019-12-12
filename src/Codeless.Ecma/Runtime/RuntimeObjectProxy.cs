@@ -331,7 +331,7 @@ namespace Codeless.Ecma.Runtime {
       private RuntimeObjectProxy proxy;
 
       public RevokeFunction(RuntimeObjectProxy proxy) {
-        InitProperty(0);
+        InitProperty(String.Empty, 0);
         this.proxy = proxy;
       }
 

@@ -10,16 +10,9 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Codeless.Ecma.Runtime {
-  public class RuntimeExceptionEventArgs : EventArgs {
-    public RuntimeExceptionEventArgs(Exception ex) {
-      this.Exception = ex;
-    }
-
-    public Exception Exception { get; }
-  }
-
   public class RuntimeRealm : IDisposable {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private static readonly RuntimeObject[] sharedIntrinsics = new RuntimeObject[(int)WellKnownObject.MaxValue];
@@ -31,8 +24,6 @@ namespace Codeless.Ecma.Runtime {
     private readonly Dictionary<RuntimeObject, int> objectIndex = new Dictionary<RuntimeObject, int>();
     private readonly WeakKeyedCollection nativeWrappers = new WeakKeyedCollection();
     private readonly Hashtable ht = new Hashtable();
-    private readonly List<Action> queuedJobs = new List<Action>();
-    private readonly int threadId = Thread.CurrentThread.ManagedThreadId;
     private RuntimeObject[] intrinsics = new RuntimeObject[sharedIntrinsics.Length];
     private bool disposed;
 
@@ -49,9 +40,9 @@ namespace Codeless.Ecma.Runtime {
       inited = true;
     }
 
-    public EventHandler<RuntimeExceptionEventArgs> ExceptionThrown = delegate { };
-
     public int ID { get; } = Interlocked.Increment(ref accum);
+
+    public RuntimeExecution ExecutionContext { get; } = RuntimeExecution.Current;
 
     public bool Disposed {
       get { return disposed; }
@@ -126,36 +117,13 @@ namespace Codeless.Ecma.Runtime {
       return obj;
     }
 
-    public void Enqueue(Action action) {
-      if (disposed) {
-        throw new InvalidOperationException("Realm has been disposed");
-      }
-      queuedJobs.Add(action);
-    }
-
-    public void RunQueuedJobs() {
-      if (Thread.CurrentThread.ManagedThreadId != threadId) {
-        throw new InvalidOperationException("Event loop must be executed in the same thread");
-      }
-      if (disposed) {
-        throw new InvalidOperationException("Realm has been disposed");
-      }
-      RuntimeRealm before = current;
-      current = this;
+    public void Execute(Action action) {
+      RuntimeRealm previous = current;
       try {
-        List<Action> actions = new List<Action>(queuedJobs);
-        queuedJobs.Clear();
-        foreach (Action action in actions) {
-          if (!disposed) {
-            try {
-              action();
-            } catch (Exception ex) {
-              ExceptionThrown.Invoke(this, new RuntimeExceptionEventArgs(ex));
-            }
-          }
-        }
+        current = this;
+        action();
       } finally {
-        current = before;
+        current = previous;
       }
     }
 
@@ -165,7 +133,6 @@ namespace Codeless.Ecma.Runtime {
           current = null;
         }
         disposed = true;
-        queuedJobs.Clear();
       }
     }
 
@@ -275,7 +242,7 @@ namespace Codeless.Ecma.Runtime {
           foreach (MemberInfo member in t.GetMembers()) {
             if (member.HasAttribute(out IntrinsicConstructorAttribute ctorAttr)) {
               string ctorName = ctorAttr.Name ?? member.Name;
-              sharedIntrinsics[objectType] = CreateIntrinsicFunction(ctorName, member, WellKnownObject.Global, ctorName);
+              sharedIntrinsics[objectType] = CreateIntrinsicFunction(ctorName, member, WellKnownObject.Global, ctorName, ctorAttr.SuperClass);
               if (objectProto != (int)WellKnownObject.ObjectPrototype || objectType == (int)WellKnownObject.ObjectConstructor) {
                 hp[WellKnownProperty.Constructor] = CreateSharedDescriptor(objectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
                 ht[WellKnownProperty.Prototype] = CreateSharedDescriptor(objectProto, EcmaPropertyAttributes.None);
@@ -313,7 +280,7 @@ namespace Codeless.Ecma.Runtime {
                   IntrinsicMemberAttribute propAttr = (IntrinsicMemberAttribute)propAttrs[0];
                   EcmaPropertyKey name = GetNameFromMember(propAttr, member);
                   string runtimeName = (propAttr.Getter ? "get " : propAttr.Setter ? "set " : "") + (name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name);
-                  definedObj.Add(CreateIntrinsicFunction(runtimeName, member, (WellKnownObject)objectType, name));
+                  definedObj.Add(CreateIntrinsicFunction(runtimeName, member, (WellKnownObject)objectType, name, null));
                   objectIndex++;
                 }
               }
@@ -356,9 +323,9 @@ namespace Codeless.Ecma.Runtime {
       ht[name] = CreateSharedDescriptor(sharedIndex, attributes);
     }
 
-    private static IntrinsicFunction CreateIntrinsicFunction(string runtimeName, MemberInfo member, WellKnownObject objectType, EcmaPropertyKey name) {
+    private static IntrinsicFunction CreateIntrinsicFunction(string runtimeName, MemberInfo member, WellKnownObject objectType, EcmaPropertyKey name, WellKnownObject? superClass) {
       IntrinsicFunction fn = new IntrinsicFunction(runtimeName, (MethodInfo)member, objectType, name);
-      fn.SetPrototypeOf(EnsureWellKnownObject(WellKnownObject.FunctionPrototype));
+      fn.SetPrototypeOf(EnsureWellKnownObject(superClass.GetValueOrDefault(WellKnownObject.FunctionPrototype)));
       return fn;
     }
 

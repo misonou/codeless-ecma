@@ -8,95 +8,60 @@ using System.Threading.Tasks;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.ErrorConstructor)]
   internal static class ErrorConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct)]
-    public static EcmaValue Error([NewTarget] RuntimeObject constructor, EcmaValue message) {
-      return CreateError(constructor, message, WellKnownObject.ErrorPrototype, new Exception());
-    }
-
-    public static RuntimeObject CreateError(RuntimeObject constructor, EcmaValue message, WellKnownObject defaultProto, Exception ex) {
-      RuntimeObject err = new PrimitiveObject(new EcmaValue(ex), defaultProto, constructor);
-      if (message != default) {
-        err.DefinePropertyOrThrow(WellKnownProperty.Message, new EcmaPropertyDescriptor(message.ToString(), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
-      }
-      return err;
-    }
-
-    public static RuntimeObject CreateError(EcmaException exception) {
-      Guard.ArgumentNotNull(exception, "exception");
-      RuntimeObject err = new PrimitiveObject(new EcmaValue(exception), GetPrototype(exception));
-      if (!String.IsNullOrEmpty(exception.Message)) {
-        err.DefinePropertyOrThrow(WellKnownProperty.Message, new EcmaPropertyDescriptor(exception.Message.ToString(), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
-      }
-      return err;
-    }
-
-    private static WellKnownObject GetPrototype(EcmaException ex) {
-      switch (ex.ErrorType) {
-        case EcmaNativeErrorType.EvalError:
-          return WellKnownObject.EvalErrorPrototype;
-        case EcmaNativeErrorType.RangeError:
-          return WellKnownObject.RangeErrorPrototype;
-        case EcmaNativeErrorType.ReferenceError:
-          return WellKnownObject.ReferenceErrorPrototype;
-        case EcmaNativeErrorType.SyntaxError:
-          return WellKnownObject.SyntaxErrorPrototype;
-        case EcmaNativeErrorType.TypeError:
-          return WellKnownObject.TypeErrorPrototype;
-        case EcmaNativeErrorType.UriError:
-          return WellKnownObject.UriErrorPrototype;
-        default:
-          return WellKnownObject.ErrorPrototype;
-      }
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct, ObjectType = typeof(EcmaError))]
+    public static EcmaValue Error([This] EcmaValue thisValue, EcmaValue message) {
+      EcmaError error = thisValue.GetUnderlyingObject<EcmaError>();
+      error.Init(message != default ? message.ToString(true) : null);
+      return thisValue;
     }
   }
 
   #region NativeError
   [IntrinsicObject(WellKnownObject.EvalError)]
   internal static class EvalErrorConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct)]
-    public static EcmaValue EvalError([NewTarget] RuntimeObject constructor, EcmaValue message) {
-      return ErrorConstructor.CreateError(constructor, message, WellKnownObject.EvalErrorPrototype, new EcmaEvalErrorException(message.ToString()));
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct, ObjectType = typeof(EcmaError), SuperClass = WellKnownObject.ErrorConstructor)]
+    public static EcmaValue EvalError([This] EcmaValue thisValue, EcmaValue message) {
+      return ErrorConstructor.Error(thisValue, message);
     }
   }
 
   [IntrinsicObject(WellKnownObject.RangeError)]
   internal static class RangeErrorConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct)]
-    public static EcmaValue RangeError([NewTarget] RuntimeObject constructor, EcmaValue message) {
-      return ErrorConstructor.CreateError(constructor, message, WellKnownObject.RangeErrorPrototype, new EcmaRangeErrorException(message.ToString()));
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct, ObjectType = typeof(EcmaError), SuperClass = WellKnownObject.ErrorConstructor)]
+    public static EcmaValue RangeError([This] EcmaValue thisValue, EcmaValue message) {
+      return ErrorConstructor.Error(thisValue, message);
     }
   }
 
   [IntrinsicObject(WellKnownObject.ReferenceError)]
   internal static class ReferenceErrorConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct)]
-    public static EcmaValue ReferenceError([NewTarget] RuntimeObject constructor, EcmaValue message) {
-      return ErrorConstructor.CreateError(constructor, message, WellKnownObject.ReferenceErrorPrototype, new EcmaReferenceErrorException(message.ToString()));
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct, ObjectType = typeof(EcmaError), SuperClass = WellKnownObject.ErrorConstructor)]
+    public static EcmaValue ReferenceError([This] EcmaValue thisValue, EcmaValue message) {
+      return ErrorConstructor.Error(thisValue, message);
     }
   }
 
   [IntrinsicObject(WellKnownObject.SyntaxError)]
   internal static class SyntaxErrorConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct)]
-    public static EcmaValue SyntaxError([NewTarget] RuntimeObject constructor, EcmaValue message) {
-      return ErrorConstructor.CreateError(constructor, message, WellKnownObject.SyntaxErrorPrototype, new EcmaSyntaxErrorException(message.ToString()));
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct, ObjectType = typeof(EcmaError), SuperClass = WellKnownObject.ErrorConstructor)]
+    public static EcmaValue SyntaxError([This] EcmaValue thisValue, EcmaValue message) {
+      return ErrorConstructor.Error(thisValue, message);
     }
   }
 
   [IntrinsicObject(WellKnownObject.TypeError)]
   internal static class TypeErrorConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct)]
-    public static EcmaValue TypeError([NewTarget] RuntimeObject constructor, EcmaValue message) {
-      return ErrorConstructor.CreateError(constructor, message, WellKnownObject.TypeErrorPrototype, new EcmaTypeErrorException(message.ToString()));
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct, ObjectType = typeof(EcmaError), SuperClass = WellKnownObject.ErrorConstructor)]
+    public static EcmaValue TypeError([This] EcmaValue thisValue, EcmaValue message) {
+      return ErrorConstructor.Error(thisValue, message);
     }
   }
 
   [IntrinsicObject(WellKnownObject.UriError)]
   internal static class UriErrorConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct)]
-    [IntrinsicMember("URIError")]
-    public static EcmaValue UriError([NewTarget] RuntimeObject constructor, EcmaValue message) {
-      return ErrorConstructor.CreateError(constructor, message, WellKnownObject.UriErrorPrototype, new EcmaUriErrorException(message.ToString()));
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct, Name = "URIError", ObjectType = typeof(EcmaError), SuperClass = WellKnownObject.ErrorConstructor)]
+    public static EcmaValue UriError([This] EcmaValue thisValue, EcmaValue message) {
+      return ErrorConstructor.Error(thisValue, message);
     }
   }
   #endregion
