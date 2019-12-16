@@ -1,297 +1,51 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug-Net45</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{C1E80E1C-054E-459B-AD78-DD20612C2BC6}</ProjectGuid>
+    <TargetFrameworks Condition="'$(LibraryFrameworks)'==''">net45;net40;net35;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(LibraryFrameworks)'!=''">$(LibraryFrameworks)</TargetFrameworks>
+    <SignAssembly>true</SignAssembly>
+    <LangVersion>7.3</LangVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <AssemblyFileVersion>1.0.0.0</AssemblyFileVersion>
+    <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>
+    <Platform Condition="'$(Platform)'==''">AnyCPU</Platform>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Codeless.Ecma</RootNamespace>
     <AssemblyName>Codeless.Ecma</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <DocumentationFile>.\bin\Release\$(TargetFramework)\Codeless.Ecma.xml</DocumentationFile>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Net35|AnyCPU'">
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\bin\net35\</OutputPath>
-    <DocumentationFile>..\bin\net35\Codeless.Ecma.xml</DocumentationFile>
-    <DefineConstants>TRACE;NET35</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <LangVersion>7.3</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Net40|AnyCPU'">
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>..\bin\net40\</OutputPath>
-    <DocumentationFile>..\bin\net40\Codeless.Ecma.xml</DocumentationFile>
-    <DefineConstants>TRACE;NET40;DYNAMIC</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <LangVersion>7.3</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  <PropertyGroup Condition="'$(TargetFramework)'=='net45'">
+    <DefineConstants>NET45;DYNAMIC</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Net45|AnyCPU'">
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>..\bin\net45\</OutputPath>
-    <DocumentationFile>..\bin\net45\Codeless.Ecma.xml</DocumentationFile>
-    <DefineConstants>TRACE;NET45;DYNAMIC</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <LangVersion>7.3</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
+    <DefineConstants>NET40;DYNAMIC</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net35|AnyCPU'">
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\bin\net35\</OutputPath>
-    <DocumentationFile>..\bin\net35\Codeless.Ecma.xml</DocumentationFile>
-    <DefineConstants>DEBUG;TRACE;NET35</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <LangVersion>7.3</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  <PropertyGroup Condition="'$(TargetFramework)'=='net35'">
+    <DefineConstants>NET35</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net40|AnyCPU'">
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\bin\net40\</OutputPath>
-    <DocumentationFile>..\bin\net40\Codeless.Ecma.xml</DocumentationFile>
-    <DefineConstants>DEBUG;TRACE;NET40;DYNAMIC</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <LangVersion>7.3</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
+    <DefineConstants>NETSTANDARD20;DYNAMIC</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net45|AnyCPU'">
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\bin\net45\</OutputPath>
-    <DocumentationFile>..\bin\net45\Codeless.Ecma.xml</DocumentationFile>
-    <DefineConstants>DEBUG;TRACE;NET45;DYNAMIC</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <LangVersion>7.3</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <LangVersion>7.3</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <LangVersion>7.3</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net35|AnyCPU' Or '$(Configuration)|$(Platform)' == 'Release-Net35|AnyCPU'">
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net35\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Threading, Version=1.0.2856.102, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Threading.dll.1.0.2856.0\lib\net35\System.Threading.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net40|AnyCPU' Or '$(Configuration)|$(Platform)' == 'Release-Net40|AnyCPU'">
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net40\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Debug-Net45|AnyCPU' Or '$(Configuration)|$(Platform)' == 'Release-Net45|AnyCPU'">
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-  </ItemGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Web" />
-    <Reference Include="System.Web.Extensions" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="ArrayHelper.cs" />
-    <Compile Include="AttributeHelper.cs" />
-    <Compile Include="Diagnostics\InspectorMetaObjectEntry.cs" />
-    <Compile Include="Diagnostics\IInspectorMetaProvider.cs" />
-    <Compile Include="Diagnostics\InspectorMetaObject.cs" />
-    <Compile Include="Diagnostics\InspectorMetaObjectEntryCollection.cs" />
-    <Compile Include="Diagnostics\VisualStudio\RuntimeObjectDebuggerProxy.cs" />
-    <Compile Include="EcmaArray.cs" />
-    <Compile Include="EcmaError.cs" />
-    <Compile Include="PromiseAggregateHandler.cs" />
-    <Compile Include="PromiseAggregator.cs" />
-    <Compile Include="PromiseCapability.cs" />
-    <Compile Include="Runtime\RuntimeExecution.cs" />
-    <Compile Include="Runtime\ScriptFunction.cs" />
-    <Compile Include="EcmaJsonReader.cs" />
-    <Compile Include="EcmaRegExpStringEnumerator.cs" />
-    <Compile Include="EcmaStringEnumerator.cs" />
-    <Compile Include="EcmaTimestamp.cs" />
-    <Compile Include="EcmaValueUtility.cs" />
-    <Compile Include="EcmaDate.cs" />
-    <Compile Include="EcmaException.cs" />
-    <Compile Include="EcmaMath.cs" />
-    <Compile Include="EcmaObject.cs" />
-    <Compile Include="EcmaPropertyEntry.cs" />
-    <Compile Include="EcmaPropertyKeyCollection.cs" />
-    <Compile Include="EcmaSpecificationAttribute.cs" />
-    <Compile Include="Diagnostics\InspectorUtility.cs" />
-    <Compile Include="Diagnostics\VisualStudio\EcmaValueDebuggerProxy.cs" />
-    <Compile Include="EcmaValueDynamicMetaObject.cs" />
-    <Compile Include="EcmaValueHandle.cs" />
-    <Compile Include="InternalString.cs" />
-    <Compile Include="EcmaPropertyDescriptor.cs" />
-    <Compile Include="Native\INativeObjectWrapper.cs" />
-    <Compile Include="Native\ReflectedNativeObject.cs" />
-    <Compile Include="New.cs" />
-    <Compile Include="Primitives\NullBinder.cs" />
-    <Compile Include="Primitives\PrimitiveBinderWrapper.cs" />
-    <Compile Include="Primitives\PrimitiveBinder.cs" />
-    <Compile Include="Primitives\WellKnownPropertyNameBinder.cs" />
-    <Compile Include="Primitives\WellKnownSymbolBinder.cs" />
-    <Compile Include="Runtime\BoundRuntimeFunction.cs" />
-    <Compile Include="Runtime\DelegateRuntimeFunction.cs" />
-    <Compile Include="Runtime\IEnvironmentRecord.cs" />
-    <Compile Include="Runtime\ImmutablePrototypeObject.cs" />
-    <Compile Include="Runtime\IntrinsicFunction.cs" />
-    <Compile Include="Runtime\Intrinsics\ErrorConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\ErrorPrototype.cs" />
-    <Compile Include="Runtime\IntrinsicConstructorAttribute.cs" />
-    <Compile Include="Runtime\Intrinsics\ProxyConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\RegExpStringIteratorPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\SetIteratorPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\RegExpConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\RegExpPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\StringIteratorPrototype.cs" />
-    <Compile Include="Runtime\NativeRuntimeFunction.cs" />
-    <Compile Include="Runtime\Intrinsics\BooleanConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\BooleanPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\DateConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\DatePrototype.cs" />
-    <Compile Include="Native\ReflectedNativeObjectPrototype.cs" />
-    <Compile Include="Runtime\RuntimeFunction.cs" />
-    <Compile Include="Runtime\NativeRuntimeFunctionCompiler.cs" />
-    <Compile Include="Runtime\Intrinsics\FunctionConstructor.cs" />
-    <Compile Include="Runtime\SharedIntrinsicObjectBinder.cs" />
-    <Compile Include="Runtime\SuperAccessor.cs" />
-    <Compile Include="Runtime\ThisAttribute.cs" />
-    <Compile Include="Runtime\Intrinsics\FunctionPrototype.cs" />
-    <Compile Include="Runtime\RuntimeRealm.cs" />
-    <Compile Include="Runtime\Intrinsics\NumberConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\NumberPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\ObjectConstructor.cs" />
-    <Compile Include="Runtime\RuntimeObjectExtension.cs" />
-    <Compile Include="Json.cs" />
-    <Compile Include="IEcmaValueBinder.cs" />
-    <Compile Include="Primitives\DoubleBinder.cs" />
-    <Compile Include="Primitives\EnumBinder.cs" />
-    <Compile Include="Primitives\Int32Binder.cs" />
-    <Compile Include="Primitives\Int64Binder.cs" />
-    <Compile Include="Primitives\BooleanBinder.cs" />
-    <Compile Include="Guard.cs" />
-    <Compile Include="EcmaRegExp.cs" />
-    <Compile Include="EcmaJsonWriter.cs" />
-    <Compile Include="EcmaPropertyKey.cs" />
-    <Compile Include="Primitives\StringBinder.cs" />
-    <Compile Include="Primitives\UndefinedBinder.cs" />
-    <Compile Include="Primitives\SymbolBinder.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Runtime\Intrinsics\ObjectPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\StringConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\StringPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\SymbolConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\SymbolPrototype.cs" />
-    <Compile Include="Runtime\PrimitiveObject.cs" />
-    <Compile Include="Runtime\TransientPrimitiveObject.cs" />
-    <Compile Include="Symbol.cs" />
-    <Compile Include="WeakKeyedCollection.cs" />
-    <Compile Include="WeakKeyedItem.cs" />
-    <Compile Include="Runtime\RuntimeFunctionInvocation.cs" />
-    <Compile Include="Runtime\Intrinsics\ArrayConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\ArrayPrototype.cs" />
-    <Compile Include="Runtime\IntrinsicObjectAttribute.cs" />
-    <Compile Include="Runtime\IntrinsicMemberAttribute.cs" />
-    <Compile Include="Runtime\Intrinsics\IteratorPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\ArrayIteratorPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\MapPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\MapConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\WeakMapPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\WeakMapConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\SetPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\SetConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\WeakSetPrototype.cs" />
-    <Compile Include="Runtime\Intrinsics\WeakSetConstructor.cs" />
-    <Compile Include="EcmaMap.cs" />
-    <Compile Include="EcmaIteratorEnumerator.cs" />
-    <Compile Include="EcmaValueEqualityComparer.cs" />
-    <Compile Include="EcmaSet.cs" />
-    <Compile Include="EcmaWeakMap.cs" />
-    <Compile Include="EcmaWeakSet.cs" />
-    <Compile Include="EcmaIterator.cs" />
-    <Compile Include="Runtime\Intrinsics\MapIteratorPrototype.cs" />
-    <Compile Include="EcmaValueComparer.cs" />
-    <Compile Include="Runtime\RuntimeObjectProxy.cs" />
-    <Compile Include="EcmaMapBase.cs" />
-    <Compile Include="WellKnownProperty.cs" />
-    <Compile Include="WellKnownObject.cs" />
-    <Compile Include="Runtime\Intrinsics\Reflect.cs" />
-    <Compile Include="Runtime\Intrinsics\PromiseConstructor.cs" />
-    <Compile Include="Runtime\Intrinsics\PromisePrototype.cs" />
-    <Compile Include="Promise.cs" />
-    <Compile Include="Native\NativeArrayObject.cs" />
-    <Compile Include="Native\NativeDictionaryObject.cs" />
-    <Compile Include="Native\NativeObject.cs" />
-    <Compile Include="Runtime\RuntimeObject.cs" />
-    <Compile Include="EcmaValue.cs" />
-    <Compile Include="EcmaArrayEnumerator.cs" />
-    <Compile Include="Global.cs" />
-    <Compile Include="Runtime\ArgumentList.cs" />
-    <Compile Include="WellKnownSymbol.cs" />
+  <ItemGroup Condition="'$(TargetFramework)'=='net35'">
+    <PackageReference Include="System.Threading.dll" Version="1.0.2856" />
   </ItemGroup>
   <ItemGroup>
     <None Include="key.snk" />
-    <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  -->
-  <Target Name="AfterBuild" Condition="'$(Configuration)|$(Platform)' == 'Release-Net35|AnyCPU'">
-    <Copy SourceFiles="..\bin\net35\Codeless.Ecma.dll" DestinationFolder="..\..\lib\net35" ContinueOnError="false" />
-    <Copy SourceFiles="..\bin\net35\Codeless.Ecma.xml" DestinationFolder="..\..\lib\net35" ContinueOnError="false" />
-  </Target>
-  <Target Name="AfterBuild" Condition="'$(Configuration)|$(Platform)' == 'Release-Net40|AnyCPU'">
-    <Copy SourceFiles="..\bin\net40\Codeless.Ecma.dll" DestinationFolder="..\..\lib\net40" ContinueOnError="false" />
-    <Copy SourceFiles="..\bin\net40\Codeless.Ecma.xml" DestinationFolder="..\..\lib\net40" ContinueOnError="false" />
-  </Target>
-  <Target Name="AfterBuild" Condition="'$(Configuration)|$(Platform)' == 'Release-Net45|AnyCPU'">
-    <Copy SourceFiles="..\bin\net45\Codeless.Ecma.dll" DestinationFolder="..\..\lib\net45" ContinueOnError="false" />
-    <Copy SourceFiles="..\bin\net45\Codeless.Ecma.xml" DestinationFolder="..\..\lib\net45" ContinueOnError="false" />
-  </Target>
 </Project>

@@ -4,28 +4,6 @@
         <name>Codeless.Ecma</name>
     </assembly>
     <members>
-        <member name="T:Codeless.Ecma.EcmaValue">
-            <summary>
-            Represents a dynamic value in pipe executions to mimic behaviors to values in ECMAScript.
-            </summary>
-        </member>
-        <member name="F:Codeless.Ecma.EcmaValue.Undefined">
-            <summary>
-            Represents an undefined value. It is similar to *undefined* in ECMAScript which could be returned when accessing an undefined property.
-            </summary>
-        </member>
-        <member name="P:Codeless.Ecma.EcmaValue.Item(Codeless.Ecma.EcmaPropertyKey)">
-            <summary>
-            Gets value of the specified property from the object.
-            </summary>
-            <param name="index">Property name.</param>
-            <returns>Value associated with the property name, -or- <see cref="F:Codeless.Ecma.EcmaValue.Undefined"/> if property does not exist.</returns>
-        </member>
-        <member name="P:Codeless.Ecma.EcmaValue.Type">
-            <summary>
-            Gets the type of value represented by the <see cref="T:Codeless.Ecma.EcmaValue"/> instance.
-            </summary>
-        </member>
         <member name="T:Codeless.Ecma.EcmaRegExp">
             <summary>
             Represents a ECMAScript-like regular expression object.
@@ -54,7 +32,7 @@
             <param name="input">A string to test against.</param>
             <returns></returns>
         </member>
-        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,Codeless.Ecma.Runtime.RuntimeFunction)">
+        <member name="M:Codeless.Ecma.EcmaRegExp.Replace(System.String,Codeless.Ecma.Runtime.RuntimeObject)">
             <summary>
             Replaces occurences of substrings that matches the pattern by the value returned from the invocation of pipe function argument.
             </summary>
@@ -85,6 +63,28 @@
             <param name="pattern">A string representing a valid ECMAScript-compatible regular expression.</param>
             <param name="flags">A string representing valid regular expression flags.</param>
             <returns>Returns *true* if the given string represents a valid ECMAScript-compatible regular expression; or *false* otherwise.</returns>
+        </member>
+        <member name="T:Codeless.Ecma.EcmaValue">
+            <summary>
+            Represents a dynamic value in pipe executions to mimic behaviors to values in ECMAScript.
+            </summary>
+        </member>
+        <member name="F:Codeless.Ecma.EcmaValue.Undefined">
+            <summary>
+            Represents an undefined value. It is similar to *undefined* in ECMAScript which could be returned when accessing an undefined property.
+            </summary>
+        </member>
+        <member name="P:Codeless.Ecma.EcmaValue.Item(Codeless.Ecma.EcmaPropertyKey)">
+            <summary>
+            Gets value of the specified property from the object.
+            </summary>
+            <param name="index">Property name.</param>
+            <returns>Value associated with the property name, -or- <see cref="F:Codeless.Ecma.EcmaValue.Undefined"/> if property does not exist.</returns>
+        </member>
+        <member name="P:Codeless.Ecma.EcmaValue.Type">
+            <summary>
+            Gets the type of value represented by the <see cref="T:Codeless.Ecma.EcmaValue"/> instance.
+            </summary>
         </member>
     </members>
 </doc>
