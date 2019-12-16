@@ -40,8 +40,8 @@ namespace Codeless.Ecma {
       this.Value = data;
     }
 
-    public EcmaPropertyDescriptor(EcmaValue data, EcmaPropertyAttributes attributes)
-      : this(attributes) {
+    public EcmaPropertyDescriptor(EcmaValue data, EcmaPropertyAttributes attributes) {
+      this.attributes = attributes | EcmaPropertyAttributes.HasWritable | EcmaPropertyAttributes.HasEnumerable | EcmaPropertyAttributes.HasConfigurable;
       if ((attributes & EcmaPropertyAttributes.LazyInitialize) != 0) {
         getter = data;
       } else {
@@ -54,8 +54,8 @@ namespace Codeless.Ecma {
       this.Set = setter;
     }
 
-    public EcmaPropertyDescriptor(EcmaValue getter, EcmaValue setter, EcmaPropertyAttributes attributes)
-      : this(attributes) {
+    public EcmaPropertyDescriptor(EcmaValue getter, EcmaValue setter, EcmaPropertyAttributes attributes) {
+      this.attributes = attributes | EcmaPropertyAttributes.HasEnumerable | EcmaPropertyAttributes.HasConfigurable;
       this.Get = getter;
       this.Set = setter;
     }

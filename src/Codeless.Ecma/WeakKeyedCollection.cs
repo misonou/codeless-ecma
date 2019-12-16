@@ -15,7 +15,9 @@ namespace Codeless.Ecma {
 
     static WeakKeyedCollection() {
       AppDomain.CurrentDomain.DomainUnload += OnDomainUnload;
-      new Thread(RemoveFreedObjects).Start();
+      Thread thread = new Thread(RemoveFreedObjects);
+      thread.IsBackground = true;
+      thread.Start();
     }
 
     public WeakKeyedCollection() {

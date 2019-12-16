@@ -132,7 +132,7 @@ namespace Codeless.Ecma {
       }
       ConstructorInfo ci = typeof(EcmaValue).GetConstructors().FirstOrDefault(v => v.GetParameters()[0].ParameterType.IsAssignableFrom(value.Type)) ??
          typeof(EcmaValue).GetConstructors().FirstOrDefault(v => v.GetParameters()[0].ParameterType == typeof(object));
-      return Expression.New(ci, value);
+      return Expression.New(ci, Expression.Convert(value, ci.GetParameters()[0].ParameterType));
     }
 
     public static Expression ConvertFromEcmaValueExpression(Expression value, Type conversionType) {

@@ -78,7 +78,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     public static EcmaTimestamp ParseInternal(string inputString) {
       Guard.ArgumentNotNull(inputString, "inputString");
-      Match r = Regex.Match(inputString, "([+-]?\\d{3,6})-(\\d{2})-(\\d{2})(?:T(\\d{2}):(\\d{2}):(\\d{2})(?:\\.(\\d{3}))?Z?)?");
+      Match r = Regex.Match(inputString, "([+-]?\\d{3,6})-(\\d{2})-(\\d{2})(?:(?:T|\\s+)(\\d{2}):(\\d{2}):(\\d{2})(?:\\.(\\d{3}))?(Z|[+-]\\d{1,4})?)?");
       if (r.Success) {
         long y = Int64.Parse(r.Groups[1].Value);
         long m = Int64.Parse(r.Groups[2].Value);
@@ -88,7 +88,18 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
           long n = Int64.Parse(r.Groups[5].Value);
           long s = Int64.Parse(r.Groups[6].Value);
           long ms = r.Groups[7].Success ? Int64.Parse(r.Groups[7].Value) : 0;
-          return new EcmaTimestamp(EcmaTimestamp.GetTimestampUtc(0, 0, y, m - 1, d, h, n, s, ms));
+          long tz = (int)TimeZoneInfo.Local.BaseUtcOffset.TotalMilliseconds;
+          if (r.Groups[8].Success) {
+            string tzStr = r.Groups[8].Value;
+            if (tzStr[0] == 'Z') {
+              tz = 0;
+            } else if (tzStr.Length <= 3) {
+              tz = Int32.Parse(tzStr) * 864000;
+            } else {
+              tz = Int32.Parse(tzStr.Substring(0, tzStr.Length - 2)) * 864000 + Int32.Parse(tzStr.Substring(tzStr.Length - 2)) * 60000;
+            }
+          }
+          return new EcmaTimestamp(EcmaTimestamp.GetTimestampUtc(0, 0, y, m - 1, d, h, n, s, ms - tz));
         }
         return new EcmaTimestamp(EcmaTimestamp.GetTimestampUtc(0, 0, y, m - 1, d));
       }

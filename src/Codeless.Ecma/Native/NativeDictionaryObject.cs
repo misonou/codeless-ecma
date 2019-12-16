@@ -33,7 +33,10 @@ namespace Codeless.Ecma.Native {
         return base.Get(propertyKey, receiver);
       }
       string key = propertyKey.ToString();
-      return Target.Contains(key) ? new EcmaValue(Target[key]) : default;
+      if (Target.Contains(key)) {
+        return new EcmaValue(Target[key]);
+      }
+      return base.Get(propertyKey, receiver);
     }
 
     public override bool Set(EcmaPropertyKey propertyKey, EcmaValue value, RuntimeObject receiver) {
