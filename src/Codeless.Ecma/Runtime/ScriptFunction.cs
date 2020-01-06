@@ -6,15 +6,19 @@ using System.Text;
 namespace Codeless.Ecma.Runtime {
   public class ScriptFunction : RuntimeFunction {
     public ScriptFunction() {
+      this.ParameterList = "";
+      this.Source = "";
       InitProperty("", 0);
       SetPrototypeInternal(RuntimeObject.CreateFromConstructor<EcmaObject>(this.Realm.GetRuntimeObject(WellKnownObject.ObjectConstructor), WellKnownObject.ObjectPrototype));
     }
 
-    public override bool IsConstructor => true;
+    public string ParameterList { get; private set; }
 
-    public string ParameterList => "";
+    public string Source { get; private set; }
 
-    public string Source => "";
+    public override bool IsConstructor {
+      get { return this.HomeObject == null || this.HomeObject == this; }
+    }
 
     protected override EcmaValue Invoke(RuntimeFunctionInvocation invocation, EcmaValue[] arguments) {
       return EcmaValue.Undefined;

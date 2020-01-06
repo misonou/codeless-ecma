@@ -87,6 +87,18 @@ namespace Codeless.Ecma {
       get { return (attributes & EcmaPropertyAttributes.HasValue) != 0; }
     }
 
+    public bool HasEnumerable {
+      get { return (attributes & EcmaPropertyAttributes.HasEnumerable) != 0; }
+    }
+
+    public bool HasConfigurable {
+      get { return (attributes & EcmaPropertyAttributes.HasConfigurable) != 0; }
+    }
+
+    public bool HasWritable {
+      get { return (attributes & EcmaPropertyAttributes.HasWritable) != 0; }
+    }
+
     public EcmaValue Value {
       get {
         if ((attributes & EcmaPropertyAttributes.LazyInitialize) != 0) {
@@ -140,6 +152,10 @@ namespace Codeless.Ecma {
       return obj;
     }
 
+    public void CompleteDescriptor() {
+      CompleteDescriptor(frozenProperty);
+    }
+
     [EcmaSpecification("ToPropertyDescriptor", EcmaSpecificationKind.AbstractOperations)]
     public static EcmaPropertyDescriptor FromValue(EcmaValue value) {
       Guard.ArgumentIsObject(value);
@@ -173,7 +189,6 @@ namespace Codeless.Ecma {
       if (result.IsAccessorDescriptor && result.IsDataDescriptor) {
         throw new EcmaTypeErrorException(InternalString.Error.InvalidDescriptor);
       }
-      result.CompleteDescriptorAttributes(frozenProperty.attributes);
       return result;
     }
 
@@ -184,7 +199,7 @@ namespace Codeless.Ecma {
           return false;
         }
         descriptor = (EcmaPropertyDescriptor)descriptor.MemberwiseClone();
-        descriptor.CompleteDescriptorAttributes(defaultProperty.attributes);
+        descriptor.CompleteDescriptorAttributes(frozenProperty.attributes);
         return true;
       }
       if (!current.Configurable) {

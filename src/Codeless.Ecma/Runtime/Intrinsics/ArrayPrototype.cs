@@ -11,7 +11,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static EcmaValue ToString([This] EcmaValue thisValue) {
-      return Join(thisValue, EcmaValue.Undefined);
+      return thisValue.Invoke("join", EcmaValue.Undefined);
     }
 
     [IntrinsicMember]
@@ -28,7 +28,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         }
         EcmaValue item = obj.Get(i);
         if (!item.IsNullOrUndefined) {
-          sb.Append(item.Invoke("toLocaleString"));
+          sb.Append(item.Invoke("toLocaleString").ToString(true));
         }
       }
       return sb.ToString();
@@ -157,8 +157,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Slice([This] EcmaValue thisValue, EcmaValue start, EcmaValue end) {
       RuntimeObject obj = thisValue.ToObject();
       long len = obj.Get(WellKnownProperty.Length).ToLength();
-      long from = GetBoundIndex(start, len, 0);
-      long count = Math.Max(GetBoundIndex(end, len, len) - from, 0);
+      long from = ArrayHelper.GetBoundIndex(start, len, 0);
+      long count = Math.Max(ArrayHelper.GetBoundIndex(end, len, len) - from, 0);
 
       RuntimeObject target = SpeciesCreate(thisValue, count);
       if (obj is EcmaArray arr && target is EcmaArray other && !arr.FallbackMode && !other.FallbackMode) {
@@ -179,7 +179,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       RuntimeObject obj = thisValue.ToObject();
       int argLength = args.Length;
       long len = obj.Get(WellKnownProperty.Length).ToLength();
-      long from = argLength > 0 ? GetBoundIndex(args[0], len, 0) : 0;
+      long from = argLength > 0 ? ArrayHelper.GetBoundIndex(args[0], len, 0) : 0;
       long insertCount = argLength > 1 ? argLength - 2 : 0;
       long deleteCount = argLength > 1 ? Math.Min(Math.Max(0, args[1].ToLength()), len - from) : argLength > 0 ? len - from : 0;
       long newLen = len + insertCount - deleteCount;
@@ -236,7 +236,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return thisValue;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue Filter([This] EcmaValue thisValue, EcmaValue callback, EcmaValue thisArg) {
       RuntimeObject obj = thisValue.ToObject();
       long len = obj.Get(WellKnownProperty.Length).ToLength();
@@ -256,7 +256,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return target;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue Some([This] EcmaValue thisValue, EcmaValue callback, EcmaValue thisArg) {
       RuntimeObject obj = thisValue.ToObject();
       long len = obj.Get(WellKnownProperty.Length).ToLength();
@@ -294,7 +294,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return true;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue Map([This] EcmaValue thisValue, EcmaValue callback, EcmaValue thisArg) {
       RuntimeObject obj = thisValue.ToObject();
       long len = obj.Get(WellKnownProperty.Length).ToLength();
@@ -359,7 +359,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         } else {
           from = fromValue.ToInt64();
           if (from < 0) {
-            from = Math.Max(0, from + length);
+            from += length;
           }
         }
       }
@@ -374,13 +374,13 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return -1;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue Reduce([This] EcmaValue thisValue, EcmaValue callback, EcmaValue? initialValue) {
       RuntimeObject obj = thisValue.ToObject();
       long length = obj.Get(WellKnownProperty.Length).ToLength();
       Guard.ArgumentIsCallable(callback);
       if (length == 0 && !initialValue.HasValue) {
-        throw new EcmaTypeErrorException("");
+        throw new EcmaTypeErrorException(InternalString.Error.ReduceEmptyArray);
       }
       if (obj is EcmaArray arr && !arr.FallbackMode) {
         return arr.Reduce(callback.ToObject(), initialValue.GetValueOrDefault());
@@ -408,13 +408,13 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return value;
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue ReduceRight([This] EcmaValue thisValue, EcmaValue callback, EcmaValue? initialValue) {
       RuntimeObject obj = thisValue.ToObject();
       long length = obj.Get(WellKnownProperty.Length).ToLength();
       Guard.ArgumentIsCallable(callback);
       if (length == 0 && !initialValue.HasValue) {
-        throw new EcmaTypeErrorException("");
+        throw new EcmaTypeErrorException(InternalString.Error.ReduceEmptyArray);
       }
       long i = length - 1;
       EcmaValue value = default;
@@ -443,9 +443,9 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue CopyWithin([This] EcmaValue thisValue, EcmaValue target, EcmaValue start, EcmaValue end) {
       RuntimeObject obj = thisValue.ToObject();
       long len = obj.Get(WellKnownProperty.Length).ToLength();
-      long to = GetBoundIndex(target, len, 0);
-      long from = GetBoundIndex(start, len, 0);
-      long until = GetBoundIndex(end, len, len);
+      long to = ArrayHelper.GetBoundIndex(target, len, 0);
+      long from = ArrayHelper.GetBoundIndex(start, len, 0);
+      long until = ArrayHelper.GetBoundIndex(end, len, len);
       long count = Math.Min(until - from, len - to);
       if (count > 0) {
         if (from < to && to < from + count) {
@@ -494,8 +494,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Fill([This] EcmaValue thisValue, EcmaValue value, EcmaValue start, EcmaValue end) {
       RuntimeObject obj = thisValue.ToObject();
       long len = obj.Get(WellKnownProperty.Length).ToLength();
-      long from = GetBoundIndex(start, len, 0);
-      long until = GetBoundIndex(end, len, len);
+      long from = ArrayHelper.GetBoundIndex(start, len, 0);
+      long until = ArrayHelper.GetBoundIndex(end, len, len);
       for (long i = from; i < until; i++) {
         obj.SetOrThrow(i, value);
       }
@@ -536,7 +536,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return new EcmaIterator(thisValue, EcmaIteratorResultKind.Entry, WellKnownObject.ArrayIteratorPrototype);
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue ForEach([This] EcmaValue thisValue, EcmaValue callback, EcmaValue thisArg) {
       RuntimeObject obj = thisValue.ToObject();
       long length = obj.Get(WellKnownProperty.Length).ToLength();
@@ -688,14 +688,6 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (newLen >= (1L << 53)) {
         throw new EcmaTypeErrorException(InternalString.Error.ExceedMaximumLength);
       }
-    }
-
-    private static long GetBoundIndex(EcmaValue index, long len, long defaultValue) {
-      if (index == default) {
-        return defaultValue;
-      }
-      index = index.ToInteger();
-      return (index < 0 ? EcmaMath.Max(len + index, 0) : EcmaMath.Min(index, len)).ToInt64();
     }
 
     private static void CopyWithinInternal(RuntimeObject obj, long from, long to, long count) {

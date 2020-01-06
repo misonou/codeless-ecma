@@ -23,7 +23,7 @@ namespace Codeless.Ecma.Runtime {
       DefineOwnPropertyNoChecked(WellKnownSymbol.Iterator, new EcmaPropertyDescriptor(RuntimeRealm.Current.GetRuntimeObject(WellKnownObject.ArrayPrototype).Get(WellKnownSymbol.Iterator), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
     }
 
-    public EcmaValue this[int index] {
+    public override EcmaValue this[int index] {
       get { return arguments[index]; }
       set { arguments[index] = value; }
     }

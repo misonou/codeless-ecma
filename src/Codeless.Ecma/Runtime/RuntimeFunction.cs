@@ -14,7 +14,7 @@ namespace Codeless.Ecma.Runtime {
 
     public bool ContainsUseStrict { get; protected set; }
 
-    public RuntimeObject HomeObject { get; set; }
+    public RuntimeObject HomeObject { get; private set; }
 
     public override sealed bool IsCallable => true;
 
@@ -69,10 +69,22 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public RuntimeFunction AsDerivedClassConstructorOf(RuntimeObject super) {
+      if (this is IntrinsicFunction) {
+        throw new InvalidOperationException("Cannot modified HomeObject internal slot for intrinsic function");
+      }
       RuntimeObject proto = Create(GetPrototypeFromConstructor(super, WellKnownObject.ObjectPrototype));
       SetPrototypeOf(super);
       SetPrototypeInternal(proto);
       this.HomeObject = this;
+      return this;
+    }
+
+    public RuntimeFunction AsHomedMethodOf(RuntimeObject homeObject) {
+      if (this is IntrinsicFunction) {
+        throw new InvalidOperationException("Cannot modified HomeObject internal slot for intrinsic function");
+      }
+      Guard.ArgumentNotNull(homeObject, "homeObject");
+      this.HomeObject = homeObject;
       return this;
     }
 

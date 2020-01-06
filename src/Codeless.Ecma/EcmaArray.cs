@@ -384,9 +384,7 @@ namespace Codeless.Ecma {
       List<EcmaValue> arr = new List<EcmaValue>();
       if (list != null) {
         foreach (KeyValuePair<EcmaValue, EcmaValue> entry in EnumerateEntries(true)) {
-          if (callback.Call(thisArg, entry.Value, entry.Key, this)) {
-            arr.Add(entry.Value);
-          }
+          arr.Add(callback.Call(thisArg, entry.Value, entry.Key, this));
         }
       }
       return new EcmaArray(arr);

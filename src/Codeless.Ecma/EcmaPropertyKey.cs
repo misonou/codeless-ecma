@@ -3,6 +3,7 @@ using Codeless.Ecma.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -20,7 +21,9 @@ namespace Codeless.Ecma {
 
     public EcmaPropertyKey(string value)
       : this() {
-      if (UInt32.TryParse(value, out uint number) && number < UInt32.MaxValue) {
+      if (value == "-0") {
+        this.value = EcmaValue.NegativeZero;
+      } else if (UInt32.TryParse(value, NumberStyles.None, null, out uint number) && number < UInt32.MaxValue) {
         this.value = number;
       } else {
         this.value = value;
@@ -44,6 +47,23 @@ namespace Codeless.Ecma {
 
     public bool IsArrayIndex {
       get { return value.Type == EcmaValueType.Number; }
+    }
+
+    public bool IsNegativeZero {
+      get { return value.Equals(EcmaValue.NegativeZero, EcmaValueComparison.SameValue); }
+    }
+
+    public bool IsCanonicalNumericIndex {
+      get {
+        if (value.Type == EcmaValueType.Number) {
+          return true;
+        }
+        if (value.Type == EcmaValueType.Symbol) {
+          return false;
+        }
+        string strValue = value.ToString();
+        return strValue == "Infinity" || strValue == "-Infinity" || (Double.TryParse(strValue, out double doubleValue) && DoubleBinder.Default.ToString(doubleValue) == strValue);
+      }
     }
 
     public Symbol Symbol {
@@ -74,7 +94,14 @@ namespace Codeless.Ecma {
       if (value.Type == EcmaValueType.Symbol) {
         return default;
       }
-      if (Double.TryParse(value.ToString(), out double doubleValue) && DoubleBinder.Default.ToString(doubleValue) == value.ToString()) {
+      string strValue = value.ToString();
+      if (strValue == "Infinity") {
+        return EcmaValue.Infinity;
+      }
+      if (strValue == "-Infinity") {
+        return EcmaValue.NegativeInfinity;
+      }
+      if (Double.TryParse(strValue, out double doubleValue) && DoubleBinder.Default.ToString(doubleValue) == strValue) {
         return doubleValue;
       }
       return default;

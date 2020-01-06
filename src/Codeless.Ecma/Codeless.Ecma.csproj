@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <ProjectGuid>{C1E80E1C-054E-459B-AD78-DD20612C2BC6}</ProjectGuid>
     <TargetFrameworks Condition="'$(LibraryFrameworks)'==''">net45;net40;net35;netstandard2.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(LibraryFrameworks)'!=''">$(LibraryFrameworks)</TargetFrameworks>
     <SignAssembly>true</SignAssembly>

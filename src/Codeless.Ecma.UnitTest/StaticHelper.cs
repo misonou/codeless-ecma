@@ -1,4 +1,5 @@
-﻿using Codeless.Ecma.Runtime;
+using Codeless.Ecma.Diagnostics;
+using Codeless.Ecma.Runtime;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -183,6 +184,15 @@ namespace Codeless.Ecma.UnitTest {
       private readonly EcmaPropertyDescriptor previous;
 
       public TempPropertyScope(RuntimeObject obj, EcmaPropertyKey key, EcmaPropertyDescriptor descriptor) {
+        if (descriptor.IsDataDescriptor && !descriptor.HasWritable) {
+          descriptor.Writable = true;
+        }
+        if (!descriptor.HasEnumerable) {
+          descriptor.Enumerable = true;
+        }
+        if (!descriptor.HasConfigurable) {
+          descriptor.Configurable = true;
+        }
         this.obj = obj;
         this.key = key;
         this.previous = obj.GetOwnProperty(key);
@@ -190,10 +200,14 @@ namespace Codeless.Ecma.UnitTest {
       }
 
       public void Dispose() {
-        if (this.previous != null) {
-          obj.DefinePropertyOrThrow(key, previous);
-        } else {
-          obj.DeletePropertyOrThrow(key);
+        try {
+          if (this.previous != null) {
+            obj.DefinePropertyOrThrow(key, previous);
+          } else {
+            obj.DeletePropertyOrThrow(key);
+          }
+        } catch {
+          NUnit.Framework.Assume.That(false, "Unable to remove temporary property {0} on object {1}", key.ToString(), InspectorUtility.WriteValue(obj));
         }
       }
     }

@@ -63,17 +63,17 @@ namespace Codeless.Ecma.Runtime {
       set { Set(index, value, this); }
     }
 
-    public EcmaValue this[string key] {
+    public virtual EcmaValue this[string key] {
       get { return this[new EcmaPropertyKey(key)]; }
       set { this[new EcmaPropertyKey(key)] = value; }
     }
 
-    public EcmaValue this[int key] {
+    public virtual EcmaValue this[int key] {
       get { return this[new EcmaPropertyKey(key)]; }
       set { this[new EcmaPropertyKey(key)] = value; }
     }
 
-    public EcmaValue this[long key] {
+    public virtual EcmaValue this[long key] {
       get { return this[new EcmaPropertyKey(key)]; }
       set { this[new EcmaPropertyKey(key)] = value; }
     }

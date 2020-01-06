@@ -111,7 +111,7 @@ namespace Codeless.Ecma {
       if (conversionType.IsAssignableFrom(obj.GetType())) {
         return obj;
       }
-      throw new InvalidCastException();
+      throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
     }
 
     public static EcmaValue GetValueFromException(Exception ex) {
@@ -186,6 +186,9 @@ namespace Codeless.Ecma {
       }
       if (conversionType == typeof(EcmaPropertyKey)) {
         return Expression.Call(typeof(EcmaPropertyKey), "FromValue", Type.EmptyTypes, value);
+      }
+      if (!conversionType.IsValueType) {
+        return Expression.Call(typeof(EcmaValueUtility), "GetUnderlyingObject", new[] { conversionType }, value);
       }
       return Expression.Convert(Expression.Call(typeof(EcmaValueUtility), "ConvertToUnknownType", Type.EmptyTypes, value, Expression.Constant(conversionType)), conversionType);
     }

@@ -33,5 +33,21 @@ namespace Codeless.Ecma {
       Array.Copy(b, 0, args, len1, len2);
       return args;
     }
+
+    public static long GetBoundIndex(EcmaValue index, long len, long defaultValue) {
+      if (index == default) {
+        return defaultValue;
+      }
+      index = index.ToInteger();
+      return (index < 0 ? EcmaMath.Max(len + index, 0) : EcmaMath.Min(index, len)).ToInt64();
+    }
+
+    public static int GetBoundIndex(EcmaValue index, int len, int defaultValue) {
+      if (index == default) {
+        return defaultValue;
+      }
+      index = index.ToInteger();
+      return (index < 0 ? EcmaMath.Max(len + index, 0) : EcmaMath.Min(index, len)).ToInt32();
+    }
   }
 }

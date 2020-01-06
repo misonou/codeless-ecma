@@ -612,6 +612,26 @@ namespace Codeless.Ecma {
       return (byte)ConvertToInt(0xFF, true);
     }
 
+    [EcmaSpecification("ToUInt8Clamp", EcmaSpecificationKind.AbstractOperations)]
+    public byte ToUInt8Clamp() {
+      switch (GetNumberCoercion(this)) {
+        case EcmaNumberType.Invalid:
+          return this.ToNumber().ToUInt8Clamp();
+        case EcmaNumberType.Int32:
+        case EcmaNumberType.Int64:
+          long longValue = binder.ToInt64(handle);
+          return longValue < 0 ? (byte)0 : longValue > 255 ? (byte)255 : (byte)longValue;
+      }
+      double doubleValue = this.ToDouble();
+      if (Double.IsNaN(doubleValue) || doubleValue <= 0) {
+        return 0;
+      }
+      if (doubleValue >= 255) {
+        return 255;
+      }
+      return (byte)(int)Math.Round(doubleValue, MidpointRounding.ToEven);
+    }
+
     [EcmaSpecification("ToInt16", EcmaSpecificationKind.AbstractOperations)]
     public short ToInt16() {
       return (short)ConvertToInt(UInt16.MaxValue, false);

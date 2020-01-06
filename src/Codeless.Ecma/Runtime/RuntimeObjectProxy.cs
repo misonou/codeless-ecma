@@ -162,6 +162,7 @@ namespace Codeless.Ecma.Runtime {
           return null;
         }
         EcmaPropertyDescriptor resultDesc = EcmaPropertyDescriptor.FromValue(result);
+        resultDesc.CompleteDescriptor();
         if (!EcmaPropertyDescriptor.ValidateAndApplyPropertyDescriptor(ref resultDesc, targetDesc, !target.IsExtensible) ||
             resultDesc.Configurable == false && (targetDesc == null || targetDesc.Configurable == true)) {
           throw new EcmaTypeErrorException(InternalString.Error.InvalidTrapResult);

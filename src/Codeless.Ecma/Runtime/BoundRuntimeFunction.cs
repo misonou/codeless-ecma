@@ -19,6 +19,10 @@ namespace Codeless.Ecma.Runtime {
     public EcmaValue BoundThis { get; }
     public EcmaValue[] BoundArgs { get; }
 
+    public override bool IsConstructor {
+      get { return this.TargetFunction.IsConstructor; }
+    }
+
     public override EcmaValue Call(EcmaValue thisValue, params EcmaValue[] arguments) {
       return this.TargetFunction.Call(this.BoundThis, ArrayHelper.Combine(this.BoundArgs, arguments));
     }
