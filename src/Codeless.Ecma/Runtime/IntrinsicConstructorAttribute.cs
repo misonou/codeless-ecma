@@ -9,15 +9,19 @@ namespace Codeless.Ecma.Runtime {
   internal class IntrinsicConstructorAttribute : Attribute {
     private WellKnownObject? superClass;
 
-    public IntrinsicConstructorAttribute() { }
+    public IntrinsicConstructorAttribute() {
+      this.Global = true;
+    }
 
-    public IntrinsicConstructorAttribute(NativeRuntimeFunctionConstraint constraint) {
+    public IntrinsicConstructorAttribute(NativeRuntimeFunctionConstraint constraint)
+      : this() {
       this.Constraint = constraint;
     }
 
     public NativeRuntimeFunctionConstraint Constraint { get; private set; }
     public Type ObjectType { get; set; }
     public string Name { get; set; }
+    public bool Global { get; set; }
 
     public WellKnownObject SuperClass {
       get => superClass.GetValueOrDefault(WellKnownObject.FunctionPrototype);

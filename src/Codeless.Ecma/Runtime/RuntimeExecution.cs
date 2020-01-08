@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Codeless.Ecma.Runtime {
+  public delegate void RuntimeExecutionStart(RuntimeRealm parentRealm);
+
   public class RuntimeUnhandledExceptionEventArgs : EventArgs {
     public RuntimeUnhandledExceptionEventArgs(Exception ex, EcmaValue value) {
       this.Exception = ex;
@@ -37,30 +40,117 @@ namespace Codeless.Ecma.Runtime {
 
     private readonly List<Job> queue = new List<Job>();
     private readonly List<WaitHandle> handles = new List<WaitHandle>();
+    private readonly AutoResetEvent resetEvent = new AutoResetEvent(false);
+    private readonly Stopwatch stopwatch = Stopwatch.StartNew();
+    private RuntimeRealm defaultRealm;
     private int nextId;
 
     private RuntimeExecution() {
+      current = this;
+      defaultRealm = new RuntimeRealm();
       this.Thread = Thread.CurrentThread;
+      this.CanSuspend = true;
+      this.AutoExit = true;
     }
 
     public EventHandler<RuntimeUnhandledExceptionEventArgs> UnhandledException;
 
-    public CancellationTokenSource CancellationToken { get; private set; }
-
     public Thread Thread { get; }
+
+    public bool CanSuspend { get; set; }
+
+    public bool AutoExit { get; set; }
+
+    public bool ShouldExit {
+      get { return queue.Count == 0 && handles.Count == 0 && this.AutoExit; }
+    }
+
+    public RuntimeRealm DefaultRealm {
+      get {
+        if (defaultRealm.Disposed) {
+          defaultRealm = new RuntimeRealm();
+        }
+        return defaultRealm;
+      }
+    }
 
     public static RuntimeExecution Current {
       get { return EnsureInstance(); }
     }
 
+    public static RuntimeExecution CreateWorkerThread(RuntimeExecutionStart action, bool autoExit) {
+      ManualResetEvent waitHandle = new ManualResetEvent(false);
+      RuntimeRealm parentRealm = RuntimeRealm.Current;
+      RuntimeExecution execution = null;
+      new Thread(() => {
+        execution = EnsureInstance();
+        execution.AutoExit = autoExit;
+        try {
+          action(parentRealm);
+          waitHandle.Set();
+          ContinueUntilEnd();
+        } catch (Exception ex) {
+          SendUnhandledException(ex);
+          waitHandle.Set();
+        }
+      }).Start();
+      waitHandle.WaitOne();
+      return execution;
+    }
+
+    public static double GetPerformaceTimestamp(double precision) {
+      Stopwatch stopwatch = EnsureInstance().stopwatch;
+      stopwatch.Stop();
+      double milliseconds = Math.Round(stopwatch.ElapsedTicks * (1000 / precision) / Stopwatch.Frequency) * precision;
+      stopwatch.Start();
+      return milliseconds;
+    }
+
     [EcmaSpecification("EnqueueJob", EcmaSpecificationKind.AbstractOperations)]
-    public static RuntimeExecutionHandle Enqueue(Action action) {
-      return Enqueue(action, 0, RuntimeExecutionFlags.None);
+    public static void Enqueue(Action action) {
+      Enqueue(action, 0, RuntimeExecutionFlags.None);
+    }
+
+    public static void Enqueue(Action action, Task task) {
+      RuntimeExecution current = EnsureInstance();
+      current.Enqueue(RuntimeRealm.Current, action, task);
     }
 
     public static RuntimeExecutionHandle Enqueue(Action action, int milliseconds, RuntimeExecutionFlags flags) {
       RuntimeExecution current = EnsureInstance();
       return current.Enqueue(RuntimeRealm.Current, action, milliseconds, flags);
+    }
+
+    public void Enqueue(RuntimeRealm realm, Action action) {
+      Guard.ArgumentNotNull(realm, "realm");
+      Guard.ArgumentNotNull(action, "action");
+      if (realm.ExecutionContext != this) {
+        throw new InvalidOperationException("Realm must be belong to the same execution context");
+      }
+      Enqueue(realm, action, 0, RuntimeExecutionFlags.None);
+      WakeImmediately();
+    }
+
+    public void Enqueue(RuntimeRealm realm, Action action, Task task) {
+      Guard.ArgumentNotNull(realm, "realm");
+      Guard.ArgumentNotNull(task, "task");
+      Guard.ArgumentNotNull(action, "action");
+      if (realm.ExecutionContext != this) {
+        throw new InvalidOperationException("Realm must be belong to the same execution context");
+      }
+      if (!task.IsCompleted) {
+        ManualResetEvent handle = new ManualResetEvent(false);
+        lock (this) {
+          handles.Add(handle);
+        }
+        task.ContinueWith(_ => {
+          Enqueue(realm, action, 0, RuntimeExecutionFlags.None);
+          handle.Set();
+        });
+      } else {
+        Enqueue(realm, action, 0, RuntimeExecutionFlags.None);
+      }
+      WakeImmediately();
     }
 
     public RuntimeExecutionHandle Enqueue(RuntimeRealm realm, Action action, int milliseconds, RuntimeExecutionFlags flags) {
@@ -83,29 +173,9 @@ namespace Codeless.Ecma.Runtime {
       return new RuntimeExecutionHandle(job.Id);
     }
 
-    public static void SetInterrupt(Task task, Action action) {
-      RuntimeExecution current = EnsureInstance();
-      current.SetInterrupt(RuntimeRealm.Current, task, action);
-    }
-
-    public void SetInterrupt(RuntimeRealm realm, Task task, Action action) {
-      Guard.ArgumentNotNull(realm, "realm");
-      Guard.ArgumentNotNull(task, "task");
-      Guard.ArgumentNotNull(action, "action");
-      if (realm.ExecutionContext != this) {
-        throw new InvalidOperationException("Realm must be belong to the same execution context");
-      }
-      if (!task.IsCompleted) {
-        AutoResetEvent handle = new AutoResetEvent(false);
-        lock (this) {
-          handles.Add(handle);
-        }
-        task.ContinueWith(_ => {
-          Enqueue(realm, action, 0, RuntimeExecutionFlags.None);
-          handle.Set();
-        });
-      } else {
-        Enqueue(realm, action, 0, RuntimeExecutionFlags.None);
+    public void WakeImmediately() {
+      if (this.Thread.ThreadState == System.Threading.ThreadState.WaitSleepJoin) {
+        resetEvent.Set();
       }
     }
 
@@ -123,19 +193,15 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public static bool ContinueUntilEnd() {
-      return ContinueUntilEnd(new CancellationTokenSource());
-    }
-
-    public static bool ContinueUntilEnd(CancellationTokenSource ct) {
       bool result = false;
-      while (Continue(ct)) {
+      while (Continue()) {
         result = true;
       }
       return result;
     }
 
     [EcmaSpecification("RunJobs", EcmaSpecificationKind.AbstractOperations)]
-    public static bool Continue(CancellationTokenSource ct) {
+    public static bool Continue() {
       RuntimeExecution current = EnsureInstance();
       bool executed = false;
       DateTime? waitUntil = null;
@@ -169,15 +235,14 @@ namespace Codeless.Ecma.Runtime {
           SendUnhandledException(ex);
         }
       }
-      bool hasPending = current.queue.Count > 0 || current.handles.Count > 0;
-      if (!executed && hasPending) {
+      if (!executed && !current.ShouldExit) {
         if (waitUntil >= DateTime.Now) {
-          SuspendThread(ct, waitUntil.Value - DateTime.Now);
+          SuspendThread(waitUntil.Value - DateTime.Now);
         } else if (waitUntil == null) {
-          SuspendThread(ct, null);
+          SuspendThread(null);
         }
       }
-      return hasPending;
+      return !current.ShouldExit;
     }
 
     public static void SendUnhandledException(EcmaValue value) {
@@ -195,19 +260,18 @@ namespace Codeless.Ecma.Runtime {
       current.UnhandledException?.Invoke(null, new RuntimeUnhandledExceptionEventArgs(ex, EcmaValueUtility.GetValueFromException(ex)));
     }
 
-    private static void SuspendThread(CancellationTokenSource ct, TimeSpan? timeSpan) {
+    private static void SuspendThread(TimeSpan? timeSpan) {
+      AutoResetEvent resetEvent = current.resetEvent;
       List<WaitHandle> handles;
-      current.CancellationToken = ct;
       lock (current) {
         handles = new List<WaitHandle>(current.handles);
       }
-      if (handles.Count > 0) {
-        handles.Add(ct.Token.WaitHandle);
-        int index = timeSpan.HasValue ? WaitHandle.WaitAny(handles.ToArray(), timeSpan.Value) : WaitHandle.WaitAny(handles.ToArray());
-        if (index >= 0 && index != handles.Count - 1) {
-          lock (current) {
-            current.handles.RemoveAt(index);
-          }
+      resetEvent.Reset();
+      handles.Add(resetEvent);
+      int index = timeSpan.HasValue ? WaitHandle.WaitAny(handles.ToArray(), timeSpan.Value) : WaitHandle.WaitAny(handles.ToArray());
+      if (index >= 0 && handles[index] != resetEvent) {
+        lock (current) {
+          current.handles.RemoveAt(index);
         }
       }
     }

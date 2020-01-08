@@ -77,6 +77,20 @@ namespace Codeless.Ecma {
     SharedArrayBuffer,
     SharedArrayBufferPrototype,
     StringIteratorPrototype,
+    ArrayBuffer,
+    ArrayBufferPrototype,
+    TypedArray,
+    TypedArrayPrototype,
+    Float32Array,
+    Float32ArrayPrototype,
+    Float64Array,
+    Float64ArrayPrototype,
+    Int8Array,
+    Int8ArrayPrototype,
+    Int16Array,
+    Int16ArrayPrototype,
+    Int32Array,
+    Int32ArrayPrototype,
     MaxValue
   }
 }

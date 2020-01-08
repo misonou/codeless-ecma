@@ -1,5 +1,6 @@
-using Codeless.Ecma.Diagnostics;
+﻿using Codeless.Ecma.Diagnostics;
 using Codeless.Ecma.Runtime;
+using Codeless.Ecma.UnitTest.Harness;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,6 +13,8 @@ namespace Codeless.Ecma.UnitTest {
     public static readonly ArrayList Logs = new ArrayList();
 
     public static readonly Func<EcmaValue> Noop = () => EcmaValue.Undefined;
+
+    public static readonly Action DerivedCtor = () => Global.Super.Construct(EcmaValueUtility.CreateListFromArrayLike(Global.Arguments));
 
     public static readonly Action UnexpectedFulfill = () => NUnit.Framework.Assert.Fail("Promise should not be fulfilled");
 
@@ -158,12 +161,44 @@ namespace Codeless.Ecma.UnitTest {
       };
     }
 
+    public static void TestWithTypedArrayConstructors(Action<RuntimeFunction> action, RuntimeFunction[] constructors = null) {
+      foreach (RuntimeFunction constructor in constructors ?? new[] { Global.Int8Array, Global.Int16Array, Global.Int32Array, Global.Uint8Array, Global.Uint8ClampedArray, Global.Uint16Array, Global.Uint32Array, Global.Float32Array, Global.Float64Array }) {
+        Logs.Clear();
+        action(constructor);
+      }
+    }
+
+    public static void TestTypedArrayConversion(Action<RuntimeFunction, EcmaValue, EcmaValue, EcmaValue> action) {
+      TestWithTypedArrayConstructors(TA => {
+        EcmaValue values = ByteConversionValues.Values;
+        EcmaValue expected = ByteConversionValues.Expected[TA["name"].Invoke("slice", 0, -5)];
+        for (long i = 0, len = values["length"].ToLength(); i < len; i++) {
+          action(TA, values[i], expected[i], expected[i] == 0 ? 1 : 0);
+        }
+      });
+    }
+
+    public static void DetachBuffer(EcmaValue value) {
+      switch (value.ToObject()) {
+        case IArrayBufferView view:
+          view.Buffer.Detach();
+          break;
+        case ArrayBuffer buffer:
+          buffer.Detach();
+          break;
+      }
+    }
+
     public static IDisposable TempProperty(EcmaValue obj, EcmaPropertyKey key, EcmaValue value) {
       return new TempPropertyScope(obj.ToObject(), key, new EcmaPropertyDescriptor(value));
     }
 
     public static IDisposable TempProperty(EcmaValue obj, EcmaPropertyKey key, EcmaPropertyDescriptor descriptor) {
       return new TempPropertyScope(obj.ToObject(), key, descriptor);
+    }
+
+    public static string FormatArguments(EcmaValue thisArg, EcmaValue[] args) {
+      return String.Format("(this = {0}, arguments = {1})", InspectorUtility.WriteValue(thisArg), String.Join(", ", args.Select(InspectorUtility.WriteValue)));
     }
 
     private class ValueHolder {

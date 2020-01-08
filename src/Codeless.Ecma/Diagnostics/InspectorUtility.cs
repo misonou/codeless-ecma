@@ -51,6 +51,10 @@ namespace Codeless.Ecma.Diagnostics {
             }
           } else if (EcmaArray.IsArray(value)) {
             SerializeAsArray(writer, value);
+          } else if (value.GetUnderlyingObject() is TypedArray arr) {
+            writer.Write(TypedArrayInfo.GetTypedArrayName(arr.ArrayKind));
+            writer.Write(" ");
+            SerializeAsArray(writer, value);
           } else if (value.GetUnderlyingObject() is ArgumentList) {
             writer.Write("Arguments ");
             SerializeAsArray(writer, value);

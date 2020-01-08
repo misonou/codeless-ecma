@@ -40,6 +40,10 @@ namespace Codeless.Ecma {
       public const string Null = "Null";
       public const string Error = "Error";
       public const string Promise = "Promise";
+      public const string ArrayBuffer = "ArrayBuffer";
+      public const string DataView = "DataView";
+      public const string SharedArrayBuffer = "SharedArrayBuffer";
+      public const string Atomics = "Atomics";
     }
 
     public static class Error {
@@ -94,6 +98,19 @@ namespace Codeless.Ecma {
       public const string SuperConstructorNotCalled = "Must call super constructor in derived class before accessing 'this' or returning from derived constructor";
       public const string SuperConstructorAlreadyCalled = "Super constructor may only be called once";
       public const string UnexpectedSuper = "'super' keyword unexpected here";
+      public const string TypedArrayIsAbstract = "Abstract class TypedArray not directly constructable";
+      public const string TypedArrayInvalidOffset = "Start offset of {0} should be a multiple of {1}";
+      public const string TypedArrayInvalidByteLength = "Byte length of {0} should be a multiple of {1}";
+      public const string TypedArrayInvalidLength = "Invalid typed array length: {0}";
+      public const string TypedArrayBufferTooSmall = "Derived TypedArray constructor created an array which was too small";
+      public const string TypedArrayNotWaitable = "Object is not a 32-bit signed integer shared array";
+      public const string TypedArrayNotAtomic = "Object is not an integer shared array";
+      public const string BufferOffsetOutOfBound = "Start offset {0} is outside the bounds of the buffer";
+      public const string BufferDetached = "Buffer is detached";
+      public const string BufferShared = "Operation is not allowed on shared buffer";
+      public const string SourceTooLarge = "Source is too large";
+      public const string DataViewInvalidOffset = "Offset is outside the bounds of the DataView";
+      public const string DataViewInvalidLength = "Invalid DataView length: {0}";
     }
   }
 }

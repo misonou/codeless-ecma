@@ -29,5 +29,19 @@ namespace Codeless.Ecma {
         throw new EcmaTypeErrorException(errorMessage ?? InternalString.Error.NotFunction);
       }
     }
+
+    public static void BufferNotDetached(ArrayBuffer buffer) {
+      Guard.ArgumentNotNull(buffer, "buffer");
+      if (buffer.IsDetached) {
+        throw new EcmaTypeErrorException(InternalString.Error.BufferDetached);
+      }
+    }
+
+    public static void BufferNotDetached(IArrayBufferView buffer) {
+      Guard.ArgumentNotNull(buffer, "buffer");
+      if (buffer.Buffer.IsDetached) {
+        throw new EcmaTypeErrorException(InternalString.Error.BufferDetached);
+      }
+    }
   }
 }

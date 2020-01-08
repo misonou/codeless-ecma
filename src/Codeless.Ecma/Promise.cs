@@ -31,7 +31,7 @@ namespace Codeless.Ecma {
     public Promise(Task task)
       : this() {
       Guard.ArgumentNotNull(task, "task");
-      RuntimeExecution.SetInterrupt(task, () => HandleCompletedTask(task));
+      RuntimeExecution.Enqueue(() => HandleCompletedTask(task), task);
     }
 
     public Promise(Exception ex)
@@ -95,7 +95,7 @@ namespace Codeless.Ecma {
     public static Promise FromTask<T>(Task<T> task) {
       Guard.ArgumentNotNull(task, "task");
       Promise promise = new Promise();
-      RuntimeExecution.SetInterrupt(task, () => promise.HandleCompletedTask(task));
+      RuntimeExecution.Enqueue(() => promise.HandleCompletedTask(task), task);
       return promise;
     }
 

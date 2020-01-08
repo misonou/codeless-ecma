@@ -138,7 +138,7 @@ namespace Codeless.Ecma.UnitTest {
       if (constraint == null) {
         constraint = condition is Array arr ? Is.EquivalentTo(arr) : Is.EqualTo(condition);
       }
-      message = FormatMessage(args, message);
+      message = message + " " + StaticHelper.FormatArguments(args.thisArg, args.Item2);
       if (ShouldRunInDelegate(constraint)) {
         That(() => fn.Call(args.Item1, args.Item2), constraint, message);
       } else {
@@ -146,16 +146,12 @@ namespace Codeless.Ecma.UnitTest {
       }
     }
 
-    public static string FormatMessage((EcmaValue thisArg, EcmaValue[]) args, string message) {
-      return String.Format("{0}{1} [Input = ({2})]", Assert.message, Assert.message != null && message != null ? ": " + message : "",
-        String.Join(", ", new[] { args.Item1 }.Concat(args.Item2).Select(InspectorUtility.WriteValue)));
-    }
-
     public static void That(EcmaValue value, IResolveConstraint constraint) {
       That(value, constraint, message, new object[0]);
     }
 
     public static void That(EcmaValue value, IResolveConstraint constraint, string message, params object[] args) {
+      message = PrependScopeMessage(message);
       if (constraint is CollectionEquivalentConstraint equivalentConstraint) {
         NUnit.Framework.Assert.That(value.Type != EcmaValueType.Object ? null : EcmaValueUtility.CreateListFromArrayLike(value), equivalentConstraint.Using(new RecursiveArrayEqualityComparer()), message, args);
       } else if (ShouldUnboxResult(constraint)) {
@@ -173,6 +169,10 @@ namespace Codeless.Ecma.UnitTest {
       return (constraint is InstanceOfTypeConstraint typeConstraint && ((Type)typeConstraint.Arguments[0]).IsSubclassOf(typeof(Exception))) || constraint is ThrowsNothingConstraint;
     }
 
+    private static string PrependScopeMessage(string message) {
+      return String.Format("{0}{1}", Assert.message, Assert.message != null && message != null ? ": " + message : "");
+    }
+
     #region Out-out-the-box methods
     public static void That<TActual>(TActual actual, IResolveConstraint expression) {
       NUnit.Framework.Assert.That(actual, expression, message);
@@ -183,7 +183,7 @@ namespace Codeless.Ecma.UnitTest {
     }
 
     public static void That(TestDelegate code, IResolveConstraint constraint, string message, params object[] args) {
-      NUnit.Framework.Assert.That(code, constraint, message, args);
+      NUnit.Framework.Assert.That(code, constraint, PrependScopeMessage(message), args);
     }
 
     public static void That(TestDelegate code, IResolveConstraint constraint) {
@@ -207,11 +207,11 @@ namespace Codeless.Ecma.UnitTest {
     }
 
     public static void That(Func<bool> condition) {
-      NUnit.Framework.Assert.That(condition, message);
+      NUnit.Framework.Assert.That(condition, PrependScopeMessage(message));
     }
 
     public static void That(Func<bool> condition, string message, params object[] args) {
-      NUnit.Framework.Assert.That(condition, message, args);
+      NUnit.Framework.Assert.That(condition, PrependScopeMessage(message), args);
     }
 
     public static void That(bool condition, Func<string> getExceptionMessage) {
@@ -223,15 +223,15 @@ namespace Codeless.Ecma.UnitTest {
     }
 
     public static void That<TActual>(TActual actual, IResolveConstraint expression, string message, params object[] args) {
-      NUnit.Framework.Assert.That(actual, expression, message, args);
+      NUnit.Framework.Assert.That(actual, expression, PrependScopeMessage(message), args);
     }
 
     public static void That<TActual>(ActualValueDelegate<TActual> del, IResolveConstraint expr, string message, params object[] args) {
-      NUnit.Framework.Assert.That(del, expr, message, args);
+      NUnit.Framework.Assert.That(del, expr, PrependScopeMessage(message), args);
     }
 
     public static void That(bool condition, string message, params object[] args) {
-      NUnit.Framework.Assert.That(condition, message, args);
+      NUnit.Framework.Assert.That(condition, PrependScopeMessage(message), args);
     }
     #endregion
   }

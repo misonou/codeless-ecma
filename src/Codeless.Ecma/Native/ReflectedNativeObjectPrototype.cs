@@ -25,6 +25,12 @@ namespace Codeless.Ecma.Native {
             EcmaPropertyAttributes.DefaultDataProperty));
         }
       }
+      foreach (MethodInfo method in type.GetMethods()) {
+        if (method.HasAttribute(out IntrinsicMemberAttribute attribute)) {
+          string methodName = attribute.Name ?? method.Name;
+          DefineOwnPropertyNoChecked(methodName, new EcmaPropertyDescriptor(new NativeRuntimeFunction(methodName, method), EcmaPropertyAttributes.DefaultMethodProperty));
+        }
+      }
       DefineOwnPropertyNoChecked(WellKnownProperty.Constructor, new EcmaPropertyDescriptor(new Constructor(type.Name), EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
     }
 

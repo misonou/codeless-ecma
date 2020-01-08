@@ -27,16 +27,19 @@ namespace Codeless.Ecma.UnitTest {
           if (typeName.EndsWith("Object")) {
             typeName = typeName.Substring(0, typeName.Length - 6);
           }
-          RuntimeObject obj = RuntimeRealm.Current.GetRuntimeObject((WellKnownObject)Enum.Parse(typeof(WellKnownObject), typeName));
-          if (method.MethodName == "Constructor") {
-            function = (RuntimeFunction)obj;
-            _ = Global.GlobalThis;
-          } else {
-            descriptor = obj.GetOwnProperty(Regex.Replace(method.MethodName, "^[A-Z](?=[a-z])", v => v.Value.ToLower()));
-            if (descriptor == null && Enum.TryParse(typeof(WellKnownSymbol), method.MethodName, out object sym)) {
-              descriptor = obj.GetOwnProperty((WellKnownSymbol)sym);
+          object objectType;
+          if (Enum.TryParse(typeof(WellKnownObject), typeName, out objectType) || Enum.TryParse(typeof(WellKnownObject), typeName.Replace("Constructor", ""), out objectType)) {
+            RuntimeObject obj = RuntimeRealm.Current.GetRuntimeObject((WellKnownObject)objectType);
+            if (method.MethodName == "Constructor") {
+              function = (RuntimeFunction)obj;
+              _ = Global.GlobalThis;
+            } else {
+              descriptor = obj.GetOwnProperty(Regex.Replace(method.MethodName, "^[A-Z](?=[a-z])", v => v.Value.ToLower()));
+              if (descriptor == null && Enum.TryParse(typeof(WellKnownSymbol), method.MethodName, out object sym)) {
+                descriptor = obj.GetOwnProperty((WellKnownSymbol)sym);
+              }
+              _ = obj;
             }
-            _ = obj;
           }
         }
         if (descriptor != null) {

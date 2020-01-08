@@ -133,7 +133,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         // IdentityEscape in AtomEscape
         VerifyMatch(@"\^", "u", "^", true);
         VerifyMatch(@"\$", "u", "$", true);
-        VerifyMatch(@"\\", "u", "\\",true);
+        VerifyMatch(@"\\", "u", "\\", true);
         VerifyMatch(@"\.", "u", ".", true);
         VerifyMatch(@"\*", "u", "*", true);
         VerifyMatch(@"\+", "u", "+", true);
@@ -776,11 +776,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
     }
 
     public static void VerifyMatch(EcmaValue pattern, EcmaValue input, bool success) {
-      That(RegExp.Construct(pattern).Invoke("test", input), Is.EqualTo(success), FormatMessage((pattern, new[] { input }), null));
+      That(RegExp.Construct(pattern).Invoke("test", input), Is.EqualTo(success), FormatArguments(pattern, new[] { input }));
     }
 
     public static void VerifyMatch(EcmaValue pattern, EcmaValue flags, EcmaValue input, bool success) {
-      That(RegExp.Construct(pattern, flags).Invoke("test", input), Is.EqualTo(success), FormatMessage((pattern, new[] { input }), null));
+      That(RegExp.Construct(pattern, flags).Invoke("test", input), Is.EqualTo(success), FormatArguments(pattern, new[] { input }));
     }
 
     public static void VerifyMatch(EcmaValue pattern, EcmaValue input, object[] expected, int index) {
@@ -789,7 +789,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
     public static void VerifyMatch(EcmaValue pattern, EcmaValue flags, EcmaValue input, object[] expected, int index) {
       EcmaValue re = default;
-      That(() => re = RegExp.Construct(pattern, flags), Throws.Nothing, FormatMessage((Undefined, new[] { pattern, flags }), null));
+      That(() => re = RegExp.Construct(pattern, flags), Throws.Nothing, FormatArguments(Undefined, new[] { pattern, flags }));
 
       RuntimeObject fn = TestContext.CurrentContext.Test.Arguments.FirstOrDefault() as RuntimeObject;
       if (fn == null || fn.IsIntrinsicFunction(WellKnownObject.RegExpPrototype, "test")) {
@@ -806,7 +806,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
     public static void VerifyMatch(EcmaValue pattern, EcmaValue flags, EcmaValue input, params (object[], int)[] expected) {
       EcmaValue re = default;
-      That(() => re = RegExp.Construct(pattern, flags), Throws.Nothing, FormatMessage((Undefined, new[] { pattern, flags }), null));
+      That(() => re = RegExp.Construct(pattern, flags), Throws.Nothing, FormatArguments(Undefined, new[] { pattern, flags }));
 
       EcmaValue actual;
       int i = 0;

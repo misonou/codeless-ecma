@@ -51,6 +51,8 @@ namespace Codeless.Ecma {
 
     public static RuntimeObject GlobalThis => (RuntimeObject)WellKnownObject.Global;
 
+    public static RuntimeObject Atomics => (RuntimeObject)WellKnownObject.Atomics;
+
     public static RuntimeObject Json => (RuntimeObject)WellKnownObject.Json;
 
     public static RuntimeObject Math => (RuntimeObject)WellKnownObject.Math;
@@ -89,6 +91,8 @@ namespace Codeless.Ecma {
 
     public static RuntimeFunction WeakSet => (RuntimeFunction)WellKnownObject.WeakSetConstructor;
 
+    public static RuntimeFunction EvalError => (RuntimeFunction)WellKnownObject.EvalError;
+ 
     public static RuntimeFunction RangeError => (RuntimeFunction)WellKnownObject.RangeError;
 
     public static RuntimeFunction ReferenceError => (RuntimeFunction)WellKnownObject.ReferenceError;
@@ -98,6 +102,30 @@ namespace Codeless.Ecma {
     public static RuntimeFunction TypeError => (RuntimeFunction)WellKnownObject.TypeError;
 
     public static RuntimeFunction UriError => (RuntimeFunction)WellKnownObject.UriError;
+
+    public static RuntimeFunction ArrayBuffer => (RuntimeFunction)WellKnownObject.ArrayBuffer;
+
+    public static RuntimeFunction SharedArrayBuffer => (RuntimeFunction)WellKnownObject.SharedArrayBuffer;
+
+    public static RuntimeFunction DataView => (RuntimeFunction)WellKnownObject.DataView;
+
+    public static RuntimeFunction Float32Array => (RuntimeFunction)WellKnownObject.Float32Array;
+
+    public static RuntimeFunction Float64Array => (RuntimeFunction)WellKnownObject.Float64Array;
+
+    public static RuntimeFunction Int8Array => (RuntimeFunction)WellKnownObject.Int8Array;
+
+    public static RuntimeFunction Int16Array => (RuntimeFunction)WellKnownObject.Int16Array;
+
+    public static RuntimeFunction Int32Array => (RuntimeFunction)WellKnownObject.Int32Array;
+
+    public static RuntimeFunction Uint8Array => (RuntimeFunction)WellKnownObject.Uint8Array;
+
+    public static RuntimeFunction Uint8ClampedArray => (RuntimeFunction)WellKnownObject.Uint8ClampedArray;
+
+    public static RuntimeFunction Uint16Array => (RuntimeFunction)WellKnownObject.Uint16Array;
+
+    public static RuntimeFunction Uint32Array => (RuntimeFunction)WellKnownObject.Uint32Array;
 
     public static EcmaValue Void(params EcmaValue[] exp) {
       return EcmaValue.Undefined;

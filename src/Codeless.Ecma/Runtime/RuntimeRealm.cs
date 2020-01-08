@@ -40,9 +40,17 @@ namespace Codeless.Ecma.Runtime {
       inited = true;
     }
 
+    public RuntimeRealm() {
+      if (inited) {
+        this.ExecutionContext = RuntimeExecution.Current;
+      }
+    }
+
+    public event EventHandler BeforeDisposed = delegate { };
+
     public int ID { get; } = Interlocked.Increment(ref accum);
 
-    public RuntimeExecution ExecutionContext { get; } = RuntimeExecution.Current;
+    public RuntimeExecution ExecutionContext { get; }
 
     public bool Disposed {
       get { return disposed; }
@@ -64,7 +72,7 @@ namespace Codeless.Ecma.Runtime {
           return invocation.FunctionObject.Realm;
         }
         if (current == null) {
-          current = new RuntimeRealm();
+          current = RuntimeExecution.Current.DefaultRealm;
         }
         return current;
       }
@@ -129,10 +137,14 @@ namespace Codeless.Ecma.Runtime {
 
     public void Dispose() {
       if (!disposed) {
-        if (current == this) {
-          current = null;
+        try {
+          BeforeDisposed(this, EventArgs.Empty);
+        } finally {
+          if (current == this) {
+            current = null;
+          }
+          disposed = true;
         }
-        disposed = true;
       }
     }
 
@@ -165,7 +177,24 @@ namespace Codeless.Ecma.Runtime {
         case WellKnownObject.Uint32Array:
         case WellKnownObject.DataView:
         case WellKnownObject.SharedArrayBuffer:
+        case WellKnownObject.ArrayBuffer:
+        case WellKnownObject.TypedArray:
+        case WellKnownObject.Float32Array:
+        case WellKnownObject.Float64Array:
+        case WellKnownObject.Int8Array:
+        case WellKnownObject.Int16Array:
+        case WellKnownObject.Int32Array:
           return (WellKnownObject)((int)type + 1);
+        case WellKnownObject.Float32ArrayPrototype:
+        case WellKnownObject.Float64ArrayPrototype:
+        case WellKnownObject.Uint8ArrayPrototype:
+        case WellKnownObject.Uint8ClampedArrayPrototype:
+        case WellKnownObject.Uint16ArrayPrototype:
+        case WellKnownObject.Uint32ArrayPrototype:
+        case WellKnownObject.Int8ArrayPrototype:
+        case WellKnownObject.Int16ArrayPrototype:
+        case WellKnownObject.Int32ArrayPrototype:
+          return WellKnownObject.TypedArrayPrototype;
         case WellKnownObject.EvalErrorPrototype:
         case WellKnownObject.RangeErrorPrototype:
         case WellKnownObject.ReferenceErrorPrototype:
@@ -247,25 +276,35 @@ namespace Codeless.Ecma.Runtime {
                 hp[WellKnownProperty.Constructor] = CreateSharedDescriptor(objectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
                 ht[WellKnownProperty.Prototype] = CreateSharedDescriptor(objectProto, EcmaPropertyAttributes.None);
               }
-              DefineIntrinsicFunction(globals, ctorName, objectType, EcmaPropertyAttributes.DefaultMethodProperty);
+              if (ctorAttr.Global) {
+                DefineIntrinsicFunction(globals, ctorName, objectType, EcmaPropertyAttributes.DefaultMethodProperty);
+              }
             } else {
               object[] propAttrs = member.GetCustomAttributes(typeof(IntrinsicMemberAttribute), false);
               if (propAttrs.Length > 0) {
+                int thisIndex = objectIndex;
+                if (member.HasAttribute(out AliasOfAttribute aliasOf)) {
+                  EcmaPropertyKey aliasOfKey = aliasOf.Name != null ? (EcmaPropertyKey)aliasOf.Name : aliasOf.Symbol;
+                  if (!properties[(int)aliasOf.ObjectType].TryGetValue(aliasOfKey, out EcmaPropertyDescriptor descriptor)) {
+                    throw new InvalidOperationException();
+                  }
+                  thisIndex = descriptor.Value.ToInt32();
+                }
                 foreach (IntrinsicMemberAttribute propAttr in propAttrs) {
                   EcmaPropertyKey name = GetNameFromMember(propAttr, member);
                   switch (member.MemberType) {
                     case MemberTypes.Method:
                       if (propAttr.Getter) {
-                        DefineIntrinsicAccessorProperty(ht, name, objectIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty), true);
+                        DefineIntrinsicAccessorProperty(ht, name, thisIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty), true);
                       } else if (propAttr.Setter) {
-                        DefineIntrinsicAccessorProperty(ht, name, objectIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty), false);
+                        DefineIntrinsicAccessorProperty(ht, name, thisIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty), false);
                       } else if (((MethodInfo)member).IsStatic) {
-                        DefineIntrinsicFunction(ht, name, objectIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
+                        DefineIntrinsicFunction(ht, name, thisIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
                         if (propAttr.Global) {
-                          DefineIntrinsicFunction(globals, name, objectIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
+                          DefineIntrinsicFunction(globals, name, thisIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
                         }
                       } else {
-                        DefineIntrinsicFunction(hp, name, objectIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
+                        DefineIntrinsicFunction(hp, name, thisIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
                       }
                       break;
                     case MemberTypes.Property:
@@ -276,7 +315,7 @@ namespace Codeless.Ecma.Runtime {
                       break;
                   }
                 }
-                if (member.MemberType == MemberTypes.Method) {
+                if (member.MemberType == MemberTypes.Method && thisIndex == objectIndex) {
                   IntrinsicMemberAttribute propAttr = (IntrinsicMemberAttribute)propAttrs[0];
                   EcmaPropertyKey name = GetNameFromMember(propAttr, member);
                   string runtimeName = (propAttr.Getter ? "get " : propAttr.Setter ? "set " : "") + (name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name);
