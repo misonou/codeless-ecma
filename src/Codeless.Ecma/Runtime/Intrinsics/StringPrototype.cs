@@ -26,7 +26,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue CharAt([This] EcmaValue value, EcmaValue index) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       EcmaValue pos = index.ToInteger();
       if (pos < 0 || pos >= str.Length) {
         return String.Empty;
@@ -37,7 +37,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue CharCodeAt([This] EcmaValue value, EcmaValue index) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       EcmaValue pos = index.ToInteger();
       if (pos < 0 || pos >= str.Length) {
         return EcmaValue.NaN;
@@ -48,7 +48,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue CodePointAt([This] EcmaValue value, EcmaValue index) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       EcmaValue pos = index.ToInteger();
       if (pos < 0 || pos >= str.Length) {
         return default;
@@ -67,9 +67,9 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue Concat([This] EcmaValue value, params EcmaValue[] args) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       foreach (EcmaValue v in args) {
-        str += v.ToString(true);
+        str += v.ToStringOrThrow();
       }
       return str;
     }
@@ -77,16 +77,16 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue IndexOf([This] EcmaValue value, EcmaValue needle, EcmaValue position) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
-      string searchString = needle.ToString(true);
+      string str = value.ToStringOrThrow();
+      string searchString = needle.ToStringOrThrow();
       return str.IndexOf(searchString, position.ToInteger(0, str.Length));
     }
 
     [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue LastIndexOf([This] EcmaValue value, EcmaValue needle, EcmaValue position) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
-      string searchString = needle.ToString(true);
+      string str = value.ToStringOrThrow();
+      string searchString = needle.ToStringOrThrow();
       EcmaValue pos = position.ToNumber();
       if (pos.IsNaN || !pos.IsFinite) {
         return searchString == "" ? str.Length : str.LastIndexOf(searchString);
@@ -98,13 +98,13 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue LocaleCompare([This] EcmaValue value, EcmaValue comparand) {
       Guard.RequireObjectCoercible(value);
-      return String.Compare(value.ToString(true).Normalize(), comparand.ToString(true).Normalize());
+      return String.Compare(value.ToStringOrThrow().Normalize(), comparand.ToStringOrThrow().Normalize());
     }
 
     [IntrinsicMember]
     public static EcmaValue ToLowerCase([This] EcmaValue value) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true).ToLowerInvariant();
+      string str = value.ToStringOrThrow().ToLowerInvariant();
       StringBuilder sb = new StringBuilder(str.Length);
       for (int i = 0, len = str.Length; i < len; i++) {
         char ch = str[i];
@@ -144,7 +144,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue ToUpperCase([This] EcmaValue value) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true).ToUpperInvariant();
+      string str = value.ToStringOrThrow().ToUpperInvariant();
       StringBuilder sb = new StringBuilder(str.Length);
       for (int i = 0, len = str.Length; i < len; i++) {
         char ch = str[i];
@@ -166,9 +166,9 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue PadStart([This] EcmaValue value, EcmaValue maxLength, EcmaValue fillString) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       int intMaxLength = maxLength.ToInt32();
-      string filler = fillString == default ? " " : fillString.ToString(true);
+      string filler = fillString == default ? " " : fillString.ToStringOrThrow();
       if (intMaxLength <= str.Length) {
         return str;
       }
@@ -184,9 +184,9 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue PadEnd([This] EcmaValue value, EcmaValue maxLength, EcmaValue fillString) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       int intMaxLength = maxLength.ToInt32();
-      string filler = fillString == default ? " " : fillString.ToString(true);
+      string filler = fillString == default ? " " : fillString.ToStringOrThrow();
       if (intMaxLength <= str.Length) {
         return str;
       }
@@ -202,11 +202,11 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue EndsWith([This] EcmaValue value, EcmaValue searchString, EcmaValue endPosition) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       if (searchString.IsRegExp) {
         throw new EcmaTypeErrorException("First argument to String.prototype.endsWith must not be a regular expression");
       }
-      string needle = searchString.ToString(true);
+      string needle = searchString.ToStringOrThrow();
       int pos = endPosition == default ? str.Length : endPosition.ToInteger(0, str.Length);
       if (needle.Length == 0) {
         return true;
@@ -220,11 +220,11 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue StartsWith([This] EcmaValue value, EcmaValue searchString, EcmaValue startPosition) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       if (searchString.IsRegExp) {
         throw new EcmaTypeErrorException("First argument to String.prototype.startsWith must not be a regular expression");
       }
-      string needle = searchString.ToString(true);
+      string needle = searchString.ToStringOrThrow();
       int pos = startPosition == default ? 0 : startPosition.ToInteger(0, str.Length);
       if (needle.Length == 0) {
         return true;
@@ -238,20 +238,20 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue Includes([This] EcmaValue value, EcmaValue searchString, EcmaValue position) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       if (searchString.IsRegExp) {
         throw new EcmaTypeErrorException("First argument to String.prototype.includes must not be a regular expression");
       }
       if (position.Type != EcmaValueType.Undefined) {
         str = str.Substring(position.ToInteger(0, str.Length));
       }
-      return str.Contains(searchString.ToString(true));
+      return str.Contains(searchString.ToStringOrThrow());
     }
 
     [IntrinsicMember]
     public static EcmaValue Repeat([This] EcmaValue value, EcmaValue count) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       EcmaValue num = count.ToInteger();
       if (num < 0 || !num.IsFinite) {
         throw new EcmaRangeErrorException("First argument to String.prototype.repeat must be positive and finite");
@@ -271,7 +271,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (form.Type == EcmaValueType.Undefined) {
         f = NormalizationForm.FormC;
       } else {
-        switch (form.ToString(true)) {
+        switch (form.ToStringOrThrow()) {
           case "NFC":
             f = NormalizationForm.FormC;
             break;
@@ -288,13 +288,13 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
             throw new EcmaRangeErrorException("First argument to String.prototype.normalize must be one of the following values: NFC, NFD, NFKC, NFKD");
         }
       }
-      return value.ToString(true).Normalize(f);
+      return value.ToStringOrThrow().Normalize(f);
     }
 
     [IntrinsicMember]
     public static EcmaValue Substr([This] EcmaValue value, EcmaValue start, EcmaValue length) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       int pos = start.ToInteger(-str.Length, str.Length);
       if (pos < 0) {
         pos = pos + str.Length;
@@ -309,7 +309,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue Substring([This] EcmaValue value, EcmaValue start, EcmaValue end) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       int spos = start.ToInteger(0, str.Length);
       int epos = end == default ? str.Length : end.ToInteger(0, str.Length);
       if (epos < spos) {
@@ -321,27 +321,27 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue Trim([This] EcmaValue value) {
       Guard.RequireObjectCoercible(value);
-      return value.ToString(true).Trim(trimChars);
+      return value.ToStringOrThrow().Trim(trimChars);
     }
 
     [IntrinsicMember]
     [IntrinsicMember("TrimLeft")]
     public static EcmaValue TrimStart([This] EcmaValue value) {
       Guard.RequireObjectCoercible(value);
-      return value.ToString(true).TrimStart(trimChars);
+      return value.ToStringOrThrow().TrimStart(trimChars);
     }
 
     [IntrinsicMember]
     [IntrinsicMember("TrimRight")]
     public static EcmaValue TrimEnd([This] EcmaValue value) {
       Guard.RequireObjectCoercible(value);
-      return value.ToString(true).TrimEnd(trimChars);
+      return value.ToStringOrThrow().TrimEnd(trimChars);
     }
 
     [IntrinsicMember]
     public static EcmaValue Slice([This] EcmaValue value, EcmaValue start, EcmaValue end) {
       Guard.RequireObjectCoercible(value);
-      string str = value.ToString(true);
+      string str = value.ToStringOrThrow();
       int spos = start.ToInteger(-str.Length, str.Length);
       int epos = end == default ? str.Length : end.ToInteger(-str.Length, str.Length);
       spos = spos < 0 ? spos + str.Length : spos;
@@ -358,8 +358,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
           return handler.Call(searcher, value);
         }
       }
-      string str = value.ToString(true);
-      EcmaValue regex = EcmaRegExp.Parse(searcher == default ? "" : searcher.ToString(true), "");
+      string str = value.ToStringOrThrow();
+      EcmaValue regex = EcmaRegExp.Parse(searcher == default ? "" : searcher.ToStringOrThrow(), "");
       return regex.Invoke(WellKnownSymbol.Match, str);
     }
 
@@ -372,8 +372,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
           return handler.Call(searcher, value);
         }
       }
-      string str = value.ToString(true);
-      EcmaValue regex = EcmaRegExp.Parse(searcher == default ? "" : searcher.ToString(true), "g");
+      string str = value.ToStringOrThrow();
+      EcmaValue regex = EcmaRegExp.Parse(searcher == default ? "" : searcher.ToStringOrThrow(), "g");
       return regex.Invoke(WellKnownSymbol.MatchAll, str);
     }
 
@@ -386,13 +386,13 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
           return handler.Call(searcher, value, replacement);
         }
       }
-      string str = value.ToString(true);
-      string needle = searcher.ToString(true);
+      string str = value.ToStringOrThrow();
+      string needle = searcher.ToStringOrThrow();
       int index = str.IndexOf(needle);
       if (index < 0) {
         return str;
       }
-      string newStr = (replacement.IsCallable ? replacement.Call(EcmaValue.Undefined, needle, index, str) : replacement).ToString(true);
+      string newStr = (replacement.IsCallable ? replacement.Call(EcmaValue.Undefined, needle, index, str) : replacement).ToStringOrThrow();
       return str.Substring(0, index) + newStr + str.Substring(index + needle.Length);
     }
 
@@ -405,8 +405,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
           return handler.Call(searcher, value);
         }
       }
-      string str = value.ToString(true);
-      EcmaValue regex = EcmaRegExp.Parse(searcher == default ? "" : searcher.ToString(true), "");
+      string str = value.ToStringOrThrow();
+      EcmaValue regex = EcmaRegExp.Parse(searcher == default ? "" : searcher.ToStringOrThrow(), "");
       return regex.Invoke(WellKnownSymbol.Search, str);
     }
 
@@ -419,8 +419,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
           return handler.Call(searcher, value, limit);
         }
       }
-      string str = value.ToString(true);
-      string separator = searcher.ToString(true);
+      string str = value.ToStringOrThrow();
+      string separator = searcher.ToStringOrThrow();
       int count = unchecked((int)limit.ToUInt32());
       if (separator.Length == 0) {
         EcmaValue[] arr = new EcmaValue[str.Length];
@@ -439,7 +439,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(WellKnownSymbol.Iterator)]
     public static EcmaValue Iterator([This] EcmaValue value) {
       Guard.RequireObjectCoercible(value);
-      return new EcmaIterator(new EcmaStringEnumerator(value.ToString(true)), EcmaIteratorResultKind.Value, WellKnownObject.StringIteratorPrototype);
+      return new EcmaIterator(new EcmaStringEnumerator(value.ToStringOrThrow()), EcmaIteratorResultKind.Value, WellKnownObject.StringIteratorPrototype);
     }
 
     private static string MapLowerSpecialCase(char ch) {

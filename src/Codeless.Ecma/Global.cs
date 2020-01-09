@@ -20,35 +20,6 @@ namespace Codeless.Ecma {
     [IntrinsicMember("undefined", EcmaPropertyAttributes.None)]
     public static readonly EcmaValue Undefined = EcmaValue.Undefined;
 
-    public static readonly EcmaValue Null = EcmaValue.Null;
-
-    public static EcmaValue This {
-      get {
-        RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
-        if (invocation != null && invocation.NewTarget != null && invocation.Super != null && !invocation.Super.ConstructorInvoked) {
-          throw new EcmaReferenceErrorException(InternalString.Error.SuperConstructorNotCalled);
-        }
-        return invocation != null ? invocation.ThisValue : GlobalThis;
-      }
-    }
-
-    public static ArgumentList Arguments {
-      get {
-        RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
-        return invocation != null ? invocation.Arguments : default;
-      }
-    }
-
-    public static SuperAccessor Super {
-      get {
-        RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
-        if (invocation == null || invocation.Super == null) {
-          throw new EcmaSyntaxErrorException(InternalString.Error.UnexpectedSuper);
-        }
-        return invocation.Super;
-      }
-    }
-
     public static RuntimeObject GlobalThis => (RuntimeObject)WellKnownObject.Global;
 
     public static RuntimeObject Atomics => (RuntimeObject)WellKnownObject.Atomics;
@@ -92,7 +63,7 @@ namespace Codeless.Ecma {
     public static RuntimeFunction WeakSet => (RuntimeFunction)WellKnownObject.WeakSetConstructor;
 
     public static RuntimeFunction EvalError => (RuntimeFunction)WellKnownObject.EvalError;
- 
+
     public static RuntimeFunction RangeError => (RuntimeFunction)WellKnownObject.RangeError;
 
     public static RuntimeFunction ReferenceError => (RuntimeFunction)WellKnownObject.ReferenceError;
@@ -127,37 +98,6 @@ namespace Codeless.Ecma {
 
     public static RuntimeFunction Uint32Array => (RuntimeFunction)WellKnownObject.Uint32Array;
 
-    public static EcmaValue Void(params EcmaValue[] exp) {
-      return EcmaValue.Undefined;
-    }
-
-    public static EcmaValue Return(params EcmaValue[] exp) {
-      return exp == null || exp.Length == 0 ? EcmaValue.Undefined : exp[exp.Length - 1];
-    }
-
-    public static EcmaValue Throw(EcmaValue value) {
-      throw new EcmaRuntimeException(value);
-    }
-
-    [EcmaSpecification("typeof", EcmaSpecificationKind.RuntimeSemantics)]
-    public static string TypeOf(EcmaValue value) {
-      switch (value.Type) {
-        case EcmaValueType.Undefined:
-          return InternalString.TypeOf.Undefined;
-        case EcmaValueType.Null:
-          return InternalString.TypeOf.Object;
-        case EcmaValueType.Boolean:
-          return InternalString.TypeOf.Boolean;
-        case EcmaValueType.Number:
-          return InternalString.TypeOf.Number;
-        case EcmaValueType.String:
-          return InternalString.TypeOf.String;
-        case EcmaValueType.Symbol:
-          return InternalString.TypeOf.Symbol;
-      }
-      return value.IsCallable ? InternalString.TypeOf.Function : InternalString.TypeOf.Object;
-    }
-
     [IntrinsicMember]
     public static EcmaValue IsFinite(EcmaValue value) {
       return value.ToNumber().IsFinite;
@@ -169,43 +109,43 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue ParseInt(EcmaValue str, EcmaValue radix) {
-      string inputString = str.ToString(true);
+      string inputString = str.ToStringOrThrow();
       return EcmaValueUtility.ParseIntInternal(inputString, radix.ToInt32(), true);
     }
 
     public static EcmaValue ParseFloat(EcmaValue str) {
-      string inputString = str.ToString(true);
+      string inputString = str.ToStringOrThrow();
       return EcmaValueUtility.ParseFloatInternal(inputString, true);
     }
 
     [IntrinsicMember]
     public static EcmaValue EncodeURI(EcmaValue str) {
-      string inputString = str.ToString(true);
+      string inputString = str.ToStringOrThrow();
       CheckLoneSurrogate(inputString);
       return Uri.EscapeUriString(inputString);
     }
 
     [IntrinsicMember]
     public static EcmaValue DecodeURI(EcmaValue str) {
-      return Decode(str.ToString(true), ";/?:@&=+$,#", true, true);
+      return Decode(str.ToStringOrThrow(), ";/?:@&=+$,#", true, true);
     }
 
     [IntrinsicMember]
     public static EcmaValue EncodeURIComponent(EcmaValue str) {
-      string inputString = str.ToString(true);
+      string inputString = str.ToStringOrThrow();
       CheckLoneSurrogate(inputString);
       return Uri.EscapeDataString(inputString);
     }
 
     [IntrinsicMember]
     public static EcmaValue DecodeURIComponent(EcmaValue str) {
-      return Decode(str.ToString(true), "", true, true);
+      return Decode(str.ToStringOrThrow(), "", true, true);
     }
 
     [IntrinsicMember]
     public static EcmaValue Escape(EcmaValue str) {
       StringBuilder sb = new StringBuilder();
-      foreach (char ch in str.ToString(true)) {
+      foreach (char ch in str.ToStringOrThrow()) {
         if (ch == '*' || ch == '+' || ch == '-' || ch == '.' || ch == '/' || ch == '@' || ch == '_' || IsAlphaNumericCharPoint(ch)) {
           sb.Append(ch);
         } else if (ch < 256) {
@@ -219,7 +159,7 @@ namespace Codeless.Ecma {
 
     [IntrinsicMember]
     public static EcmaValue Unescape(EcmaValue str) {
-      return Decode(str.ToString(true), "", false, false);
+      return Decode(str.ToStringOrThrow(), "", false, false);
     }
 
     [IntrinsicMember]

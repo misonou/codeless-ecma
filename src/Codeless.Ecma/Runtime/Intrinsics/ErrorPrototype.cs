@@ -18,8 +18,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       Guard.ArgumentIsObject(thisValue);
       EcmaValue name = thisValue[WellKnownProperty.Name];
       EcmaValue msg = thisValue[WellKnownProperty.Message];
-      string strName = (name == default) ? ErrorPrototype.Name : name.ToString(true);
-      string strMsg = (msg == default) ? String.Empty : msg.ToString(true);
+      string strName = (name == default) ? ErrorPrototype.Name : name.ToStringOrThrow();
+      string strMsg = (msg == default) ? String.Empty : msg.ToStringOrThrow();
       if (strName == "") {
         return strMsg;
       }
@@ -31,7 +31,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
   }
 
   #region NativeError
-  [IntrinsicObject(WellKnownObject.EvalErrorPrototype)]
+  [IntrinsicObject(WellKnownObject.EvalErrorPrototype, Prototype = WellKnownObject.ErrorPrototype)]
   internal static class EvalErrorPrototype {
     [IntrinsicMember]
     public const string Message = "";
@@ -40,7 +40,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public const string Name = "EvalError";
   }
 
-  [IntrinsicObject(WellKnownObject.RangeErrorPrototype)]
+  [IntrinsicObject(WellKnownObject.RangeErrorPrototype, Prototype = WellKnownObject.ErrorPrototype)]
   internal static class RangeErrorPrototype {
     [IntrinsicMember]
     public const string Message = "";
@@ -49,7 +49,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public const string Name = "RangeError";
   }
 
-  [IntrinsicObject(WellKnownObject.ReferenceErrorPrototype)]
+  [IntrinsicObject(WellKnownObject.ReferenceErrorPrototype, Prototype = WellKnownObject.ErrorPrototype)]
   internal static class ReferenceErrorPrototype {
     [IntrinsicMember]
     public const string Message = "";
@@ -58,7 +58,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public const string Name = "ReferenceError";
   }
 
-  [IntrinsicObject(WellKnownObject.SyntaxErrorPrototype)]
+  [IntrinsicObject(WellKnownObject.SyntaxErrorPrototype, Prototype = WellKnownObject.ErrorPrototype)]
   internal static class SyntaxErrorPrototype {
     [IntrinsicMember]
     public const string Message = "";
@@ -67,7 +67,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public const string Name = "SyntaxError";
   }
 
-  [IntrinsicObject(WellKnownObject.TypeErrorPrototype)]
+  [IntrinsicObject(WellKnownObject.TypeErrorPrototype, Prototype = WellKnownObject.ErrorPrototype)]
   internal static class TypeErrorPrototype {
     [IntrinsicMember]
     public const string Message = "";
@@ -76,7 +76,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public const string Name = "TypeError";
   }
 
-  [IntrinsicObject(WellKnownObject.UriErrorPrototype)]
+  [IntrinsicObject(WellKnownObject.UriErrorPrototype, Prototype = WellKnownObject.ErrorPrototype)]
   internal static class UriErrorPrototype {
     [IntrinsicMember]
     public const string Message = "";

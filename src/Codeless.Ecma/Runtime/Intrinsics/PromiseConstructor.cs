@@ -6,7 +6,7 @@ using System.Linq;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.PromiseConstructor)]
   internal static class PromiseConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Promise))]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Promise), Prototype = WellKnownObject.PromisePrototype)]
     public static EcmaValue Promise([This] EcmaValue thisValue, EcmaValue executor) {
       Promise promise = thisValue.GetUnderlyingObject<Promise>();
       if (!executor.IsCallable) {

@@ -34,8 +34,8 @@ namespace Codeless.Ecma.Runtime {
       if (method.HasAttribute(out IntrinsicConstructorAttribute attribute)) {
         constraint = attribute.Constraint;
         runtimeObjectType = attribute.ObjectType;
-        if (method.DeclaringType.HasAttribute(out IntrinsicObjectAttribute a1)) {
-          defaultProto = RuntimeRealm.GetPrototypeOf(a1.ObjectType);
+        if (attribute.Prototype != 0) {
+          defaultProto = attribute.Prototype;
         }
       } else if (method.HasAttribute(out IntrinsicMemberAttribute a2)) {
         constraint = NativeRuntimeFunctionConstraint.DenyConstruct;

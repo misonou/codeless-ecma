@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.TypedArray)]
   internal static class TypedArrayConstructor {
-    [IntrinsicConstructor(Global = false)]
+    [IntrinsicConstructor(Global = false, Prototype = WellKnownObject.TypedArrayPrototype)]
     public static void TypedArray() {
       throw new EcmaTypeErrorException(InternalString.Error.TypedArrayIsAbstract);
     }
@@ -155,7 +155,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(float);
 
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Float32Array), SuperClass = WellKnownObject.TypedArray)]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Float32Array), SuperClass = WellKnownObject.TypedArray, Prototype = WellKnownObject.Float32ArrayPrototype)]
     [IntrinsicMember(FunctionLength = 3)]
     public static EcmaValue Float32Array([This] EcmaValue thisValue, params EcmaValue[] args) {
       return TypedArrayConstructor.ConstructTypedArray(TypedArrayKind.Float32Array, thisValue, args);
@@ -167,7 +167,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(double);
 
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Float64Array), SuperClass = WellKnownObject.TypedArray)]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Float64Array), SuperClass = WellKnownObject.TypedArray, Prototype = WellKnownObject.Float64ArrayPrototype)]
     [IntrinsicMember(FunctionLength = 3)]
     public static EcmaValue Float64Array([This] EcmaValue thisValue, params EcmaValue[] args) {
       return TypedArrayConstructor.ConstructTypedArray(TypedArrayKind.Float64Array, thisValue, args);
@@ -179,7 +179,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(sbyte);
 
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Int8Array), SuperClass = WellKnownObject.TypedArray)]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Int8Array), SuperClass = WellKnownObject.TypedArray, Prototype = WellKnownObject.Int8ArrayPrototype)]
     [IntrinsicMember(FunctionLength = 3)]
     public static EcmaValue Int8Array([This] EcmaValue thisValue, params EcmaValue[] args) {
       return TypedArrayConstructor.ConstructTypedArray(TypedArrayKind.Int8Array, thisValue, args);
@@ -191,7 +191,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(short);
 
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Int16Array), SuperClass = WellKnownObject.TypedArray)]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Int16Array), SuperClass = WellKnownObject.TypedArray, Prototype = WellKnownObject.Int16ArrayPrototype)]
     [IntrinsicMember(FunctionLength = 3)]
     public static EcmaValue Int16Array([This] EcmaValue thisValue, params EcmaValue[] args) {
       return TypedArrayConstructor.ConstructTypedArray(TypedArrayKind.Int16Array, thisValue, args);
@@ -203,7 +203,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(int);
 
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Int32Array), SuperClass = WellKnownObject.TypedArray)]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Int32Array), SuperClass = WellKnownObject.TypedArray, Prototype = WellKnownObject.Int32ArrayPrototype)]
     [IntrinsicMember(FunctionLength = 3)]
     public static EcmaValue Int32Array([This] EcmaValue thisValue, params EcmaValue[] args) {
       return TypedArrayConstructor.ConstructTypedArray(TypedArrayKind.Int32Array, thisValue, args);
@@ -215,7 +215,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(byte);
 
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Uint8Array), SuperClass = WellKnownObject.TypedArray)]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Uint8Array), SuperClass = WellKnownObject.TypedArray, Prototype = WellKnownObject.Uint8ArrayPrototype)]
     [IntrinsicMember(FunctionLength = 3)]
     public static EcmaValue Uint8Array([This] EcmaValue thisValue, params EcmaValue[] args) {
       return TypedArrayConstructor.ConstructTypedArray(TypedArrayKind.Uint8Array, thisValue, args);
@@ -227,7 +227,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(byte);
 
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Uint8ClampedArray), SuperClass = WellKnownObject.TypedArray)]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Uint8ClampedArray), SuperClass = WellKnownObject.TypedArray, Prototype = WellKnownObject.Uint8ClampedArrayPrototype)]
     [IntrinsicMember(FunctionLength = 3)]
     public static EcmaValue Uint8ClampedArray([This] EcmaValue thisValue, params EcmaValue[] args) {
       return TypedArrayConstructor.ConstructTypedArray(TypedArrayKind.Uint8ClampedArray, thisValue, args);
@@ -239,7 +239,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(ushort);
 
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Uint16Array), SuperClass = WellKnownObject.TypedArray)]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Uint16Array), SuperClass = WellKnownObject.TypedArray, Prototype = WellKnownObject.Uint16ArrayPrototype)]
     [IntrinsicMember(FunctionLength = 3)]
     public static EcmaValue Uint16Array([This] EcmaValue thisValue, params EcmaValue[] args) {
       return TypedArrayConstructor.ConstructTypedArray(TypedArrayKind.Uint16Array, thisValue, args);
@@ -251,7 +251,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(uint);
 
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Uint32Array), SuperClass = WellKnownObject.TypedArray)]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(Uint32Array), SuperClass = WellKnownObject.TypedArray, Prototype = WellKnownObject.Uint32ArrayPrototype)]
     [IntrinsicMember(FunctionLength = 3)]
     public static EcmaValue Uint32Array([This] EcmaValue thisValue, params EcmaValue[] args) {
       return TypedArrayConstructor.ConstructTypedArray(TypedArrayKind.Uint32Array, thisValue, args);

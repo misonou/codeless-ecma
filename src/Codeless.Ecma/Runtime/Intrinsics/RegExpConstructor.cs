@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.RegExpConstructor)]
   internal static class RegExpConstructor {
-    [IntrinsicConstructor(ObjectType = typeof(EcmaRegExp))]
+    [IntrinsicConstructor(ObjectType = typeof(EcmaRegExp), Prototype = WellKnownObject.RegExpPrototype)]
     public static EcmaValue RegExp([NewTarget] RuntimeObject newTarget, [This] EcmaValue thisValue, EcmaValue pattern, EcmaValue flags) {
       bool patternIsRegExp = pattern.IsRegExp;
       if (newTarget == null && patternIsRegExp && flags == default) {
@@ -22,13 +22,13 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       string strFlags;
       if (pattern.Type == EcmaValueType.Object && pattern.ToObject() is EcmaRegExp other) {
         strPattern = other.Source;
-        strFlags = flags == default ? (string)RegExpPrototype.Flags(other) : flags.ToString(true);
+        strFlags = flags == default ? (string)RegExpPrototype.Flags(other) : flags.ToStringOrThrow();
       } else if (patternIsRegExp) {
-        strPattern = pattern[WellKnownProperty.Source].ToString(true);
-        strFlags = flags == default ? pattern[WellKnownProperty.Flags].ToString(true) : flags.ToString(true);
+        strPattern = pattern[WellKnownProperty.Source].ToStringOrThrow();
+        strFlags = flags == default ? pattern[WellKnownProperty.Flags].ToStringOrThrow() : flags.ToStringOrThrow();
       } else {
-        strPattern = pattern == default ? "" : pattern.ToString(true);
-        strFlags = flags == default ? "" : flags.ToString(true);
+        strPattern = pattern == default ? "" : pattern.ToStringOrThrow();
+        strFlags = flags == default ? "" : flags.ToStringOrThrow();
       }
       EcmaRegExp re = EcmaRegExp.Parse(strPattern, strFlags);
       if (newTarget == null) {

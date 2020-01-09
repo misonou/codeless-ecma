@@ -2,6 +2,7 @@
 using Codeless.Ecma.UnitTest.Harness;
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
+using static Codeless.Ecma.Keywords;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 

@@ -1,4 +1,5 @@
 ﻿using static Codeless.Ecma.Global;
+using static Codeless.Ecma.Keywords;
 
 namespace Codeless.Ecma.UnitTest.Harness {
   public static class ByteConversionValues {

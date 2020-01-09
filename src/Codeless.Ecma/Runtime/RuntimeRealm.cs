@@ -148,72 +148,6 @@ namespace Codeless.Ecma.Runtime {
       }
     }
 
-    public static WellKnownObject GetPrototypeOf(WellKnownObject type) {
-      switch (type) {
-        case WellKnownObject.ArrayConstructor:
-        case WellKnownObject.BooleanConstructor:
-        case WellKnownObject.DateConstructor:
-        case WellKnownObject.ErrorConstructor:
-        case WellKnownObject.FunctionConstructor:
-        case WellKnownObject.MapConstructor:
-        case WellKnownObject.NumberConstructor:
-        case WellKnownObject.ObjectConstructor:
-        case WellKnownObject.RegExpConstructor:
-        case WellKnownObject.SetConstructor:
-        case WellKnownObject.StringConstructor:
-        case WellKnownObject.SymbolConstructor:
-        case WellKnownObject.WeakMapConstructor:
-        case WellKnownObject.WeakSetConstructor:
-        case WellKnownObject.EvalError:
-        case WellKnownObject.RangeError:
-        case WellKnownObject.ReferenceError:
-        case WellKnownObject.SyntaxError:
-        case WellKnownObject.TypeError:
-        case WellKnownObject.UriError:
-        case WellKnownObject.PromiseConstructor:
-        case WellKnownObject.Uint8Array:
-        case WellKnownObject.Uint8ClampedArray:
-        case WellKnownObject.Uint16Array:
-        case WellKnownObject.Uint32Array:
-        case WellKnownObject.DataView:
-        case WellKnownObject.SharedArrayBuffer:
-        case WellKnownObject.ArrayBuffer:
-        case WellKnownObject.TypedArray:
-        case WellKnownObject.Float32Array:
-        case WellKnownObject.Float64Array:
-        case WellKnownObject.Int8Array:
-        case WellKnownObject.Int16Array:
-        case WellKnownObject.Int32Array:
-          return (WellKnownObject)((int)type + 1);
-        case WellKnownObject.Float32ArrayPrototype:
-        case WellKnownObject.Float64ArrayPrototype:
-        case WellKnownObject.Uint8ArrayPrototype:
-        case WellKnownObject.Uint8ClampedArrayPrototype:
-        case WellKnownObject.Uint16ArrayPrototype:
-        case WellKnownObject.Uint32ArrayPrototype:
-        case WellKnownObject.Int8ArrayPrototype:
-        case WellKnownObject.Int16ArrayPrototype:
-        case WellKnownObject.Int32ArrayPrototype:
-          return WellKnownObject.TypedArrayPrototype;
-        case WellKnownObject.EvalErrorPrototype:
-        case WellKnownObject.RangeErrorPrototype:
-        case WellKnownObject.ReferenceErrorPrototype:
-        case WellKnownObject.SyntaxErrorPrototype:
-        case WellKnownObject.UriErrorPrototype:
-        case WellKnownObject.TypeErrorPrototype:
-          return WellKnownObject.ErrorPrototype;
-        case WellKnownObject.ArrayIteratorPrototype:
-        case WellKnownObject.MapIteratorPrototype:
-        case WellKnownObject.SetIteratorPrototype:
-        case WellKnownObject.StringIteratorPrototype:
-        case WellKnownObject.RegExpStringIteratorPrototype:
-          return WellKnownObject.IteratorPrototype;
-        case WellKnownObject.ObjectPrototype:
-          return 0;
-      }
-      return WellKnownObject.ObjectPrototype;
-    }
-
     private static RuntimeObject EnsureWellKnownObject(WellKnownObject type) {
       int index = (int)type;
       RuntimeObject obj = sharedIntrinsics[index];
@@ -239,8 +173,8 @@ namespace Codeless.Ecma.Runtime {
             obj.SetPrototypeOf(EnsureWellKnownObject(WellKnownObject.ObjectPrototype));
             break;
           default:
-            obj = new RuntimeObject(GetPrototypeOf(type));
-            obj.SetPrototypeOf(EnsureWellKnownObject(GetPrototypeOf(type)));
+            obj = new RuntimeObject(WellKnownObject.ObjectPrototype);
+            obj.SetPrototypeOf(EnsureWellKnownObject(WellKnownObject.ObjectPrototype));
             break;
         }
         sharedIntrinsics[index] = obj;
@@ -261,20 +195,22 @@ namespace Codeless.Ecma.Runtime {
       foreach (Type t in assembly.GetTypes()) {
         if (t.HasAttribute(out IntrinsicObjectAttribute typeAttr)) {
           int objectType = (int)typeAttr.ObjectType;
-          int objectProto = (int)GetPrototypeOf(typeAttr.ObjectType);
           Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht = properties[objectType];
-          Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> hp = properties[objectProto];
 
+          if (typeAttr.Prototype != 0) {
+            EnsureWellKnownObject(typeAttr.ObjectType).SetPrototypeOf(EnsureWellKnownObject(typeAttr.Prototype));
+          }
           if (typeAttr.Global) {
             globals[typeAttr.Name ?? t.Name] = CreateSharedDescriptor(objectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
           }
           foreach (MemberInfo member in t.GetMembers()) {
             if (member.HasAttribute(out IntrinsicConstructorAttribute ctorAttr)) {
               string ctorName = ctorAttr.Name ?? member.Name;
+              int protoIndex = (int)ctorAttr.Prototype;
               sharedIntrinsics[objectType] = CreateIntrinsicFunction(ctorName, member, WellKnownObject.Global, ctorName, ctorAttr.SuperClass);
-              if (objectProto != (int)WellKnownObject.ObjectPrototype || objectType == (int)WellKnownObject.ObjectConstructor) {
-                hp[WellKnownProperty.Constructor] = CreateSharedDescriptor(objectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
-                ht[WellKnownProperty.Prototype] = CreateSharedDescriptor(objectProto, EcmaPropertyAttributes.None);
+              if (protoIndex != 0) {
+                ht[WellKnownProperty.Prototype] = CreateSharedDescriptor(protoIndex, EcmaPropertyAttributes.None);
+                properties[protoIndex][WellKnownProperty.Constructor] = CreateSharedDescriptor(objectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
               }
               if (ctorAttr.Global) {
                 DefineIntrinsicFunction(globals, ctorName, objectType, EcmaPropertyAttributes.DefaultMethodProperty);
@@ -303,8 +239,6 @@ namespace Codeless.Ecma.Runtime {
                         if (propAttr.Global) {
                           DefineIntrinsicFunction(globals, name, thisIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
                         }
-                      } else {
-                        DefineIntrinsicFunction(hp, name, thisIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
                       }
                       break;
                     case MemberTypes.Property:

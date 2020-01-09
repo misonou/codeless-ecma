@@ -223,7 +223,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Join([This] EcmaValue thisValue, EcmaValue separater) {
       TypedArray array = thisValue.GetUnderlyingObject<TypedArray>();
       Guard.BufferNotDetached(array);
-      string sep = separater.Type == EcmaValueType.Undefined ? "," : separater.ToString(true);
+      string sep = separater.Type == EcmaValueType.Undefined ? "," : separater.ToStringOrThrow();
       int length = array.Length;
       if (length == 0) {
         return String.Empty;
@@ -234,7 +234,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
           sb.Append(sep);
         }
         EcmaValue item = array.GetValueFromBuffer(i);
-        sb.Append(item.ToString(true));
+        sb.Append(item.ToStringOrThrow());
       }
       return sb.ToString();
     }
@@ -453,7 +453,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
           sb.Append(",");
         }
         EcmaValue item = array.GetValueFromBuffer(i);
-        sb.Append(item.Invoke("toLocaleString").ToString(true));
+        sb.Append(item.Invoke("toLocaleString").ToStringOrThrow());
       }
       return sb.ToString();
     }
@@ -466,55 +466,55 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
   }
 
   #region Derived prototype objects
-  [IntrinsicObject(WellKnownObject.Float32ArrayPrototype)]
+  [IntrinsicObject(WellKnownObject.Float32ArrayPrototype, Prototype = WellKnownObject.TypedArrayPrototype)]
   internal static class Float32TypedArrayPrototype {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(float);
   }
 
-  [IntrinsicObject(WellKnownObject.Float64ArrayPrototype)]
+  [IntrinsicObject(WellKnownObject.Float64ArrayPrototype, Prototype = WellKnownObject.TypedArrayPrototype)]
   internal static class Float64TypedArrayPrototype {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(double);
   }
 
-  [IntrinsicObject(WellKnownObject.Int8ArrayPrototype)]
+  [IntrinsicObject(WellKnownObject.Int8ArrayPrototype, Prototype = WellKnownObject.TypedArrayPrototype)]
   internal static class Int8ArrayPrototype {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(sbyte);
   }
 
-  [IntrinsicObject(WellKnownObject.Int16ArrayPrototype)]
+  [IntrinsicObject(WellKnownObject.Int16ArrayPrototype, Prototype = WellKnownObject.TypedArrayPrototype)]
   internal static class Int16ArrayPrototype {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(short);
   }
 
-  [IntrinsicObject(WellKnownObject.Int32ArrayPrototype)]
+  [IntrinsicObject(WellKnownObject.Int32ArrayPrototype, Prototype = WellKnownObject.TypedArrayPrototype)]
   internal static class Int32ArrayPrototype {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(int);
   }
 
-  [IntrinsicObject(WellKnownObject.Uint8ArrayPrototype)]
+  [IntrinsicObject(WellKnownObject.Uint8ArrayPrototype, Prototype = WellKnownObject.TypedArrayPrototype)]
   internal static class Uint8ArrayPrototype {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(byte);
   }
 
-  [IntrinsicObject(WellKnownObject.Uint8ClampedArrayPrototype)]
+  [IntrinsicObject(WellKnownObject.Uint8ClampedArrayPrototype, Prototype = WellKnownObject.TypedArrayPrototype)]
   internal static class Uint8ClampedArrayPrototype {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(byte);
   }
 
-  [IntrinsicObject(WellKnownObject.Uint16ArrayPrototype)]
+  [IntrinsicObject(WellKnownObject.Uint16ArrayPrototype, Prototype = WellKnownObject.TypedArrayPrototype)]
   internal static class Uint16ArrayPrototype {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(ushort);
   }
 
-  [IntrinsicObject(WellKnownObject.Uint32ArrayPrototype)]
+  [IntrinsicObject(WellKnownObject.Uint32ArrayPrototype, Prototype = WellKnownObject.TypedArrayPrototype)]
   internal static class Uint32ArrayPrototype {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(uint);

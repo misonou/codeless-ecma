@@ -80,7 +80,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
       [IntrinsicMember(null)]
       private EcmaValue ThrowOriginalValue(EcmaValue _) {
-        Global.Throw(originalValue);
+        Keywords.Throw(originalValue);
         return EcmaValue.Undefined;
       }
     }

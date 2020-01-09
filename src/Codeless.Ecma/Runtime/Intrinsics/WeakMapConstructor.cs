@@ -3,7 +3,7 @@
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.WeakMapConstructor)]
   internal static class WeakMapConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(EcmaWeakMap))]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(EcmaWeakMap), Prototype = WellKnownObject.WeakMapPrototype)]
     [IntrinsicMember(FunctionLength = 0)]
     public static EcmaValue WeakMap([This] EcmaValue thisValue, EcmaValue iterable) {
       if (!iterable.IsNullOrUndefined) {

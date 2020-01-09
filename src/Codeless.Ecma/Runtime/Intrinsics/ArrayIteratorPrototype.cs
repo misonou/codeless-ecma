@@ -1,7 +1,7 @@
 ﻿using System;
 
 namespace Codeless.Ecma.Runtime.Intrinsics {
-  [IntrinsicObject(WellKnownObject.ArrayIteratorPrototype)]
+  [IntrinsicObject(WellKnownObject.ArrayIteratorPrototype, Prototype = WellKnownObject.IteratorPrototype)]
   internal static class ArrayIteratorPrototype {
     [IntrinsicMember(WellKnownSymbol.ToStringTag, EcmaPropertyAttributes.Configurable)]
     public static string ToStringTag = InternalString.ObjectTag.ArrayIterator;

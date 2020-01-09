@@ -3,7 +3,6 @@ using Codeless.Ecma.Diagnostics.VisualStudio;
 using Codeless.Ecma.Primitives;
 using Codeless.Ecma.Runtime;
 using Codeless.Ecma.Runtime.Intrinsics;
-using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -519,15 +518,20 @@ namespace Codeless.Ecma {
       try {
         return binder.ToString(handle);
       } catch {
-        return base.ToString();
+        return this.Type == EcmaValueType.Symbol ? this.ToSymbol().ToString() : base.ToString();
       }
     }
 
-    [EcmaSpecification("ToString", EcmaSpecificationKind.AbstractOperations)]
+    [Obsolete("Use the more intuitive method ToStringOrThrow instead")]
     public string ToString(bool throwForSymbol) {
-      if (throwForSymbol && this.Type == EcmaValueType.Symbol) {
-        throw new EcmaTypeErrorException(InternalString.Error.SymbolNotConvertibleToString);
+      if (!throwForSymbol && this.Type == EcmaValueType.Symbol) {
+        return this.ToSymbol().ToString();
       }
+      return ToStringOrThrow();
+    }
+
+    [EcmaSpecification("ToString", EcmaSpecificationKind.AbstractOperations)]
+    public string ToStringOrThrow() {
       return binder.ToString(handle);
     }
 
@@ -818,7 +822,7 @@ namespace Codeless.Ecma {
 
     #region Operator overloading
     public static explicit operator string(EcmaValue value) {
-      return value.ToString(true);
+      return value.ToStringOrThrow();
     }
 
     public static explicit operator bool(EcmaValue value) {

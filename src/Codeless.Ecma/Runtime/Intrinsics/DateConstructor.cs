@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.DateConstructor)]
   internal static class DateConstructor {
-    [IntrinsicConstructor(ObjectType = typeof(EcmaDate))]
+    [IntrinsicConstructor(ObjectType = typeof(EcmaDate), Prototype = WellKnownObject.DatePrototype)]
     [IntrinsicMember(FunctionLength = 7)]
     public static EcmaValue Date([NewTarget] RuntimeObject constructor, [This] EcmaValue thisValue, params EcmaValue[] args) {
       if (constructor == null) {
@@ -72,7 +72,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static EcmaValue Parse(EcmaValue str) {
-      EcmaTimestamp ts = ParseInternal(str.ToString(true));
+      EcmaTimestamp ts = ParseInternal(str.ToStringOrThrow());
       return ts.IsValid ? ts.Value : EcmaValue.NaN;
     }
 

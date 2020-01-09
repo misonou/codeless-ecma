@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System.Collections;
 using System.Collections.Generic;
 using static Codeless.Ecma.Global;
+using static Codeless.Ecma.Keywords;
 using static Codeless.Ecma.UnitTest.Assert;
 
 namespace Codeless.Ecma.UnitTest.Tests {

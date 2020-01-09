@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma.Runtime.Intrinsics {
-  [IntrinsicObject(WellKnownObject.ObjectPrototype)]
+  [IntrinsicObject(WellKnownObject.ObjectPrototype, Prototype = 0)]
   internal static class ObjectPrototype {
     [IntrinsicMember]
     public static EcmaValue HasOwnProperty([This] EcmaValue thisValue, EcmaValue key) {

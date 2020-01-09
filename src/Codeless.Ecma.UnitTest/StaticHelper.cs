@@ -14,7 +14,7 @@ namespace Codeless.Ecma.UnitTest {
 
     public static readonly Func<EcmaValue> Noop = () => EcmaValue.Undefined;
 
-    public static readonly Action DerivedCtor = () => Global.Super.Construct(EcmaValueUtility.CreateListFromArrayLike(Global.Arguments));
+    public static readonly Action DerivedCtor = () => Keywords.Super.Construct(EcmaValueUtility.CreateListFromArrayLike(Keywords.Arguments));
 
     public static readonly Action UnexpectedFulfill = () => NUnit.Framework.Assert.Fail("Promise should not be fulfilled");
 
@@ -114,49 +114,49 @@ namespace Codeless.Ecma.UnitTest {
 
     public static Action Intercept(Action fn, string message = null) {
       return () => {
-        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        Logs.Add(message != null ? String.Format(message, Keywords.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
         fn();
       };
     }
 
     public static Action<EcmaValue> Intercept(Action<EcmaValue> fn, string message = null) {
       return (a) => {
-        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        Logs.Add(message != null ? String.Format(message, Keywords.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
         fn(a);
       };
     }
 
     public static Action<EcmaValue, EcmaValue> Intercept(Action<EcmaValue, EcmaValue> fn, string message = null) {
       return (a, b) => {
-        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        Logs.Add(message != null ? String.Format(message, Keywords.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
         fn(a, b);
       };
     }
 
     public static Func<EcmaValue> Intercept(Func<EcmaValue> fn, string message = null) {
       return () => {
-        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        Logs.Add(message != null ? String.Format(message, Keywords.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
         return fn();
       };
     }
 
     public static Func<EcmaValue, EcmaValue> Intercept(Func<EcmaValue, EcmaValue> fn, string message = null) {
       return (a) => {
-        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        Logs.Add(message != null ? String.Format(message, Keywords.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
         return fn(a);
       };
     }
 
     public static Func<EcmaValue, EcmaValue, EcmaValue> Intercept(Func<EcmaValue, EcmaValue, EcmaValue> fn, string message = null) {
       return (a, b) => {
-        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        Logs.Add(message != null ? String.Format(message, Keywords.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
         return fn(a, b);
       };
     }
 
     public static Func<EcmaValue, EcmaValue, EcmaValue, EcmaValue> Intercept(Func<EcmaValue, EcmaValue, EcmaValue, EcmaValue> fn, string message = null) {
       return (a, b, c) => {
-        Logs.Add(message != null ? String.Format(message, Global.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
+        Logs.Add(message != null ? String.Format(message, Keywords.Arguments.Select(v => new ValueHolder(v)).ToArray()) : null);
         return fn(a, b, c);
       };
     }

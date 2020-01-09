@@ -1,5 +1,5 @@
 ﻿namespace Codeless.Ecma.Runtime.Intrinsics {
-  [IntrinsicObject(WellKnownObject.MapIteratorPrototype)]
+  [IntrinsicObject(WellKnownObject.MapIteratorPrototype, Prototype = WellKnownObject.IteratorPrototype)]
   internal static class MapIteratorPrototype {
     [IntrinsicMember(WellKnownSymbol.ToStringTag, EcmaPropertyAttributes.Configurable)]
     public static string ToStringTag = InternalString.ObjectTag.MapIterator;

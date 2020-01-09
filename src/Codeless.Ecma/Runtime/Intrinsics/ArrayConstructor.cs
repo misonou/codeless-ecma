@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.ArrayConstructor)]
   internal static class ArrayConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct, ObjectType = typeof(EcmaArray))]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.AlwaysConstruct, ObjectType = typeof(EcmaArray), Prototype = WellKnownObject.ArrayPrototype)]
     public static EcmaValue Array([This] EcmaValue thisValue, params EcmaValue[] args) {
       EcmaArray array = thisValue.GetUnderlyingObject<EcmaArray>();
       if (args.Length == 1 && args[0].Type == EcmaValueType.Number) {

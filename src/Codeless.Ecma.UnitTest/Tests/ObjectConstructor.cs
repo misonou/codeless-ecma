@@ -2,6 +2,8 @@
 using NUnit.Framework;
 using System.Collections;
 using static Codeless.Ecma.Global;
+using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Keywords;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 

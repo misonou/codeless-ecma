@@ -3,7 +3,7 @@
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.SetConstructor)]
   internal static class SetConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(EcmaSet))]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(EcmaSet), Prototype = WellKnownObject.SetPrototype)]
     [IntrinsicMember(FunctionLength = 0)]
     public static EcmaValue Set([This] EcmaValue thisValue, EcmaValue iterable) {
       if (!iterable.IsNullOrUndefined) {

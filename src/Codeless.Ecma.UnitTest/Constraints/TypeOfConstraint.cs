@@ -20,7 +20,7 @@ namespace Codeless.Ecma.UnitTest.Constraints {
     }
 
     public ConstraintResult ApplyTo<TActual>(TActual actual) {
-      string typeOf = Global.TypeOf(new EcmaValue(actual));
+      string typeOf = Keywords.TypeOf(new EcmaValue(actual));
       return new ConstraintResult(this, typeOf, typeOf == expected);
     }
 

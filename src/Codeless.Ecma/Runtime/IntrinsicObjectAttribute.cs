@@ -12,6 +12,7 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public WellKnownObject ObjectType { get; private set; }
+    public WellKnownObject Prototype { get; set; }
     public bool Global { get; set; }
     public string Name { get; set; }
   }

@@ -7,12 +7,12 @@ using System.Text;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.StringConstructor)]
   internal static class StringConstructor {
-    [IntrinsicConstructor(ObjectType = typeof(PrimitiveObject))]
+    [IntrinsicConstructor(ObjectType = typeof(PrimitiveObject), Prototype = WellKnownObject.StringPrototype)]
     public static EcmaValue String([NewTarget] RuntimeObject constructor, [This] EcmaValue thisValue, EcmaValue value) {
       if (constructor == null) {
         return value.ToString();
       }
-      ((PrimitiveObject)thisValue.ToObject()).PrimitiveValue = value.ToString(true);
+      ((PrimitiveObject)thisValue.ToObject()).PrimitiveValue = value.ToStringOrThrow();
       return thisValue;
     }
 

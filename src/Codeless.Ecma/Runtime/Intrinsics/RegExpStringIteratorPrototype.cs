@@ -1,5 +1,5 @@
 ﻿namespace Codeless.Ecma.Runtime.Intrinsics {
-  [IntrinsicObject(WellKnownObject.RegExpStringIteratorPrototype)]
+  [IntrinsicObject(WellKnownObject.RegExpStringIteratorPrototype, Prototype = WellKnownObject.IteratorPrototype)]
   internal static class RegExpStringIteratorPrototype {
     [IntrinsicMember(WellKnownSymbol.ToStringTag, EcmaPropertyAttributes.Configurable)]
     public static string ToStringTag = InternalString.ObjectTag.RegExpStringIterator;

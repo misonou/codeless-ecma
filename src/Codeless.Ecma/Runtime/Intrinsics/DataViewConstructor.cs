@@ -3,7 +3,7 @@
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.DataView)]
   internal static class DataViewConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(DataView))]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(DataView), Prototype = WellKnownObject.DataViewPrototype)]
     [IntrinsicMember(FunctionLength = 1)]
     public static EcmaValue DataView([This] EcmaValue thisValue, EcmaValue buffer, EcmaValue offset, EcmaValue length) {
       DataView view = thisValue.GetUnderlyingObject<DataView>();

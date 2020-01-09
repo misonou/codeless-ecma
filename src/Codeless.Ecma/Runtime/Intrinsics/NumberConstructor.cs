@@ -7,7 +7,7 @@ using System.Text;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.NumberConstructor)]
   internal static class NumberConstructor {
-    [IntrinsicConstructor(ObjectType = typeof(PrimitiveObject))]
+    [IntrinsicConstructor(ObjectType = typeof(PrimitiveObject), Prototype = WellKnownObject.NumberPrototype)]
     public static EcmaValue Number([NewTarget] RuntimeObject constructor, [This] EcmaValue thisValue, EcmaValue? value) {
       if (constructor == null) {
         return value.GetValueOrDefault().ToNumber();

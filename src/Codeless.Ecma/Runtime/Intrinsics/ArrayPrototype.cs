@@ -28,7 +28,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         }
         EcmaValue item = obj.Get(i);
         if (!item.IsNullOrUndefined) {
-          sb.Append(item.Invoke("toLocaleString").ToString(true));
+          sb.Append(item.Invoke("toLocaleString").ToStringOrThrow());
         }
       }
       return sb.ToString();
@@ -49,7 +49,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         }
         EcmaValue item = obj.Get(i);
         if (!item.IsNullOrUndefined) {
-          sb.Append(item.ToString(true));
+          sb.Append(item.ToStringOrThrow());
         }
       }
       return sb.ToString();

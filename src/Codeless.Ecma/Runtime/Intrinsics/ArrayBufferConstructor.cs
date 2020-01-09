@@ -3,7 +3,7 @@
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.ArrayBuffer)]
   internal static class ArrayBufferConstructor {
-    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(ArrayBuffer))]
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(ArrayBuffer), Prototype = WellKnownObject.ArrayBufferPrototype)]
     public static EcmaValue ArrayBuffer([This] EcmaValue thisValue, EcmaValue length) {
       ArrayBuffer buffer = thisValue.GetUnderlyingObject<ArrayBuffer>();
       buffer.Init(length.ToIndex());

@@ -1,6 +1,5 @@
 ﻿using Codeless.Ecma.Runtime;
 using Codeless.Ecma.Runtime.Intrinsics;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,7 +32,7 @@ namespace Codeless.Ecma {
       if (space.Type == EcmaValueType.Number) {
         indentString = new String(' ', Math.Max(0, Math.Min(10, space.ToInt32())));
       } else if (space.Type == EcmaValueType.String) {
-        indentString = space.ToString(true);
+        indentString = space.ToStringOrThrow();
       } else {
         indentString = String.Empty;
       }
@@ -45,7 +44,7 @@ namespace Codeless.Ecma {
         for (long i = 0, length = replacer[WellKnownProperty.Length].ToLength(); i < length; i++) {
           EcmaValue item = EcmaValueUtility.UnboxPrimitiveObject(replacer[i]);
           if (item.Type == EcmaValueType.String || item.Type == EcmaValueType.Number) {
-            propertyList.Add(item.ToString(true));
+            propertyList.Add(item.ToStringOrThrow());
           }
         }
         result = new EcmaJsonWriter(indentString, propertyList).Serialize(value);
@@ -61,7 +60,7 @@ namespace Codeless.Ecma {
 
     [IntrinsicMember]
     public static EcmaValue Parse(EcmaValue value, EcmaValue reviver) {
-      EcmaValue unfiltered = Parse(value.ToString(true));
+      EcmaValue unfiltered = Parse(value.ToStringOrThrow());
       if (!reviver.IsCallable) {
         return unfiltered;
       }

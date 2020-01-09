@@ -19,13 +19,13 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue Exec([This] EcmaValue thisValue, EcmaValue input) {
       EcmaRegExp re = thisValue.GetUnderlyingObject<EcmaRegExp>();
-      return re.Test(input.ToString(true)) ? re.LastResult.ToValue() : EcmaValue.Null;
+      return re.Test(input.ToStringOrThrow()) ? re.LastResult.ToValue() : EcmaValue.Null;
     }
 
     [IntrinsicMember]
     public static EcmaValue Test([This] EcmaValue thisValue, EcmaValue str) {
       Guard.ArgumentIsObject(thisValue);
-      return CreateExecCallback(thisValue)(str.ToString(true)) != null;
+      return CreateExecCallback(thisValue)(str.ToStringOrThrow()) != null;
     }
 
     [IntrinsicMember]
@@ -133,7 +133,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(WellKnownSymbol.Match)]
     public static EcmaValue Match([This] EcmaValue thisValue, EcmaValue str) {
       Guard.ArgumentIsObject(thisValue);
-      string inputString = str.ToString(true);
+      string inputString = str.ToStringOrThrow();
       ExecCallback exec = CreateExecCallback(thisValue);
       IEcmaRegExpResult result;
       if (thisValue[WellKnownProperty.Global]) {
@@ -156,14 +156,14 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue MatchAll([This] EcmaValue thisValue, EcmaValue str) {
       Guard.ArgumentIsObject(thisValue);
       EcmaValue re = SpeciesConstruct(thisValue, false);
-      string inputString = str.ToString(true);
+      string inputString = str.ToStringOrThrow();
       return new EcmaIterator(new EcmaRegExpStringEnumerator(re, inputString), EcmaIteratorResultKind.Value, WellKnownObject.RegExpStringIteratorPrototype);
     }
 
     [IntrinsicMember(WellKnownSymbol.Replace)]
     public static EcmaValue Replace([This] EcmaValue thisValue, EcmaValue str, EcmaValue replacement) {
       Guard.ArgumentIsObject(thisValue);
-      string input = str.ToString(true);
+      string input = str.ToStringOrThrow();
       EcmaRegExp re;
       if (IsCustomRegExpObject(thisValue, out re, out _) || thisValue[WellKnownProperty.Sticky]) {
         return ReplaceGeneric(thisValue, input, replacement);
@@ -171,20 +171,20 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (replacement.IsCallable) {
         return re.Replace(input, replacement.ToObject());
       }
-      return re.Replace(input, replacement.ToString(true));
+      return re.Replace(input, replacement.ToStringOrThrow());
     }
 
     [IntrinsicMember(WellKnownSymbol.Search)]
     public static EcmaValue Search([This] EcmaValue thisValue, EcmaValue str) {
       EcmaValue re = SpeciesConstruct(thisValue, false);
-      IEcmaRegExpResult result = CreateExecCallback(re)(str.ToString(true));
+      IEcmaRegExpResult result = CreateExecCallback(re)(str.ToStringOrThrow());
       return result != null ? result.Index : -1;
     }
 
     [IntrinsicMember(WellKnownSymbol.Split)]
     public static EcmaValue Split([This] EcmaValue thisValue, EcmaValue str, EcmaValue limit) {
       EcmaValue re = SpeciesConstruct(thisValue, true);
-      string inputString = str.ToString(true);
+      string inputString = str.ToStringOrThrow();
       int count = limit == default ? Int32.MaxValue : unchecked((int)limit.ToUInt32());
 
       ExecCallback exec = CreateExecCallback(re);
@@ -233,7 +233,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (replacement.IsCallable) {
         callback = replacement.ToObject();
       } else {
-        list = ParseReplacement(replacement.ToString(true));
+        list = ParseReplacement(replacement.ToStringOrThrow());
       }
 
       ExecCallback exec = CreateExecCallback(re);
@@ -264,7 +264,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
                 case -2:
                   if (result.HasNamedGroups) {
                     EcmaValue value = groups[repl.StringValue];
-                    sb.Append(value != default ? value.ToString(true) : "");
+                    sb.Append(value != default ? value.ToStringOrThrow() : "");
                   } else {
                     sb.Append("$<" + repl.StringValue + ">");
                   }
@@ -282,7 +282,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
               if (repl.Mode >= captures.Length) {
                 sb.Append(repl.StringValue);
               } else {
-                sb.Append(captures[repl.Mode].ToString(true));
+                sb.Append(captures[repl.Mode].ToStringOrThrow());
               }
             }
           }
@@ -323,7 +323,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (hasNamedGroup) {
         args[len + 2] = result.CreateNamedGroupObject();
       }
-      return callback.Call(EcmaValue.Undefined, args).ToString(true);
+      return callback.Call(EcmaValue.Undefined, args).ToStringOrThrow();
     }
 
     private static EcmaValue SpeciesConstruct(EcmaValue thisValue, bool forceGlobal) {
@@ -387,7 +387,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         this.result = result;
         this.Input = input;
         this.Index = unchecked((int)result[WellKnownProperty.Index].ToUInt32());
-        this.Value = result[0].ToString(true);
+        this.Value = result[0].ToStringOrThrow();
       }
 
       public bool HasNamedGroups => result[WellKnownProperty.Groups] != default;

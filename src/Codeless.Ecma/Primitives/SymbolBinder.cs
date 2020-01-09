@@ -51,7 +51,7 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public override string ToString(Symbol value) {
-      return value.ToString();
+      throw new EcmaTypeErrorException(InternalString.Error.SymbolNotConvertibleToString);
     }
 
     public override bool TryGet(Symbol target, EcmaPropertyKey name, out EcmaValue value) {

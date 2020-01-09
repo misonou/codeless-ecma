@@ -19,6 +19,7 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public NativeRuntimeFunctionConstraint Constraint { get; private set; }
+    public WellKnownObject Prototype { get; set; }
     public Type ObjectType { get; set; }
     public string Name { get; set; }
     public bool Global { get; set; }

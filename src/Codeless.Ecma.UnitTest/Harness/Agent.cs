@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using static Codeless.Ecma.Global;
+using static Codeless.Ecma.Keywords;
 
 namespace Codeless.Ecma.UnitTest.Harness {
   public class Agent : IDisposable {
@@ -126,7 +127,7 @@ namespace Codeless.Ecma.UnitTest.Harness {
         WorkerAgent agent = new WorkerAgent(postMessage);
         This.ToObject()["postMessage"] = postMessage;
         This.ToObject()["onmessage"] = RuntimeFunction.Create(msg => {
-          switch (msg["kind"].ToString(true)) {
+          switch (msg["kind"].ToStringOrThrow()) {
             case "start":
               agent.Init(msg["i32a"], msg["index"]);
               script(agent);
