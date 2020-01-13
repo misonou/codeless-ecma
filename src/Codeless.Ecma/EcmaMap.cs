@@ -1,6 +1,7 @@
 ﻿using Codeless.Ecma.Runtime;
 
 namespace Codeless.Ecma {
+  [Cloneable(false)]
   public class EcmaMap : EcmaMapBase {
     public EcmaMap()
       : base(WellKnownObject.MapPrototype) { }

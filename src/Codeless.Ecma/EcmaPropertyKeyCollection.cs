@@ -12,8 +12,8 @@ namespace Codeless.Ecma {
     public EcmaPropertyKeyCollection()
       : base() { }
 
-    public EcmaPropertyKeyCollection(EcmaPropertyKeyCollection other)
-      : base(new List<EcmaPropertyKey>(other.Items)) { }
+    public EcmaPropertyKeyCollection(EcmaPropertyKeyCollection other, bool cloneSymbolProperties)
+      : base(new List<EcmaPropertyKey>(cloneSymbolProperties ? other.Items : other.Items.Take(other.symbolStartKey))) { }
 
     protected override void InsertItem(int index, EcmaPropertyKey item) {
       if (index != this.Count || Contains(item)) {

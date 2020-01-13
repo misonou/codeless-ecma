@@ -147,7 +147,7 @@ namespace Codeless.Ecma.UnitTest {
     }
 
     public static void That(EcmaValue value, IResolveConstraint constraint) {
-      That(value, constraint, message, new object[0]);
+      That(value, constraint, null, new object[0]);
     }
 
     public static void That(EcmaValue value, IResolveConstraint constraint, string message, params object[] args) {

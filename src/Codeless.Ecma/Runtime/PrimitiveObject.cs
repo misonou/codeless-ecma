@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma.Runtime {
+  [Cloneable(false)]
   internal class PrimitiveObject : RuntimeObject, IInspectorMetaProvider {
     private EcmaValue value;
 
@@ -74,6 +75,11 @@ namespace Codeless.Ecma.Runtime {
         }
       }
       return base.DefineOwnProperty(propertyKey, descriptor);
+    }
+
+    protected override void OnCloned(RuntimeObject sourceObj, bool isTransfer, CloneContext context) {
+      base.OnCloned(sourceObj, isTransfer, context);
+      SetPrototypeOf(this.Realm.GetSharedObjectInRealm(sourceObj.GetPrototypeOf()));
     }
 
     void IInspectorMetaProvider.FillInInspectorMetaObject(InspectorMetaObject meta) {

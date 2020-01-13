@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma {
+  [Cloneable(false)]
   public class EcmaDate : RuntimeObject {
     private EcmaTimestamp timestamp;
 

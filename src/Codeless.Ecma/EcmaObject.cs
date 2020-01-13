@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma {
+  [Cloneable(true)]
   [IntrinsicObject(WellKnownObject.ObjectConstructor)]
   public class EcmaObject : RuntimeObject {
     public EcmaObject()

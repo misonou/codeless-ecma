@@ -37,6 +37,7 @@ namespace Codeless.Ecma {
   /// <summary>
   /// Represents a ECMAScript-like regular expression object.
   /// </summary>
+  [Cloneable(false)]
   [DebuggerDisplay("{DebuggerDisplay,nq}")]
   public class EcmaRegExp : RuntimeObject {
     private const int HighSurrogateStart = 0xD800;
@@ -397,6 +398,12 @@ namespace Codeless.Ecma {
         cache.TryAdd(key, re);
       }
       return (EcmaRegExp)re.Clone(RuntimeRealm.Current);
+    }
+
+    protected override void OnCloned(RuntimeObject sourceObj, bool isTransfer, CloneContext context) {
+      base.OnCloned(sourceObj, isTransfer, context);
+      this.LastIndex = 0;
+      this.LastResult = null;
     }
 
     private string DebuggerDisplay {

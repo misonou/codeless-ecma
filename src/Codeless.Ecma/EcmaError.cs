@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma {
+  [Cloneable(true)]
   public class EcmaError : RuntimeObject {
     public EcmaError() :
       base(WellKnownObject.ErrorPrototype) {

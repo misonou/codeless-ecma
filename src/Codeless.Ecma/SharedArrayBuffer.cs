@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 
 namespace Codeless.Ecma {
+  [Cloneable(false)]
   public class SharedArrayBuffer : ArrayBuffer {
     private Dictionary<long, List<WaiterHandle>> waiterLists;
 

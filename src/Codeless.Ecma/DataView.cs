@@ -11,6 +11,7 @@ namespace Codeless.Ecma {
     LittleEndian
   }
 
+  [Cloneable(false)]
   public class DataView : RuntimeObject, IArrayBufferView {
     public DataView()
       : base(WellKnownObject.DataViewPrototype) { }
@@ -142,6 +143,11 @@ namespace Codeless.Ecma {
       uint uintValue = value.ToUInt32();
       ThrowIfOutOfBound(index, sizeof(uint));
       this.Buffer.SetValue(index + ByteOffset, CheckAndSwap(uintValue, isLittleEndian));
+    }
+
+    protected override void OnCloned(RuntimeObject sourceObj, bool isTransfer, CloneContext context) {
+      base.OnCloned(sourceObj, isTransfer, context);
+      this.Buffer = (ArrayBuffer)context.Clone(this.Buffer);
     }
 
     private void ThrowIfOutOfBound(long index, int elementSize) {

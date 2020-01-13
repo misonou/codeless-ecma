@@ -237,6 +237,11 @@ namespace Codeless.Ecma {
 
     protected abstract void SetValueInBufferImpl(int index, EcmaValue value);
 
+    protected override void OnCloned(RuntimeObject sourceObj, bool isTransfer, CloneContext context) {
+      base.OnCloned(sourceObj, isTransfer, context);
+      this.Buffer = (ArrayBuffer)context.Clone(this.Buffer);
+    }
+
     private bool IsValidIndex(EcmaPropertyKey propertyKey, out int index) {
       if (propertyKey.IsArrayIndex && !propertyKey.IsNegativeZero) {
         long longIndex = propertyKey.ToArrayIndex();
@@ -277,9 +282,15 @@ namespace Codeless.Ecma {
     protected abstract ArrayBufferView<T> GetArrayBufferView(ArrayBuffer buffer, long byteOffset, long byteLength);
 
     protected abstract EcmaValue CallSortCallback(RuntimeObject callback, T x, T y);
+
+    protected override void OnCloned(RuntimeObject sourceObj, bool isTransfer, CloneContext context) {
+      base.OnCloned(sourceObj, isTransfer, context);
+      this.BufferView = GetArrayBufferView(this.Buffer, this.ByteOffset, this.ByteLength);
+    }
   }
 
   #region Derived classes
+  [Cloneable(false)]
   public class Float32Array : TypedArray<float> {
     private const TypedArrayKind arrayKind = TypedArrayKind.Float32Array;
     private static readonly IComparer<float> floatComparer = new ComparerWrapper<float>(CompareFloat);
@@ -358,6 +369,7 @@ namespace Codeless.Ecma {
     }
   }
 
+  [Cloneable(false)]
   public class Float64Array : TypedArray<double> {
     private const TypedArrayKind arrayKind = TypedArrayKind.Float64Array;
     private static readonly IComparer<double> doubleComparer = new ComparerWrapper<double>(CompareDouble);
@@ -436,6 +448,7 @@ namespace Codeless.Ecma {
     }
   }
 
+  [Cloneable(false)]
   public class Int8Array : TypedArray<sbyte> {
     private const TypedArrayKind arrayKind = TypedArrayKind.Int8Array;
 
@@ -484,6 +497,7 @@ namespace Codeless.Ecma {
     }
   }
 
+  [Cloneable(false)]
   public class Int16Array : TypedArray<short> {
     private const TypedArrayKind arrayKind = TypedArrayKind.Int16Array;
 
@@ -532,6 +546,7 @@ namespace Codeless.Ecma {
     }
   }
 
+  [Cloneable(false)]
   public class Int32Array : TypedArray<int> {
     private const TypedArrayKind arrayKind = TypedArrayKind.Int32Array;
 
@@ -580,6 +595,7 @@ namespace Codeless.Ecma {
     }
   }
 
+  [Cloneable(false)]
   public class Uint8Array : TypedArray<byte> {
     private const TypedArrayKind arrayKind = TypedArrayKind.Uint8Array;
 
@@ -628,6 +644,7 @@ namespace Codeless.Ecma {
     }
   }
 
+  [Cloneable(false)]
   public class Uint8ClampedArray : TypedArray<byte> {
     private const TypedArrayKind arrayKind = TypedArrayKind.Uint8ClampedArray;
 
@@ -676,6 +693,7 @@ namespace Codeless.Ecma {
     }
   }
 
+  [Cloneable(false)]
   public class Uint16Array : TypedArray<ushort> {
     private const TypedArrayKind arrayKind = TypedArrayKind.Uint16Array;
 
@@ -724,6 +742,7 @@ namespace Codeless.Ecma {
     }
   }
 
+  [Cloneable(false)]
   public class Uint32Array : TypedArray<uint> {
     private const TypedArrayKind arrayKind = TypedArrayKind.Uint32Array;
 

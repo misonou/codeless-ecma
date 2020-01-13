@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 
 namespace Codeless.Ecma {
+  [Cloneable(false)]
   public class EcmaSet : EcmaMapBase {
     public EcmaSet()
       : base(WellKnownObject.SetPrototype) { }

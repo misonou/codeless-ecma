@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Codeless.Ecma {
   public abstract class EcmaMapBase : RuntimeObject, IEnumerable<KeyValuePair<EcmaValue, EcmaValue>>, IInspectorMetaProvider {
-    private readonly Dictionary<EcmaValue, Entry> dict = new Dictionary<EcmaValue, Entry>(EcmaValueEqualityComparer.SameValueZero);
+    private Dictionary<EcmaValue, Entry> dict = new Dictionary<EcmaValue, Entry>(EcmaValueEqualityComparer.SameValueZero);
     private HashSet<Enumerator> iterators;
 
     public EcmaMapBase(WellKnownObject proto)
@@ -85,6 +85,17 @@ namespace Codeless.Ecma {
 
     public IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> GetEnumerator() {
       return new Enumerator(this);
+    }
+
+    protected override void OnCloned(RuntimeObject sourceObj, bool isTransfer, CloneContext context) {
+      base.OnCloned(sourceObj, isTransfer, context);
+      dict = new Dictionary<EcmaValue, Entry>();
+      iterators = null;
+      foreach (KeyValuePair<EcmaValue, Entry> e in ((EcmaMapBase)sourceObj).dict) {
+        if (!e.Value.Removed) {
+          dict[context.Clone(e.Key)] = new Entry(context.Clone(e.Value.Value));
+        }
+      }
     }
 
     private bool TryGetValueChecked(EcmaValue key, out Entry entry) {

@@ -14,6 +14,7 @@ namespace Codeless.Ecma {
     long ByteLength { get; }
   }
 
+  [Cloneable(false, Transferable = true)]
   public class ArrayBuffer : RuntimeObject {
     [StructLayout(LayoutKind.Explicit)]
     private struct BufferView {
@@ -489,6 +490,21 @@ namespace Codeless.Ecma {
       ArrayBufferView<sbyte> bufferView = new ArrayBufferView<sbyte>(buffer.SByteBuffer, byteOffset, byteLength);
       AddDisposable(bufferView);
       return bufferView;
+    }
+
+    protected override void OnCloned(RuntimeObject sourceObj, bool isTransfer, CloneContext context) {
+      base.OnCloned(sourceObj, isTransfer, context);
+      if (!this.IsShared) {
+        ArrayBuffer other = (ArrayBuffer)sourceObj;
+        other.ThrowIfBufferDetached();
+        if (isTransfer) {
+          other.Detach();
+        } else {
+          long count = other.buffer.Buffer.LongLength;
+          buffer.Buffer = new byte[count];
+          CopyBytes(other, 0, this, 0, count);
+        }
+      }
     }
 
     private void AddDisposable(IDisposable item) {

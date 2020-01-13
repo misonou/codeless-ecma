@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma {
+  [Cloneable(true)]
   public class EcmaArray : RuntimeObject, IList<EcmaValue> {
     private List<EcmaValue> list;
     private LinkedList<ArrayChunk> chunks;
@@ -681,6 +682,18 @@ namespace Codeless.Ecma {
 
     protected override RuntimeObjectIntegrityLevel TestIntegrityLevel() {
       return !this.FallbackMode ? RuntimeObjectIntegrityLevel.Default : base.TestIntegrityLevel();
+    }
+
+    protected override void OnCloned(RuntimeObject sourceObj, bool isTransfer, CloneContext context) {
+      base.OnCloned(sourceObj, isTransfer, context);
+      if (!this.FallbackMode) {
+        if (chunks != null) {
+          chunks = new LinkedList<ArrayChunk>(chunks);
+        }
+        if (list != null) {
+          list = new List<EcmaValue>(list.Select(context.Clone));
+        }
+      }
     }
 
     private bool SetLength(long length) {

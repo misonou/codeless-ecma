@@ -13,52 +13,62 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Codeless.Ecma.Runtime {
+  [DebuggerDisplay("RuntimeRealm ID={ID}")]
   public class RuntimeRealm : IDisposable {
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    private static readonly RuntimeObject[] sharedIntrinsics = new RuntimeObject[(int)WellKnownObject.MaxValue];
+    private static readonly int sharedIntrinsicLength = (int)WellKnownObject.MaxValue;
+    private static readonly RuntimeObject[] sharedIntrinsics = new RuntimeObject[sharedIntrinsicLength];
+    private static readonly RuntimeRealm sharedRealm = new RuntimeRealm();
     private static readonly bool inited;
+
+    private static RuntimeObject[][] sharedObjects = { sharedIntrinsics };
     private static int accum;
     [ThreadStatic]
     private static RuntimeRealm current;
+    [ThreadStatic]
+    private static bool useSharedRealm;
 
-    private readonly Dictionary<RuntimeObject, int> objectIndex = new Dictionary<RuntimeObject, int>();
+    private readonly Dictionary<RuntimeObject, long> objectIndex = new Dictionary<RuntimeObject, long>();
     private readonly WeakKeyedCollection nativeWrappers = new WeakKeyedCollection();
     private readonly Hashtable ht = new Hashtable();
-    private RuntimeObject[] intrinsics = new RuntimeObject[sharedIntrinsics.Length];
-    private bool disposed;
+    private RuntimeObject[][] intrinsics = { };
 
     static RuntimeRealm() {
-      using (current = new RuntimeRealm()) {
-        EnsureWellKnownObject(WellKnownObject.ObjectPrototype);
-        EnsureWellKnownObject(WellKnownObject.FunctionPrototype);
-        DefineIntrinsicObjectsFromAssembly(ref sharedIntrinsics, Assembly.GetExecutingAssembly());
-        for (int i = 1; i < sharedIntrinsics.Length; i++) {
-          current.objectIndex.Add(sharedIntrinsics[i], i);
-        }
-        current.intrinsics = sharedIntrinsics;
+      current = sharedRealm;
+      EnsureWellKnownObject(WellKnownObject.ObjectPrototype);
+      EnsureWellKnownObject(WellKnownObject.FunctionPrototype);
+      using (SharedObjectContainer container = new SharedObjectContainer()) {
+        DefineIntrinsicObjectsFromAssembly(container, Assembly.GetExecutingAssembly());
       }
+      for (int i = 1; i < sharedIntrinsicLength; i++) {
+        current.objectIndex.Add(sharedIntrinsics[i], i);
+      }
+      current.intrinsics = sharedObjects;
+      current = null;
       inited = true;
     }
 
     public RuntimeRealm() {
       if (inited) {
+        this.ID = Interlocked.Increment(ref accum);
         this.ExecutionContext = RuntimeExecution.Current;
       }
     }
 
     public event EventHandler BeforeDisposed = delegate { };
 
-    public int ID { get; } = Interlocked.Increment(ref accum);
+    public int ID { get; }
 
     public RuntimeExecution ExecutionContext { get; }
 
-    public bool Disposed {
-      get { return disposed; }
+    public bool Disposed { get; private set; }
+
+    public RuntimeObject Global {
+      get { return GetRuntimeObject(WellKnownObject.Global); }
     }
 
     public Hashtable Properties {
       get {
-        if (disposed) {
+        if (this.Disposed) {
           throw new ObjectDisposedException("");
         }
         return ht;
@@ -67,6 +77,9 @@ namespace Codeless.Ecma.Runtime {
 
     public static RuntimeRealm Current {
       get {
+        if (useSharedRealm) {
+          return sharedRealm;
+        }
         RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
         if (invocation != null) {
           return invocation.FunctionObject.Realm;
@@ -79,7 +92,7 @@ namespace Codeless.Ecma.Runtime {
     }
 
     internal static RuntimeRealm SharedRealm {
-      get { return sharedIntrinsics[1].Realm; }
+      get { return sharedRealm; }
     }
 
     public static RuntimeRealm GetRealm(EcmaValue obj) {
@@ -97,10 +110,13 @@ namespace Codeless.Ecma.Runtime {
         target = value.GetUnderlyingObject();
       }
       if (target is RuntimeObject runtimeObject) {
-        if (runtimeObject.Realm.objectIndex.TryGetValue(runtimeObject, out int index)) {
-          return GetRuntimeObject((WellKnownObject)index);
+        if (runtimeObject.Realm == this) {
+          return runtimeObject;
         }
-        return runtimeObject;
+        if (TryGetSharedObjectInRealm(runtimeObject, out RuntimeObject sharedObject)) {
+          return sharedObject;
+        }
+        return runtimeObject.Clone(this);
       }
       return nativeWrappers.GetOrAdd(NativeObject.Create(target));
     }
@@ -109,23 +125,33 @@ namespace Codeless.Ecma.Runtime {
       if (!inited) {
         return null;
       }
-      int index = (int)type;
-      if (index <= 0 || index > sharedIntrinsics.Length) {
-        throw new ArgumentOutOfRangeException("type");
+      return GetSharedObject((long)type);
+    }
+
+    public RuntimeObject GetSharedObjectInRealm(RuntimeObject sourceObj) {
+      if (TryGetSharedObjectInRealm(sourceObj, out RuntimeObject sharedObject)) {
+        return sharedObject;
       }
-      RuntimeObject obj = intrinsics[index];
-      if (obj == null) {
-        if (!inited) {
-          EnsureWellKnownObject(type);
-        }
-        obj = sharedIntrinsics[index].Clone(this);
-        objectIndex.Add(obj, index);
-        intrinsics[index] = obj;
+      throw new ArgumentException("Object is not shared", "souceObj");
+    }
+
+    internal bool TryGetSharedObjectInRealm(RuntimeObject sourceObj, out RuntimeObject runtimeObject) {
+      Guard.ArgumentNotNull(sourceObj, "sourceObj");
+      if (sourceObj.Realm.objectIndex.TryGetValue(sourceObj, out long index)) {
+        runtimeObject = GetSharedObject(index);
+        return true;
       }
-      return obj;
+      runtimeObject = null;
+      return false;
     }
 
     public void Execute(Action action) {
+      if (this == sharedRealm) {
+        throw new InvalidOperationException("Execution in shared realm is disallowed");
+      }
+      if (Thread.CurrentThread != this.ExecutionContext.Thread) {
+        throw new InvalidOperationException("Execution in another thread is disallowed");
+      }
       RuntimeRealm previous = current;
       try {
         current = this;
@@ -135,17 +161,55 @@ namespace Codeless.Ecma.Runtime {
       }
     }
 
+    public void Enqueue(Action action) {
+      this.ExecutionContext.Enqueue(this, action, 0, RuntimeExecutionFlags.None);
+    }
+
+    public void Enqueue(Action action, Task task) {
+      this.ExecutionContext.Enqueue(this, action, task);
+    }
+
+    public RuntimeExecutionHandle Enqueue(Action action, int milliseconds, RuntimeExecutionFlags flags) {
+      return this.ExecutionContext.Enqueue(this, action, milliseconds, flags);
+    }
+
     public void Dispose() {
-      if (!disposed) {
+      if (!this.Disposed) {
         try {
           BeforeDisposed(this, EventArgs.Empty);
         } finally {
           if (current == this) {
             current = null;
           }
-          disposed = true;
+          this.Disposed = true;
         }
       }
+    }
+
+    private RuntimeObject GetSharedObject(long index) {
+      int i = (int)(index >> 32);
+      int j = (int)(index & 0xFFFFFFFF);
+      if (i >= sharedObjects.Length) {
+        throw new ArgumentOutOfRangeException("index");
+      }
+      if (i >= intrinsics.Length && intrinsics.Length != sharedObjects.Length) {
+        Array.Resize(ref intrinsics, sharedObjects.Length);
+      }
+      RuntimeObject[] arr = intrinsics[i];
+      if (arr == null) {
+        arr = new RuntimeObject[sharedObjects[i].Length];
+        intrinsics[i] = arr;
+      }
+      if (j >= arr.Length) {
+        throw new ArgumentOutOfRangeException("index");
+      }
+      RuntimeObject obj = arr[j];
+      if (obj == null) {
+        obj = sharedObjects[i][j].CloneSlim(this);
+        objectIndex.Add(obj, index);
+        arr[j] = obj;
+      }
+      return obj;
     }
 
     private static RuntimeObject EnsureWellKnownObject(WellKnownObject type) {
@@ -182,118 +246,119 @@ namespace Codeless.Ecma.Runtime {
       return obj;
     }
 
-    private static void DefineIntrinsicObjectsFromAssembly(ref RuntimeObject[] sharedIntrinsics, Assembly assembly) {
-      List<RuntimeObject> definedObj = new List<RuntimeObject>();
-      int objectIndex = sharedIntrinsics.Length;
-
-      Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>[] properties = new Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>[sharedIntrinsics.Length];
-      for (int i = 1; i < sharedIntrinsics.Length; i++) {
+    private static void DefineIntrinsicObjectsFromAssembly(SharedObjectContainer container, Assembly assembly) {
+      // properties are first stored in dictionary while in the foreach loop
+      // since EnsureWellKnownObject will return different objects during the loop
+      Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>[] properties = new Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>[sharedIntrinsicLength];
+      for (int i = 1; i < sharedIntrinsicLength; i++) {
         properties[i] = new Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>();
       }
       Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> globals = properties[(int)WellKnownObject.Global];
 
       foreach (Type t in assembly.GetTypes()) {
         if (t.HasAttribute(out IntrinsicObjectAttribute typeAttr)) {
-          int objectType = (int)typeAttr.ObjectType;
-          Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht = properties[objectType];
+          int objectIndex = (int)typeAttr.ObjectType;
+          Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht = properties[objectIndex];
 
           if (typeAttr.Prototype != 0) {
             EnsureWellKnownObject(typeAttr.ObjectType).SetPrototypeOf(EnsureWellKnownObject(typeAttr.Prototype));
           }
           if (typeAttr.Global) {
-            globals[typeAttr.Name ?? t.Name] = CreateSharedDescriptor(objectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
+            globals[typeAttr.Name ?? t.Name] = CreateWellknownObjectSharedDescriptor(typeAttr.ObjectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
           }
           foreach (MemberInfo member in t.GetMembers()) {
+            // special handling if the type defines an instrinsic contructor
+            // replace the default object created from EnsureWellKnownObject to InstrincFunction
             if (member.HasAttribute(out IntrinsicConstructorAttribute ctorAttr)) {
               string ctorName = ctorAttr.Name ?? member.Name;
               int protoIndex = (int)ctorAttr.Prototype;
-              sharedIntrinsics[objectType] = CreateIntrinsicFunction(ctorName, member, WellKnownObject.Global, ctorName, ctorAttr.SuperClass);
+              sharedIntrinsics[objectIndex] = CreateIntrinsicFunction(ctorName, member, WellKnownObject.Global, ctorName, ctorAttr.SuperClass);
               if (protoIndex != 0) {
-                ht[WellKnownProperty.Prototype] = CreateSharedDescriptor(protoIndex, EcmaPropertyAttributes.None);
-                properties[protoIndex][WellKnownProperty.Constructor] = CreateSharedDescriptor(objectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
+                ht[WellKnownProperty.Prototype] = CreateWellknownObjectSharedDescriptor(ctorAttr.Prototype, EcmaPropertyAttributes.None);
+                properties[protoIndex][WellKnownProperty.Constructor] = CreateWellknownObjectSharedDescriptor(typeAttr.ObjectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
               }
               if (ctorAttr.Global) {
-                DefineIntrinsicFunction(globals, ctorName, objectType, EcmaPropertyAttributes.DefaultMethodProperty);
+                globals[ctorName] = CreateWellknownObjectSharedDescriptor(typeAttr.ObjectType, EcmaPropertyAttributes.DefaultMethodProperty);
               }
-            } else {
-              object[] propAttrs = member.GetCustomAttributes(typeof(IntrinsicMemberAttribute), false);
-              if (propAttrs.Length > 0) {
-                int thisIndex = objectIndex;
-                if (member.HasAttribute(out AliasOfAttribute aliasOf)) {
-                  EcmaPropertyKey aliasOfKey = aliasOf.Name != null ? (EcmaPropertyKey)aliasOf.Name : aliasOf.Symbol;
-                  if (!properties[(int)aliasOf.ObjectType].TryGetValue(aliasOfKey, out EcmaPropertyDescriptor descriptor)) {
-                    throw new InvalidOperationException();
-                  }
-                  thisIndex = descriptor.Value.ToInt32();
+              continue;
+            }
+
+            object[] propAttrs = member.GetCustomAttributes(typeof(IntrinsicMemberAttribute), false);
+            if (propAttrs.Length > 0) {
+              EcmaValue sharedValue = default;
+              if (member.HasAttribute(out AliasOfAttribute aliasOf)) {
+                EcmaPropertyKey aliasOfKey = aliasOf.Name != null ? (EcmaPropertyKey)aliasOf.Name : aliasOf.Symbol;
+                if (!properties[(int)aliasOf.ObjectType].TryGetValue(aliasOfKey, out EcmaPropertyDescriptor descriptor)) {
+                  // for sake of simplicity the aliased target should be defined on intrinsic object with smaller WellKnownObject enum value
+                  // to avoid the need of topological sort
+                  throw new InvalidOperationException();
                 }
-                foreach (IntrinsicMemberAttribute propAttr in propAttrs) {
-                  EcmaPropertyKey name = GetNameFromMember(propAttr, member);
-                  switch (member.MemberType) {
-                    case MemberTypes.Method:
-                      if (propAttr.Getter) {
-                        DefineIntrinsicAccessorProperty(ht, name, thisIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty), true);
-                      } else if (propAttr.Setter) {
-                        DefineIntrinsicAccessorProperty(ht, name, thisIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty), false);
-                      } else if (((MethodInfo)member).IsStatic) {
-                        DefineIntrinsicFunction(ht, name, thisIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
-                        if (propAttr.Global) {
-                          DefineIntrinsicFunction(globals, name, thisIndex, propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
-                        }
+                sharedValue = descriptor.Value;
+              }
+              if (member.MemberType == MemberTypes.Method && sharedValue == default) {
+                IntrinsicMemberAttribute propAttr = (IntrinsicMemberAttribute)propAttrs[0];
+                EcmaPropertyKey name = GetNameFromMember(propAttr, member);
+                string runtimeName = (propAttr.Getter ? "get " : propAttr.Setter ? "set " : "") + (name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name);
+                sharedValue = container.Add(CreateIntrinsicFunction(runtimeName, member, typeAttr.ObjectType, name, null)).ToValue();
+              }
+              foreach (IntrinsicMemberAttribute propAttr in propAttrs) {
+                EcmaPropertyKey name = GetNameFromMember(propAttr, member);
+                switch (member.MemberType) {
+                  case MemberTypes.Method:
+                    if (propAttr.Getter) {
+                      DefineIntrinsicAccessorProperty(ht, name, sharedValue, propAttr.Attributes, true);
+                    } else if (propAttr.Setter) {
+                      DefineIntrinsicAccessorProperty(ht, name, sharedValue, propAttr.Attributes, false);
+                    } else if (((MethodInfo)member).IsStatic) {
+                      DefineIntrinsicMethodProperty(ht, name, sharedValue, propAttr.Attributes);
+                      if (propAttr.Global) {
+                        DefineIntrinsicMethodProperty(globals, name, sharedValue, propAttr.Attributes);
                       }
-                      break;
-                    case MemberTypes.Property:
-                      DefineIntrinsicDataProperty(ht, name, ((PropertyInfo)member).GetValue(null, null), propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty));
-                      break;
-                    case MemberTypes.Field:
-                      DefineIntrinsicDataProperty(ht, name, ((FieldInfo)member).GetValue(null), propAttr.Attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty));
-                      break;
-                  }
-                }
-                if (member.MemberType == MemberTypes.Method && thisIndex == objectIndex) {
-                  IntrinsicMemberAttribute propAttr = (IntrinsicMemberAttribute)propAttrs[0];
-                  EcmaPropertyKey name = GetNameFromMember(propAttr, member);
-                  string runtimeName = (propAttr.Getter ? "get " : propAttr.Setter ? "set " : "") + (name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name);
-                  definedObj.Add(CreateIntrinsicFunction(runtimeName, member, (WellKnownObject)objectType, name, null));
-                  objectIndex++;
+                    }
+                    break;
+                  case MemberTypes.Property:
+                    DefineIntrinsicDataProperty(ht, name, ((PropertyInfo)member).GetValue(null, null), propAttr.Attributes);
+                    break;
+                  case MemberTypes.Field:
+                    DefineIntrinsicDataProperty(ht, name, ((FieldInfo)member).GetValue(null), propAttr.Attributes);
+                    break;
                 }
               }
             }
           }
         }
       }
-
-      for (int i = 1; i < sharedIntrinsics.Length; i++) {
+      for (int i = 1; i < sharedIntrinsicLength; i++) {
         RuntimeObject obj = EnsureWellKnownObject((WellKnownObject)i);
         foreach (KeyValuePair<EcmaPropertyKey, EcmaPropertyDescriptor> e in properties[i]) {
           obj.DefinePropertyOrThrow(e.Key, e.Value);
         }
       }
-      Array.Resize(ref sharedIntrinsics, sharedIntrinsics.Length + definedObj.Count);
-      definedObj.CopyTo(sharedIntrinsics, sharedIntrinsics.Length - definedObj.Count);
     }
 
-    private static void DefineIntrinsicDataProperty(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, object value, EcmaPropertyAttributes attributes) {
-      ht[name] = new EcmaPropertyDescriptor(new EcmaValue(value), attributes & (EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
+    private static void DefineIntrinsicDataProperty(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, object value, EcmaPropertyAttributes? attributes) {
+      ht[name] = new EcmaPropertyDescriptor(new EcmaValue(value), attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty) & (EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
     }
 
-    private static void DefineIntrinsicAccessorProperty(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, int sharedIndex, EcmaPropertyAttributes attributes, bool isGetter) {
+    private static void DefineIntrinsicAccessorProperty(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, EcmaValue sharedValue, EcmaPropertyAttributes? attributes, bool isGetter) {
+      attributes = attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty);
       if (name.IsSymbol) {
         attributes &= ~EcmaPropertyAttributes.Enumerable;
       }
       EcmaPropertyDescriptor descriptor;
       if (!ht.TryGetValue(name, out descriptor)) {
-        descriptor = new EcmaPropertyDescriptor(attributes);
+        descriptor = new EcmaPropertyDescriptor(attributes.Value);
         ht[name] = descriptor;
       }
       if (isGetter) {
-        descriptor.Get = CreateSharedValue(sharedIndex);
+        descriptor.Get = sharedValue;
       } else {
-        descriptor.Set = CreateSharedValue(sharedIndex);
+        descriptor.Set = sharedValue;
       }
     }
 
-    private static void DefineIntrinsicFunction(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, int sharedIndex, EcmaPropertyAttributes attributes) {
-      ht[name] = CreateSharedDescriptor(sharedIndex, attributes);
+    private static void DefineIntrinsicMethodProperty(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, EcmaValue sharedValue, EcmaPropertyAttributes? attributes) {
+      ht[name] = new EcmaPropertyDescriptor(sharedValue, attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultMethodProperty));
     }
 
     private static IntrinsicFunction CreateIntrinsicFunction(string runtimeName, MemberInfo member, WellKnownObject objectType, EcmaPropertyKey name, WellKnownObject? superClass) {
@@ -302,12 +367,8 @@ namespace Codeless.Ecma.Runtime {
       return fn;
     }
 
-    private static EcmaValue CreateSharedValue(int sharedIndex) {
-      return new EcmaValue(new EcmaValueHandle(sharedIndex), SharedIntrinsicObjectBinder.Default);
-    }
-
-    private static EcmaPropertyDescriptor CreateSharedDescriptor(int sharedIndex, EcmaPropertyAttributes attributes) {
-      return new EcmaPropertyDescriptor(CreateSharedValue(sharedIndex), attributes);
+    private static EcmaPropertyDescriptor CreateWellknownObjectSharedDescriptor(WellKnownObject type, EcmaPropertyAttributes attributes) {
+      return new EcmaPropertyDescriptor(new SharedObjectHandle((long)type).ToValue(), attributes);
     }
 
     private static EcmaPropertyKey GetNameFromMember(IntrinsicMemberAttribute propAttr, MemberInfo member) {
@@ -315,6 +376,70 @@ namespace Codeless.Ecma.Runtime {
         return new EcmaPropertyKey(propAttr.Symbol);
       }
       return new EcmaPropertyKey(propAttr.Name ?? Regex.Replace(member.Name, "^[A-Z](?=[a-z])", v => v.Value.ToLower()));
+    }
+
+    internal struct SharedObjectHandle {
+      private EcmaValue sharedValue;
+
+      internal SharedObjectHandle(long value) {
+        sharedValue = new EcmaValue(new EcmaValueHandle(value), SharedIntrinsicObjectBinder.Default);
+      }
+
+      public EcmaValue ToValue() {
+        return sharedValue;
+      }
+
+      public RuntimeObject GetRuntimeObject(RuntimeRealm realm) {
+        return realm.GetSharedObject(sharedValue.ToInt64());
+      }
+
+      public static SharedObjectHandle FromValue(EcmaValue sharedValue) {
+        if (sharedValue.Type != SharedIntrinsicObjectBinder.SharedValue) {
+          throw new ArgumentException("Value must be created from SharedObjectHandle.ToValue()", "sharedValue");
+        }
+        SharedObjectHandle handle = default;
+        handle.sharedValue = sharedValue;
+        return handle;
+      }
+    }
+
+    internal class SharedObjectContainer : IDisposable {
+      private readonly List<RuntimeObject> definedObj = new List<RuntimeObject>();
+      private readonly long prefix = sharedObjects.LongLength << 32;
+      private readonly object syncRoot = sharedRealm;
+
+      public SharedObjectContainer() {
+        Monitor.Enter(syncRoot);
+        useSharedRealm = true;
+      }
+
+      public SharedObjectHandle Add(RuntimeObject obj) {
+        Guard.ArgumentNotNull(obj, "obj");
+        if (obj.Realm != RuntimeRealm.SharedRealm) {
+          throw new ArgumentException();
+        }
+        long sharedIndex = definedObj.IndexOf(obj);
+        if (sharedIndex < 0) {
+          sharedIndex = definedObj.Count;
+          definedObj.Add(obj);
+        }
+        return new SharedObjectHandle(prefix | sharedIndex);
+      }
+
+      public void Dispose() {
+        try {
+          int index = sharedObjects.Length;
+          Array.Resize(ref sharedObjects, index + 1);
+          sharedObjects[index] = definedObj.ToArray();
+          sharedRealm.intrinsics = sharedObjects;
+          for (int i = 0, len = definedObj.Count; i < len; i++) {
+            sharedRealm.objectIndex.Add(definedObj[i], prefix | i);
+          }
+        } finally {
+          useSharedRealm = false;
+          Monitor.Exit(syncRoot);
+        }
+      }
     }
   }
 }

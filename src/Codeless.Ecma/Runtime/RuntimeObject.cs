@@ -3,6 +3,7 @@ using Codeless.Ecma.Diagnostics.VisualStudio;
 using Codeless.Ecma.Native;
 using Codeless.Ecma.Runtime.Intrinsics;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -15,36 +16,53 @@ namespace Codeless.Ecma.Runtime {
     Frozen
   }
 
+  public class RuntimeObjectCloneException : Exception {
+    public RuntimeObjectCloneException() { }
+
+    public RuntimeObjectCloneException(string message)
+      : base(message) { }
+
+    public RuntimeObjectCloneException(string message, Exception innerException)
+      : base(message, innerException) { }
+  }
+
+  [Cloneable(true)]
   [DebuggerTypeProxy(typeof(RuntimeObjectDebuggerProxy))]
   [DebuggerDisplay("{DebuggerDisplay,nq}")]
   public class RuntimeObject : WeakKeyedItem, IEcmaValueBinder {
+    private static readonly Hashtable cloneable = new Hashtable();
     private static readonly EcmaValue[] hintString = { "default", "string", "number" };
     private static readonly EcmaPropertyDescriptor sealedProperty = new EcmaPropertyDescriptor { Configurable = false };
     private static readonly EcmaPropertyDescriptor frozenProperty = new EcmaPropertyDescriptor { Configurable = false, Writable = false };
     [ThreadStatic]
     private static RuntimeRealm currentRealm;
 
+    private readonly WellKnownObject defaultProto;
     private Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> dictionary;
     private EcmaPropertyKeyCollection keys;
     private RuntimeObject prototype;
 
     public RuntimeObject(WellKnownObject defaultProto) {
+      this.defaultProto = defaultProto;
       this.Realm = currentRealm ?? RuntimeRealm.Current;
       this.prototype = this.Realm.GetRuntimeObject(defaultProto);
     }
 
     public RuntimeObject(WellKnownObject defaultProto, RuntimeObject constructor) {
+      this.defaultProto = defaultProto;
       this.prototype = GetPrototypeFromConstructor(constructor, defaultProto);
       this.Realm = prototype != null ? prototype.Realm : RuntimeRealm.Current;
     }
 
     protected RuntimeObject(WellKnownObject defaultProto, bool shared) {
+      this.defaultProto = defaultProto;
       this.Realm = shared ? RuntimeRealm.SharedRealm : RuntimeRealm.Current;
       this.prototype = this.Realm.GetRuntimeObject(defaultProto);
     }
 
     protected RuntimeObject(object target)
       : base(target) {
+      this.defaultProto = WellKnownObject.ObjectPrototype;
       this.Realm = RuntimeRealm.Current;
     }
 
@@ -364,11 +382,39 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public override string ToString() {
-      return ToPrimitive(EcmaPreferredPrimitiveType.String).ToString();
+      try {
+        return ToPrimitive(EcmaPreferredPrimitiveType.String).ToString();
+      } catch {
+        return base.ToString();
+      }
     }
 
     public EcmaValue ToValue() {
       return new EcmaValue(new EcmaValueHandle(GetHashCode()), this);
+    }
+
+    public RuntimeObject Clone(RuntimeRealm targetRealm, params RuntimeObject[] transferList) {
+      if (this.Realm == targetRealm) {
+        return this;
+      }
+      return new CloneContext(targetRealm, transferList).Clone(this);
+    }
+
+    internal RuntimeObject CloneSlim(RuntimeRealm targetRealm) {
+      Guard.ArgumentNotNull(targetRealm, "targetRealm");
+      if (this.Realm != RuntimeRealm.SharedRealm) {
+        throw new InvalidOperationException();
+      }
+      RuntimeObject clone = (RuntimeObject)MemberwiseClone();
+      clone.Realm = targetRealm;
+      if (clone.dictionary != null) {
+        clone.dictionary = new Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>(clone.dictionary);
+        clone.keys = new EcmaPropertyKeyCollection(clone.keys, true);
+      }
+      if (clone.prototype != null) {
+        clone.prototype = targetRealm.GetSharedObjectInRealm(clone.prototype);
+      }
+      return clone;
     }
 
     public static explicit operator RuntimeObject(WellKnownObject type) {
@@ -431,18 +477,16 @@ namespace Codeless.Ecma.Runtime {
       return this.OrdinaryToPrimitive(kind);
     }
 
-    protected internal RuntimeObject Clone(RuntimeRealm realm) {
-      Guard.ArgumentNotNull(realm, "realm");
-      RuntimeObject clone = (RuntimeObject)MemberwiseClone();
-      clone.Realm = realm;
-      if (clone.dictionary != null) {
-        clone.dictionary = new Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>(clone.dictionary);
-        clone.keys = new EcmaPropertyKeyCollection(clone.keys);
+    protected virtual void OnCloned(RuntimeObject sourceObj, bool isTransfer, CloneContext context) {
+    }
+
+    private bool IsCloneable(out CloneableAttribute attribute) {
+      Type t = this.GetType();
+      if (!cloneable.ContainsKey(t)) {
+        cloneable[t] = t.HasAttribute(out attribute) ? attribute : null;
       }
-      if (clone.prototype != null) {
-        clone.prototype = realm.GetRuntimeObject(clone.prototype);
-      }
-      return clone;
+      attribute = (CloneableAttribute)cloneable[t];
+      return attribute != null;
     }
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -500,7 +544,7 @@ namespace Codeless.Ecma.Runtime {
     }
 
     string IEcmaValueBinder.ToString(EcmaValueHandle handle) {
-      return ToPrimitive(EcmaPreferredPrimitiveType.String).ToString();
+      return ToPrimitive(EcmaPreferredPrimitiveType.String).ToStringOrThrow();
     }
 
     EcmaValue IEcmaValueBinder.ToPrimitive(EcmaValueHandle handle, EcmaPreferredPrimitiveType preferredType) {
@@ -540,5 +584,89 @@ namespace Codeless.Ecma.Runtime {
       return this.GetOwnPropertyKeys().Where(v => GetOwnProperty(v).Enumerable);
     }
     #endregion
+
+    protected class CloneContext {
+      private readonly Dictionary<RuntimeObject, RuntimeObject> dict = new Dictionary<RuntimeObject, RuntimeObject>();
+      private readonly RuntimeRealm targetRealm;
+      private readonly RuntimeObject[] transferList;
+
+      public CloneContext(RuntimeRealm targetRealm, RuntimeObject[] transferList) {
+        Guard.ArgumentNotNull(targetRealm, "targetRealm");
+        Guard.ArgumentNotNull(transferList, "transferList");
+        this.targetRealm = targetRealm;
+        this.transferList = transferList;
+        foreach (RuntimeObject obj in transferList) {
+          if (!obj.IsCloneable(out CloneableAttribute attribute) || !attribute.Transferable) {
+            throw new RuntimeObjectCloneException("Object is not transferable");
+          }
+          if (obj is ArrayBuffer buffer && buffer.IsDetached) {
+            throw new RuntimeObjectCloneException("Detached array buffer is not transferable");
+          }
+        }
+      }
+
+      public RuntimeObject Clone(RuntimeObject sourceObj) {
+        RuntimeObject clone;
+        if (dict.TryGetValue(sourceObj, out clone)) {
+          return clone;
+        }
+        if (sourceObj.Realm == targetRealm) {
+          return sourceObj;
+        }
+        if (targetRealm.TryGetSharedObjectInRealm(sourceObj, out clone)) {
+          return dict[sourceObj] = clone;
+        }
+        if (!sourceObj.IsCloneable(out CloneableAttribute attribute)) {
+          throw new RuntimeObjectCloneException(String.Format("{0} is not clonable", new EcmaValue(sourceObj).ToStringTag));
+        }
+        clone = (RuntimeObject)sourceObj.MemberwiseClone();
+        clone.Realm = targetRealm;
+        if (clone.prototype != null) {
+          clone.prototype = targetRealm.GetRuntimeObject(sourceObj.defaultProto);
+        }
+        dict[sourceObj] = clone;
+        if (clone.dictionary != null) {
+          if (!attribute.CopyOwnProperties) {
+            clone.dictionary = null;
+            clone.keys = null;
+          } else {
+            clone.dictionary = new Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>();
+            clone.keys = new EcmaPropertyKeyCollection(clone.keys, false);
+            foreach (EcmaPropertyKey clonedKey in clone.keys) {
+              EcmaPropertyDescriptor descriptor = sourceObj.dictionary[clonedKey];
+              if (descriptor.Enumerable) {
+                EcmaValue value = descriptor.Value;
+                if (value.Type == EcmaValueType.Symbol) {
+                  throw new RuntimeObjectCloneException("Symbol value cannot be cloned");
+                }
+                bool cloneValue = value.Type == EcmaValueType.Object && value.ToObject().Realm != targetRealm;
+                if (cloneValue || descriptor.IsAccessorDescriptor || !descriptor.Writable || !descriptor.Configurable) {
+                  if (descriptor.IsAccessorDescriptor) {
+                    value = Clone(sourceObj.Get(clonedKey));
+                  } else {
+                    value = Clone(value);
+                  }
+                  clone.DefineOwnPropertyNoChecked(clonedKey, new EcmaPropertyDescriptor(value, EcmaPropertyAttributes.DefaultDataProperty));
+                } else {
+                  clone.DefineOwnPropertyNoChecked(clonedKey, descriptor);
+                }
+              }
+            }
+          }
+        }
+        clone.OnCloned(sourceObj, transferList.Contains(sourceObj), this);
+        return clone;
+      }
+
+      public EcmaValue Clone(EcmaValue value) {
+        switch (value.Type) {
+          case EcmaValueType.Symbol:
+            throw new RuntimeObjectCloneException("Symbol value cannot be cloned");
+          case EcmaValueType.Object:
+            return Clone(value.ToObject());
+        }
+        return value;
+      }
+    }
   }
 }

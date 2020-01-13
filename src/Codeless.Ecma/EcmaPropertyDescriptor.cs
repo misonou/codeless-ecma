@@ -236,10 +236,12 @@ namespace Codeless.Ecma {
       if (isGetterShared || isSetterShared) {
         EcmaPropertyDescriptor clone = Clone();
         if (isGetterShared) {
-          clone.getter = realm.GetRuntimeObject((WellKnownObject)getter.ToInt32());
+          RuntimeRealm.SharedObjectHandle handle = RuntimeRealm.SharedObjectHandle.FromValue(getter);
+          clone.getter = handle.GetRuntimeObject(realm);
         }
         if (isSetterShared) {
-          clone.setter = realm.GetRuntimeObject((WellKnownObject)setter.ToInt32());
+          RuntimeRealm.SharedObjectHandle handle = RuntimeRealm.SharedObjectHandle.FromValue(setter);
+          clone.setter = handle.GetRuntimeObject(realm);
         }
         return clone;
       }
