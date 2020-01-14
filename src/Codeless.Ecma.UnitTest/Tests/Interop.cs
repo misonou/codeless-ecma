@@ -246,6 +246,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
         That(() => fn.ToObject().Clone(other), Throws.Exception);
       });
 
+      It("should throw if object has other internal slots", () => {
+        EcmaValue symObj = Object.Construct(new Symbol());
+        That(() => symObj.ToObject().Clone(other), Throws.Exception);
+      });
+
       It("should detach array buffer if it is in the transfer list", () => {
         EcmaValue buffer = Global.ArrayBuffer.Construct(4);
         EcmaValue view = Global.Uint8Array.Construct(buffer);
