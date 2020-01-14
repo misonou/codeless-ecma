@@ -121,7 +121,7 @@ namespace Codeless.Ecma.Runtime {
     }
 
     bool ICollection<EcmaValue>.Remove(EcmaValue item) {
-      throw new NotImplementedException();
+      throw new InvalidOperationException();
     }
 
     IEnumerator<EcmaValue> IEnumerable<EcmaValue>.GetEnumerator() {

@@ -1,4 +1,4 @@
-﻿using Codeless.Ecma.Diagnostics;
+using Codeless.Ecma.Diagnostics;
 using Codeless.Ecma.Diagnostics.VisualStudio;
 using Codeless.Ecma.Primitives;
 using Codeless.Ecma.Runtime;
@@ -723,16 +723,13 @@ namespace Codeless.Ecma {
     public static EcmaNumberType GetNumberCoercion(EcmaValue x, EcmaValue y) {
       EcmaNumberType typeX = x.binder.GetNumberType(y.handle);
       EcmaNumberType typeY = y.binder.GetNumberType(y.handle);
+      if (typeX == typeY) {
+        return typeX;
+      }
       if (typeX == EcmaNumberType.Invalid || typeY == EcmaNumberType.Invalid) {
         return EcmaNumberType.Invalid;
       }
-      if (typeX == EcmaNumberType.Double || typeY == EcmaNumberType.Double) {
-        return EcmaNumberType.Double;
-      }
-      if (typeX == EcmaNumberType.Int64 || typeY == EcmaNumberType.Int64) {
-        return EcmaNumberType.Int64;
-      }
-      return EcmaNumberType.Int32;
+      return typeX > typeY ? typeX : typeY;
     }
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -923,14 +920,38 @@ namespace Codeless.Ecma {
       return -x.ToDouble();
     }
 
+    public static EcmaValue operator ~(EcmaValue x) {
+      return ~(+x).ToInt32();
+    }
+
+    public static EcmaValue operator !(EcmaValue x) {
+      return !x.ToBoolean();
+    }
+
+    public static EcmaValue operator ++(EcmaValue x) {
+      return x + 1;
+    }
+
+    public static EcmaValue operator --(EcmaValue x) {
+      return x - 1;
+    }
+
     public static EcmaValue operator +(EcmaValue x, EcmaValue y) {
       switch (GetNumberCoercion(x, y)) {
         case EcmaNumberType.Double:
           return new EcmaValue(x.ToDouble() + y.ToDouble());
         case EcmaNumberType.Int64:
-          return new EcmaValue(x.ToInt64() + y.ToInt64());
+          try {
+            return new EcmaValue(checked(x.ToInt64() + y.ToInt64()));
+          } catch (OverflowException) {
+            return new EcmaValue(x.ToDouble() + y.ToDouble());
+          }
         case EcmaNumberType.Int32:
-          return new EcmaValue(x.ToInt32() + y.ToInt32());
+          try {
+            return new EcmaValue(checked(x.ToInt32() + y.ToInt32()));
+          } catch (OverflowException) {
+            return new EcmaValue(x.ToDouble() + y.ToDouble());
+          }
         default:
           return new EcmaValue(x.ToString() + y.ToString());
       }
@@ -943,9 +964,17 @@ namespace Codeless.Ecma {
         case EcmaNumberType.Double:
           return new EcmaValue(x.ToDouble() - y.ToDouble());
         case EcmaNumberType.Int64:
-          return new EcmaValue(x.ToInt64() - y.ToInt64());
+          try {
+            return new EcmaValue(checked(x.ToInt64() - y.ToInt64()));
+          } catch (OverflowException) {
+            return new EcmaValue(x.ToDouble() - y.ToDouble());
+          }
         case EcmaNumberType.Int32:
-          return new EcmaValue(x.ToInt32() - y.ToInt32());
+          try {
+            return new EcmaValue(checked(x.ToInt32() - y.ToInt32()));
+          } catch (OverflowException) {
+            return new EcmaValue(x.ToDouble() - y.ToDouble());
+          }
       }
       return NaN;
     }
@@ -998,28 +1027,32 @@ namespace Codeless.Ecma {
       return NaN;
     }
 
-    public static EcmaValue operator &(EcmaValue x, long y) {
-      return new EcmaValue((+x).ToInt64() & y);
+    public static EcmaValue operator &(EcmaValue x, int y) {
+      return new EcmaValue((+x).ToInt32() & y);
     }
 
     public static EcmaValue operator &(EcmaValue x, EcmaValue y) {
       return y;
     }
 
-    public static EcmaValue operator |(EcmaValue x, long y) {
-      return new EcmaValue((+x).ToInt64() | y);
+    public static EcmaValue operator |(EcmaValue x, int y) {
+      return new EcmaValue((+x).ToInt32() | y);
     }
 
     public static EcmaValue operator |(EcmaValue x, EcmaValue y) {
       return y;
     }
 
+    public static EcmaValue operator ^(EcmaValue x, EcmaValue y) {
+      return (+x).ToInt32() ^ (+y).ToInt32();
+    }
+
     public static EcmaValue operator <<(EcmaValue x, int y) {
-      return new EcmaValue(unchecked((+x).ToInt64() << y));
+      return new EcmaValue(unchecked((+x).ToInt32() << y));
     }
 
     public static EcmaValue operator >>(EcmaValue x, int y) {
-      return new EcmaValue((+x).ToInt64() >> y);
+      return new EcmaValue((+x).ToInt32() >> y);
     }
     #endregion
 

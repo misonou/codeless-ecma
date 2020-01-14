@@ -164,7 +164,7 @@ namespace Codeless.Ecma {
         case TypeCode.Single:
           return Expression.ConvertChecked(Expression.Call(value, "ToDouble", Type.EmptyTypes), typeof(float));
         case TypeCode.String:
-          return Expression.Call(value, "ToString", Type.EmptyTypes, Expression.Constant(true));
+          return Expression.Call(value, "ToStringOrThrow", Type.EmptyTypes);
         case TypeCode.UInt16:
           return Expression.Call(value, "ToUInt16", Type.EmptyTypes);
         case TypeCode.UInt32:

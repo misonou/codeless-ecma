@@ -253,85 +253,95 @@ namespace Codeless.Ecma.Runtime {
       for (int i = 1; i < sharedIntrinsicLength; i++) {
         properties[i] = new Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>();
       }
-      Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> globals = properties[(int)WellKnownObject.Global];
-
+      DefineIntrinsicObjectFromType(container, typeof(FunctionConstructor), properties);
       foreach (Type t in assembly.GetTypes()) {
-        if (t.HasAttribute(out IntrinsicObjectAttribute typeAttr)) {
-          int objectIndex = (int)typeAttr.ObjectType;
-          Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht = properties[objectIndex];
-
-          if (typeAttr.Prototype != 0) {
-            EnsureWellKnownObject(typeAttr.ObjectType).SetPrototypeOf(EnsureWellKnownObject(typeAttr.Prototype));
-          }
-          if (typeAttr.Global) {
-            globals[typeAttr.Name ?? t.Name] = CreateWellknownObjectSharedDescriptor(typeAttr.ObjectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
-          }
-          foreach (MemberInfo member in t.GetMembers()) {
-            // special handling if the type defines an instrinsic contructor
-            // replace the default object created from EnsureWellKnownObject to InstrincFunction
-            if (member.HasAttribute(out IntrinsicConstructorAttribute ctorAttr)) {
-              string ctorName = ctorAttr.Name ?? member.Name;
-              int protoIndex = (int)ctorAttr.Prototype;
-              sharedIntrinsics[objectIndex] = CreateIntrinsicFunction(ctorName, member, WellKnownObject.Global, ctorName, ctorAttr.SuperClass);
-              if (protoIndex != 0) {
-                ht[WellKnownProperty.Prototype] = CreateWellknownObjectSharedDescriptor(ctorAttr.Prototype, EcmaPropertyAttributes.None);
-                properties[protoIndex][WellKnownProperty.Constructor] = CreateWellknownObjectSharedDescriptor(typeAttr.ObjectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
-              }
-              if (ctorAttr.Global) {
-                globals[ctorName] = CreateWellknownObjectSharedDescriptor(typeAttr.ObjectType, EcmaPropertyAttributes.DefaultMethodProperty);
-              }
-              continue;
-            }
-
-            object[] propAttrs = member.GetCustomAttributes(typeof(IntrinsicMemberAttribute), false);
-            if (propAttrs.Length > 0) {
-              EcmaValue sharedValue = default;
-              if (member.HasAttribute(out AliasOfAttribute aliasOf)) {
-                EcmaPropertyKey aliasOfKey = aliasOf.Name != null ? (EcmaPropertyKey)aliasOf.Name : aliasOf.Symbol;
-                if (!properties[(int)aliasOf.ObjectType].TryGetValue(aliasOfKey, out EcmaPropertyDescriptor descriptor)) {
-                  // for sake of simplicity the aliased target should be defined on intrinsic object with smaller WellKnownObject enum value
-                  // to avoid the need of topological sort
-                  throw new InvalidOperationException();
-                }
-                sharedValue = descriptor.Value;
-              }
-              if (member.MemberType == MemberTypes.Method && sharedValue == default) {
-                IntrinsicMemberAttribute propAttr = (IntrinsicMemberAttribute)propAttrs[0];
-                EcmaPropertyKey name = GetNameFromMember(propAttr, member);
-                string runtimeName = (propAttr.Getter ? "get " : propAttr.Setter ? "set " : "") + (name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name);
-                sharedValue = container.Add(CreateIntrinsicFunction(runtimeName, member, typeAttr.ObjectType, name, null)).ToValue();
-              }
-              foreach (IntrinsicMemberAttribute propAttr in propAttrs) {
-                EcmaPropertyKey name = GetNameFromMember(propAttr, member);
-                switch (member.MemberType) {
-                  case MemberTypes.Method:
-                    if (propAttr.Getter) {
-                      DefineIntrinsicAccessorProperty(ht, name, sharedValue, propAttr.Attributes, true);
-                    } else if (propAttr.Setter) {
-                      DefineIntrinsicAccessorProperty(ht, name, sharedValue, propAttr.Attributes, false);
-                    } else if (((MethodInfo)member).IsStatic) {
-                      DefineIntrinsicMethodProperty(ht, name, sharedValue, propAttr.Attributes);
-                      if (propAttr.Global) {
-                        DefineIntrinsicMethodProperty(globals, name, sharedValue, propAttr.Attributes);
-                      }
-                    }
-                    break;
-                  case MemberTypes.Property:
-                    DefineIntrinsicDataProperty(ht, name, ((PropertyInfo)member).GetValue(null, null), propAttr.Attributes);
-                    break;
-                  case MemberTypes.Field:
-                    DefineIntrinsicDataProperty(ht, name, ((FieldInfo)member).GetValue(null), propAttr.Attributes);
-                    break;
-                }
-              }
-            }
-          }
+        if (t != typeof(FunctionConstructor)) {
+          DefineIntrinsicObjectFromType(container, t, properties);
         }
       }
       for (int i = 1; i < sharedIntrinsicLength; i++) {
         RuntimeObject obj = EnsureWellKnownObject((WellKnownObject)i);
         foreach (KeyValuePair<EcmaPropertyKey, EcmaPropertyDescriptor> e in properties[i]) {
           obj.DefinePropertyOrThrow(e.Key, e.Value);
+        }
+      }
+    }
+
+    private static void DefineIntrinsicObjectFromType(SharedObjectContainer container, Type type, Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>[] properties) {
+      if (type.HasAttribute(out IntrinsicObjectAttribute typeAttr)) {
+        DefineIntrinsicObjectFromType(container, type, typeAttr, properties);
+      }
+    }
+
+    private static void DefineIntrinsicObjectFromType(SharedObjectContainer container, Type type, IntrinsicObjectAttribute typeAttr, Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>[] properties) {
+      int objectIndex = (int)typeAttr.ObjectType;
+      Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht = properties[objectIndex];
+      Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> globals = properties[(int)WellKnownObject.Global];
+
+      if (typeAttr.Prototype != 0) {
+        EnsureWellKnownObject(typeAttr.ObjectType).SetPrototypeOf(EnsureWellKnownObject(typeAttr.Prototype));
+      }
+      if (typeAttr.Global) {
+        globals[typeAttr.Name ?? type.Name] = CreateWellknownObjectSharedDescriptor(typeAttr.ObjectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
+      }
+      foreach (MemberInfo member in type.GetMembers()) {
+        // special handling if the type defines an instrinsic contructor
+        // replace the default object created from EnsureWellKnownObject to InstrincFunction
+        if (member.HasAttribute(out IntrinsicConstructorAttribute ctorAttr)) {
+          string ctorName = ctorAttr.Name ?? member.Name;
+          int protoIndex = (int)ctorAttr.Prototype;
+          sharedIntrinsics[objectIndex] = CreateIntrinsicFunction(ctorName, member, WellKnownObject.Global, ctorName, ctorAttr.SuperClass);
+          if (protoIndex != 0) {
+            ht[WellKnownProperty.Prototype] = CreateWellknownObjectSharedDescriptor(ctorAttr.Prototype, EcmaPropertyAttributes.None);
+            properties[protoIndex][WellKnownProperty.Constructor] = CreateWellknownObjectSharedDescriptor(typeAttr.ObjectType, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
+          }
+          if (ctorAttr.Global) {
+            globals[ctorName] = CreateWellknownObjectSharedDescriptor(typeAttr.ObjectType, EcmaPropertyAttributes.DefaultMethodProperty);
+          }
+          continue;
+        }
+
+        object[] propAttrs = member.GetCustomAttributes(typeof(IntrinsicMemberAttribute), false);
+        if (propAttrs.Length > 0) {
+          EcmaValue sharedValue = default;
+          if (member.HasAttribute(out AliasOfAttribute aliasOf)) {
+            EcmaPropertyKey aliasOfKey = aliasOf.Name != null ? (EcmaPropertyKey)aliasOf.Name : aliasOf.Symbol;
+            if (!properties[(int)aliasOf.ObjectType].TryGetValue(aliasOfKey, out EcmaPropertyDescriptor descriptor)) {
+              // for sake of simplicity the aliased target should be defined on intrinsic object with smaller WellKnownObject enum value
+              // to avoid the need of topological sort
+              throw new InvalidOperationException();
+            }
+            sharedValue = descriptor.Value;
+          }
+          if (member.MemberType == MemberTypes.Method && sharedValue == default) {
+            IntrinsicMemberAttribute propAttr = (IntrinsicMemberAttribute)propAttrs[0];
+            EcmaPropertyKey name = GetNameFromMember(propAttr, member);
+            string runtimeName = (propAttr.Getter ? "get " : propAttr.Setter ? "set " : "") + (name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name);
+            sharedValue = container.Add(CreateIntrinsicFunction(runtimeName, member, typeAttr.ObjectType, name, null)).ToValue();
+          }
+          foreach (IntrinsicMemberAttribute propAttr in propAttrs) {
+            EcmaPropertyKey name = GetNameFromMember(propAttr, member);
+            switch (member.MemberType) {
+              case MemberTypes.Method:
+                if (propAttr.Getter) {
+                  DefineIntrinsicAccessorProperty(ht, name, sharedValue, propAttr.Attributes, true);
+                } else if (propAttr.Setter) {
+                  DefineIntrinsicAccessorProperty(ht, name, sharedValue, propAttr.Attributes, false);
+                } else if (((MethodInfo)member).IsStatic) {
+                  DefineIntrinsicMethodProperty(ht, name, sharedValue, propAttr.Attributes);
+                  if (propAttr.Global) {
+                    DefineIntrinsicMethodProperty(globals, name, sharedValue, propAttr.Attributes);
+                  }
+                }
+                break;
+              case MemberTypes.Property:
+                DefineIntrinsicDataProperty(ht, name, ((PropertyInfo)member).GetValue(null, null), propAttr.Attributes);
+                break;
+              case MemberTypes.Field:
+                DefineIntrinsicDataProperty(ht, name, ((FieldInfo)member).GetValue(null), propAttr.Attributes);
+                break;
+            }
+          }
         }
       }
     }

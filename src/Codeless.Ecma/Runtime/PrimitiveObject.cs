@@ -79,7 +79,19 @@ namespace Codeless.Ecma.Runtime {
 
     protected override void OnCloned(RuntimeObject sourceObj, bool isTransfer, CloneContext context) {
       base.OnCloned(sourceObj, isTransfer, context);
-      SetPrototypeOf(this.Realm.GetSharedObjectInRealm(sourceObj.GetPrototypeOf()));
+      switch (value.Type) {
+        case EcmaValueType.Boolean:
+          SetPrototypeOf(this.Realm.GetRuntimeObject(WellKnownObject.BooleanPrototype));
+          break;
+        case EcmaValueType.Number:
+          SetPrototypeOf(this.Realm.GetRuntimeObject(WellKnownObject.NumberPrototype));
+          break;
+        case EcmaValueType.String:
+          SetPrototypeOf(this.Realm.GetRuntimeObject(WellKnownObject.StringPrototype));
+          break;
+        case EcmaValueType.Symbol:
+          throw new RuntimeObjectCloneException("Symbol value cannot be cloned");
+      }
     }
 
     void IInspectorMetaProvider.FillInInspectorMetaObject(InspectorMetaObject meta) {
