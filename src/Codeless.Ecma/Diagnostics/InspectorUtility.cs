@@ -1,4 +1,4 @@
-﻿using Codeless.Ecma.Runtime;
+using Codeless.Ecma.Runtime;
 using Codeless.Ecma.Runtime.Intrinsics;
 using System;
 using System.Collections.Generic;
@@ -60,16 +60,24 @@ namespace Codeless.Ecma.Diagnostics {
             SerializeAsArray(writer, value);
           } else {
             int count = 0;
-            EcmaValue ctor = default;
+            EcmaValue name = default;
             try {
-              ctor = value[WellKnownProperty.Constructor];
+              name = value[WellKnownSymbol.ToStringTag];
+            } catch { }
+            try {
+              if (name == default) {
+                EcmaValue ctor = value[WellKnownProperty.Constructor];
+                if (!ctor.IsNullOrUndefined && !ctor.ToObject().IsWellknownObject(WellKnownObject.ObjectConstructor)) {
+                  name = ctor[WellKnownProperty.Name];
+                }
+              }
             } catch { }
             if (!nested) {
               try {
                 TextWriter writer2 = new StringWriter();
                 RuntimeObject obj = value.ToObject();
-                if (!ctor.IsNullOrUndefined) {
-                  writer2.Write(ctor[WellKnownProperty.Name]);
+                if (!name.IsNullOrUndefined) {
+                  writer2.Write(name);
                   if (obj is EcmaMapBase collection) {
                     writer2.Write("(");
                     writer2.Write(collection.Size);
@@ -126,7 +134,7 @@ namespace Codeless.Ecma.Diagnostics {
                 break;
               } catch { }
             }
-            writer.Write(ctor.IsNullOrUndefined ? "Object" : ctor[WellKnownProperty.Name]);
+            writer.Write(name.IsNullOrUndefined ? "Object" : name);
           }
           break;
         default:

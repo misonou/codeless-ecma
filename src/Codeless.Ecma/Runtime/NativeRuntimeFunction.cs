@@ -48,6 +48,7 @@ namespace Codeless.Ecma.Runtime {
           name = "";
         }
       }
+      this.Source = "function " + name + "() { [native code] }";
       InitProperty(name, GetFuncLength(method));
       constructThisValue = runtimeObjectType == null || runtimeObjectType == typeof(EcmaObject) ? createFromConstructorDefault : createFromConstructor.MakeGenericMethod(runtimeObjectType);
     }

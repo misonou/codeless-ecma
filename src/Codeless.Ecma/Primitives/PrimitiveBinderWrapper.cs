@@ -99,7 +99,7 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public EcmaValue ToPrimitive(EcmaValueHandle handle, EcmaPreferredPrimitiveType kind) {
-      return PrimitiveBinder<T>.ToPrimitive(this, handle, kind);
+      return new EcmaValue(handle, this);
     }
 
     public EcmaValueHandle ToHandle(object value) {

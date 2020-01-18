@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -80,6 +80,10 @@ namespace Codeless.Ecma {
       public const string InvalidTimeValue = "Invalid time value";
       public const string InvalidRegex = "Invalid regular expression";
       public const string InvalidRegexFlags = "Invalid regular expression flags";
+      public const string InvalidCodePoint = "Invalid code point {0}";
+      public const string InvalidToStringRadix = "toString() radix argument must be between 2 and 36";
+      public const string InvalidWeakMapKey = "Invalid value used as weak map key";
+      public const string InvalidWeakSetValue = "Invalid value used in weak set";
       public const string StrictMode = "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them";
       public const string InvalidHint = "Invalid hint";
       public const string LastIndexNotWritable = "Cannot assign to read only property 'lastIndex' of object";
@@ -108,6 +112,10 @@ namespace Codeless.Ecma {
       public const string BufferOffsetOutOfBound = "Start offset {0} is outside the bounds of the buffer";
       public const string BufferDetached = "Buffer is detached";
       public const string BufferShared = "Operation is not allowed on shared buffer";
+      public const string BufferSubClassReturnThis = "{0} subclass returned this from species constructor";
+      public const string BufferIncompatible = "Method {0}.prototype.slice called on incompatible receiver";
+      public const string BufferAllocationFailed = "Array buffer allocation failed";
+      public const string BufferSizeMustBePositive = "Array buffer size cannot be negative";
       public const string SourceTooLarge = "Source is too large";
       public const string DataViewInvalidOffset = "Offset is outside the bounds of the DataView";
       public const string DataViewInvalidLength = "Invalid DataView length: {0}";

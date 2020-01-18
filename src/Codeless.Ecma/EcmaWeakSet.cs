@@ -9,7 +9,7 @@ namespace Codeless.Ecma {
 
     public EcmaWeakSet Add(RuntimeObject item) {
       if (item is TransientPrimitiveObject) {
-        throw new EcmaTypeErrorException("Invalid value used in weak set");
+        throw new EcmaTypeErrorException(InternalString.Error.InvalidWeakSetValue);
       }
       collection.GetOrAdd(new WeakKeyedItem(item));
       return this;

@@ -1,4 +1,4 @@
-﻿using Codeless.Ecma.Diagnostics;
+using Codeless.Ecma.Diagnostics;
 using Codeless.Ecma.Runtime;
 using Codeless.Ecma.UnitTest.Harness;
 using System;
@@ -49,6 +49,20 @@ namespace Codeless.Ecma.UnitTest {
       }
       if (toPrimitive != null) {
         properties[Symbol.ToPrimitive] = toPrimitive;
+      }
+      return new EcmaObject(properties);
+    }
+
+    public static EcmaValue CreateObject(EcmaValue? toString = null, EcmaValue? valueOf = null, EcmaValue? toPrimitive = null) {
+      Hashtable properties = new Hashtable();
+      if (toString != null) {
+        properties["toString"] = toString.Value;
+      }
+      if (valueOf != null) {
+        properties["valueOf"] = valueOf.Value;
+      }
+      if (toPrimitive != null) {
+        properties[Symbol.ToPrimitive] = toPrimitive.Value;
       }
       return new EcmaObject(properties);
     }
@@ -198,6 +212,9 @@ namespace Codeless.Ecma.UnitTest {
     }
 
     public static string FormatArguments(EcmaValue thisArg, EcmaValue[] args) {
+      if (args.Length == 0) {
+        return String.Format("(this = {0})", InspectorUtility.WriteValue(thisArg));
+      }
       return String.Format("(this = {0}, arguments = {1})", InspectorUtility.WriteValue(thisArg), String.Join(", ", args.Select(InspectorUtility.WriteValue)));
     }
 

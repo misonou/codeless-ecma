@@ -13,6 +13,7 @@ namespace Codeless.Ecma.Runtime {
       this.Realm = fn.Realm;
       this.BoundThis = thisValue;
       this.BoundArgs = args;
+      this.Source = fn.Source;
     }
 
     public RuntimeFunction TargetFunction { get; }

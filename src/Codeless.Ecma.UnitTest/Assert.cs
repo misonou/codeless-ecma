@@ -166,7 +166,7 @@ namespace Codeless.Ecma.UnitTest {
     }
 
     private static bool ShouldRunInDelegate(IResolveConstraint constraint) {
-      return (constraint is InstanceOfTypeConstraint typeConstraint && ((Type)typeConstraint.Arguments[0]).IsSubclassOf(typeof(Exception))) || constraint is ThrowsNothingConstraint;
+      return (constraint is InstanceOfTypeConstraint typeConstraint && typeof(Exception).IsAssignableFrom((Type)typeConstraint.Arguments[0])) || constraint is ThrowsNothingConstraint;
     }
 
     private static string PrependScopeMessage(string message) {

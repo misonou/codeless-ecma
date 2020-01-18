@@ -26,10 +26,10 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public const double MinValue = Double.Epsilon;
 
     [IntrinsicMember("MAX_SAFE_INTEGER", EcmaPropertyAttributes.None)]
-    public const long MaxSafeInteger = (1L << 53) - 1;
+    public const double MaxSafeInteger = EcmaValue.MaxSafeInteger;
 
     [IntrinsicMember("MIN_SAFE_INTEGER", EcmaPropertyAttributes.None)]
-    public const long MinSafeInteger = -MaxSafeInteger;
+    public const double MinSafeInteger = -EcmaValue.MaxSafeInteger;
 
     [IntrinsicMember("POSITIVE_INFINITY", EcmaPropertyAttributes.None)]
     public const double PositiveInfinity = Double.PositiveInfinity;

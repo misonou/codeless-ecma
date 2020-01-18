@@ -7,14 +7,12 @@ namespace Codeless.Ecma.Runtime {
   public class ScriptFunction : RuntimeFunction {
     public ScriptFunction() {
       this.ParameterList = "";
-      this.Source = "";
+      this.Source = "function (" + this.ParameterList + ") { }";
       InitProperty("", 0);
       SetPrototypeInternal(RuntimeObject.CreateFromConstructor<EcmaObject>(this.Realm.GetRuntimeObject(WellKnownObject.ObjectConstructor), WellKnownObject.ObjectPrototype));
     }
 
     public string ParameterList { get; private set; }
-
-    public string Source { get; private set; }
 
     public override bool IsConstructor {
       get { return this.HomeObject == null || this.HomeObject == this; }

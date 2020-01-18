@@ -62,18 +62,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember]
     public static EcmaValue ToString([This] EcmaValue thisValue) {
       Guard.ArgumentIsCallable(thisValue);
-      RuntimeObject fn = thisValue.ToObject();
-      if (fn is BoundRuntimeFunction boundFn) {
-        fn = boundFn.TargetFunction;
-      }
-      EcmaValue name = fn[WellKnownProperty.Name];
-      if (name == default) {
-        name = "";
-      }
-      if (fn is ScriptFunction userFn) {
-        return "function " + name + "(" + userFn.ParameterList + ") { " + userFn.Source + " }";
-      }
-      return "function " + name + "() { [native code] }";
+      RuntimeFunction fn = thisValue.GetUnderlyingObject<RuntimeFunction>();
+      return fn.Source;
     }
   }
 }

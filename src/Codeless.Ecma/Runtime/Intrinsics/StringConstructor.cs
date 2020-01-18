@@ -31,7 +31,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       foreach (EcmaValue v in codeUnits) {
         EcmaValue num = v.ToNumber();
         if (!num.IsInteger || num < 0 || num > 0x10FFFF) {
-          throw new EcmaRangeErrorException("Invalid code point {0}", num);
+          throw new EcmaRangeErrorException(InternalString.Error.InvalidCodePoint, num);
         }
         int intValue = (int)num;
         if (intValue <= 0xFFFF) {

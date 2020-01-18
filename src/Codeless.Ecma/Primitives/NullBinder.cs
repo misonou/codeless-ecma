@@ -63,7 +63,7 @@ namespace Codeless.Ecma.Primitives {
     }
 
     public EcmaValue ToPrimitive(EcmaValueHandle handle, EcmaPreferredPrimitiveType preferredType) {
-      return ToString(handle);
+      return EcmaValue.Null;
     }
 
     public EcmaValue ToNumber(EcmaValueHandle handle) {

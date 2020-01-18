@@ -76,7 +76,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       EcmaValue number = thisValue.GetIntrinsicPrimitiveValue(EcmaValueType.Number);
       EcmaValue b = radix == default ? 10 : radix.ToInteger();
       if (b < 2 || b > 36) {
-        throw new EcmaRangeErrorException("toString() radix argument must be between 2 and 36");
+        throw new EcmaRangeErrorException(InternalString.Error.InvalidToStringRadix);
       }
       if (!number.IsFinite) {
         return number.ToString();
@@ -108,7 +108,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         return "0";
       }
       if (radix == 2 || radix == 8 || radix == 10 || radix == 16) {
-        return Convert.ToString(signedValue, radix);
+        string str = Convert.ToString(value, radix);
+        return signedValue < 0 ? "-" + str : str;
       }
       while (value >= 1) {
         long q = value / radix;

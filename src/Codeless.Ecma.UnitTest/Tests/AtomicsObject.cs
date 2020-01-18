@@ -1132,7 +1132,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
             agent => {
               agent.ReceiveBroadcast(sab => {
                 EcmaValue i32a = Int32Array.Construct(sab);
-                Atomics.Invoke("add", i32a, RUNNING, 1);
+                Atomics.Invoke("add", i32a, RUNNING_, 1);
                 agent.Report(Atomics.Invoke("wait", i32a, 0, 0, Infinity));
                 agent.Leaving();
               });
@@ -1140,7 +1140,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
             agent => {
               agent.ReceiveBroadcast(sab => {
                 EcmaValue i32a = Int32Array.Construct(sab);
-                Atomics.Invoke("add", i32a, RUNNING, 1);
+                Atomics.Invoke("add", i32a, RUNNING_, 1);
                 agent.Report(Atomics.Invoke("wait", i32a, 2, 0, Infinity));
                 agent.Leaving();
               });
@@ -1149,7 +1149,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           main: agent => {
             EcmaValue i32a = Int32Array.Construct(SharedArrayBuffer.Construct(Int32Array["BYTES_PER_ELEMENT"] * 5));
             agent.SafeBroadcast(i32a);
-            agent.WaitUntil(i32a, RUNNING, NUMAGENT);
+            agent.WaitUntil(i32a, RUNNING_, NUMAGENT);
             That(Atomics.Invoke("notify", i32a, 1), Is.EqualTo(0));
             That(Atomics.Invoke("notify", i32a, 3), Is.EqualTo(0));
 

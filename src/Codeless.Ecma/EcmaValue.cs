@@ -48,6 +48,8 @@ namespace Codeless.Ecma {
   [DebuggerTypeProxy(typeof(EcmaValueDebuggerProxy))]
   [DebuggerDisplay("{DebuggerDisplay,nq}")]
   public partial struct EcmaValue : IEquatable<EcmaValue>, IComparable<EcmaValue>, ISerializable, IConvertible {
+    public const long MaxSafeInteger = (1L << 53) - 1;
+
     /// <summary>
     /// Represents an undefined value. It is similar to *undefined* in ECMAScript which could be returned when accessing an undefined property.
     /// </summary>
@@ -450,10 +452,8 @@ namespace Codeless.Ecma {
 
     [EcmaSpecification("Abstract Relational Comparison", EcmaSpecificationKind.AbstractOperations)]
     public static EcmaValue Compare(EcmaValue x, EcmaValue y) {
-      if (x.IsNaN || y.IsNaN) {
-        return Undefined;
-      }
-      return x.CompareTo(y) < 0 ? true : false;
+      int? result = x.CompareToInternal(y);
+      return result.HasValue ? result.Value : Undefined;
     }
 
     public override int GetHashCode() {
@@ -495,18 +495,7 @@ namespace Codeless.Ecma {
     }
 
     public int CompareTo(EcmaValue other) {
-      EcmaValue x = this.ToPrimitive(EcmaPreferredPrimitiveType.Number);
-      EcmaValue y = other.ToPrimitive(EcmaPreferredPrimitiveType.Number);
-      switch (GetNumberCoercion(x, y)) {
-        case EcmaNumberType.Double:
-          return ToDouble().CompareTo(other.ToDouble());
-        case EcmaNumberType.Int64:
-          return ToInt64().CompareTo(other.ToInt64());
-        case EcmaNumberType.Int32:
-          return ToInt32().CompareTo(other.ToInt32());
-        default:
-          return ToString().CompareTo(other.ToString());
-      }
+      return CompareToInternal(other).GetValueOrDefault();
     }
 
     [EcmaSpecification("ToObject", EcmaSpecificationKind.AbstractOperations)]
@@ -579,8 +568,8 @@ namespace Codeless.Ecma {
       if (intValue < 0) {
         return 0;
       }
-      if (intValue.binder_ != Int32Binder.Default && intValue > NumberConstructor.MaxSafeInteger) {
-        return NumberConstructor.MaxSafeInteger;
+      if (intValue.binder_ != Int32Binder.Default && intValue > MaxSafeInteger) {
+        return MaxSafeInteger;
       }
       return intValue.ToInt64();
     }
@@ -591,7 +580,7 @@ namespace Codeless.Ecma {
         return 0;
       }
       EcmaValue intValue = ToInteger();
-      if (intValue < 0 || (intValue.binder_ != Int32Binder.Default && intValue > NumberConstructor.MaxSafeInteger)) {
+      if (intValue < 0 || (intValue.binder_ != Int32Binder.Default && intValue > MaxSafeInteger)) {
         throw new EcmaRangeErrorException(InternalString.Error.InvalidIndex);
       }
       return intValue.ToInt64();
@@ -737,6 +726,30 @@ namespace Codeless.Ecma {
       get { return InspectorUtility.WriteValue(this); }
     }
 
+    private int? CompareToInternal(EcmaValue other) {
+      EcmaValue x = this.ToPrimitive(EcmaPreferredPrimitiveType.Number);
+      EcmaValue y = other.ToPrimitive(EcmaPreferredPrimitiveType.Number);
+      EcmaValueType xType = x.Type;
+      EcmaValueType yType = y.Type;
+      if (xType == EcmaValueType.String && yType == EcmaValueType.String) {
+        return String.Compare(x.ToString(), y.ToString(), StringComparison.Ordinal);
+      }
+      x = x.ToNumber();
+      y = y.ToNumber();
+      if (x.IsNaN || y.IsNaN) {
+        return null;
+      }
+      switch (GetNumberCoercion(x, y)) {
+        case EcmaNumberType.Double:
+          return x.ToDouble().CompareTo(y.ToDouble());
+        case EcmaNumberType.Int64:
+          return x.ToInt64().CompareTo(y.ToInt64());
+        case EcmaNumberType.Int32:
+          return x.ToInt32().CompareTo(y.ToInt32());
+      }
+      return 0;
+    }
+
     private long ConvertToInt(long mask, bool unsigned) {
       long longValue = 0;
       switch (binder.GetNumberType(handle)) {
@@ -879,19 +892,23 @@ namespace Codeless.Ecma {
     }
 
     public static bool operator <(EcmaValue x, EcmaValue y) {
-      return x.CompareTo(y) < 0;
+      int? result = x.CompareToInternal(y);
+      return result.HasValue && result.Value < 0;
     }
 
     public static bool operator >(EcmaValue x, EcmaValue y) {
-      return x.CompareTo(y) > 0;
+      int? result = x.CompareToInternal(y);
+      return result.HasValue && result.Value > 0;
     }
 
     public static bool operator <=(EcmaValue x, EcmaValue y) {
-      return x.CompareTo(y) <= 0;
+      int? result = x.CompareToInternal(y);
+      return result.HasValue && result.Value <= 0;
     }
 
     public static bool operator >=(EcmaValue x, EcmaValue y) {
-      return x.CompareTo(y) >= 0;
+      int? result = x.CompareToInternal(y);
+      return result.HasValue && result.Value >= 0;
     }
 
     public static bool operator true(EcmaValue x) {

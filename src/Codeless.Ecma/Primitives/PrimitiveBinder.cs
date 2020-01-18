@@ -57,17 +57,6 @@ namespace Codeless.Ecma.Primitives {
       return value.GetHashCode();
     }
 
-    public static EcmaValue ToPrimitive(IEcmaValueBinder binder, EcmaValueHandle handle, EcmaPreferredPrimitiveType preferredType) {
-      EcmaValueType type = binder.GetValueType(handle);
-      if (preferredType != EcmaPreferredPrimitiveType.Number && type == EcmaValueType.String) {
-        return new EcmaValue(handle, binder);
-      }
-      if (preferredType != EcmaPreferredPrimitiveType.String && type == EcmaValueType.Number) {
-        return new EcmaValue(handle, binder);
-      }
-      return preferredType == EcmaPreferredPrimitiveType.String ? binder.ToString(handle) : binder.ToNumber(handle);
-    }
-
     #region Interface
     bool IEcmaValueBinder.IsCallable(EcmaValueHandle handle) {
       return false;
@@ -150,7 +139,7 @@ namespace Codeless.Ecma.Primitives {
     }
 
     EcmaValue IEcmaValueBinder.ToPrimitive(EcmaValueHandle handle, EcmaPreferredPrimitiveType preferredType) {
-      return ToPrimitive(this, handle, preferredType);
+      return new EcmaValue(handle, this);
     }
     #endregion
   }

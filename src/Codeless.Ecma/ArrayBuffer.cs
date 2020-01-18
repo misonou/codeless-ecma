@@ -107,12 +107,12 @@ namespace Codeless.Ecma {
     [EcmaSpecification("CreateByteDataBlock", EcmaSpecificationKind.AbstractOperations)]
     internal void Init(long size) {
       if (size < 0) {
-        throw new EcmaRangeErrorException("Array buffer size cannot be negative");
+        throw new EcmaRangeErrorException(InternalString.Error.BufferSizeMustBePositive);
       }
       try {
         buffer.Buffer = new byte[size];
       } catch {
-        throw new EcmaRangeErrorException("Array buffer allocation failed");
+        throw new EcmaRangeErrorException(InternalString.Error.BufferAllocationFailed);
       }
     }
 
@@ -146,10 +146,10 @@ namespace Codeless.Ecma {
       RuntimeObject constructor = GetSpeciesConstructor(this, this.IsShared ? WellKnownObject.SharedArrayBuffer : WellKnownObject.ArrayBuffer);
       ArrayBuffer other = constructor.Construct(newLength).GetUnderlyingObject<ArrayBuffer>();
       if (other == this) {
-        throw new EcmaTypeErrorException("{0} subclass returned this from species constructor", this.GetType().Name);
+        throw new EcmaTypeErrorException(InternalString.Error.BufferSubClassReturnThis, this.GetType().Name);
       }
       if (other.IsShared != this.IsShared) {
-        throw new EcmaTypeErrorException("Method {0}.prototype.slice called on incompatible receiver", this.GetType().Name);
+        throw new EcmaTypeErrorException(InternalString.Error.BufferIncompatible, this.GetType().Name);
       }
       CopyBytes(this, start, other, 0, newLength);
       return other;

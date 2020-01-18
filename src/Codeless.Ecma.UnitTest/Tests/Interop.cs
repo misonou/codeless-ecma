@@ -148,6 +148,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should deeply clone [[MapData]]", () => {
         EcmaValue map = Map.Construct();
         map.Invoke("set", map, map);
+        map.Invoke("set", "bar", "baz");
         map["foo"] = 1;
 
         other.Execute(() => {
@@ -155,12 +156,20 @@ namespace Codeless.Ecma.UnitTest.Tests {
           That(clone, Is.InstanceOf(Map));
           That(clone.Invoke("get", clone), Is.EqualTo(clone));
           That(Object.Invoke("getOwnPropertyDescriptor", clone, "foo"), Is.Undefined, "own property is not copied");
+
+          clone.Invoke("set", map, 1);
+          clone.Invoke("delete", "bar");
+          clone.Invoke("set", "baz", true);
         });
+        That(map.Invoke("get", map), Is.EqualTo(map), "original value is unchanged");
+        That(map.Invoke("get", "bar"), Is.EqualTo("baz"), "original entry is not deleted");
+        That(map.Invoke("has", "baz"), Is.False, "key added in clone is not added in original map");
       });
 
       It("should deeply clone [[SetData]]", () => {
         EcmaValue set = Set.Construct();
         set.Invoke("add", set);
+        set.Invoke("add", true);
         set["foo"] = 1;
 
         other.Execute(() => {
@@ -168,7 +177,12 @@ namespace Codeless.Ecma.UnitTest.Tests {
           That(clone, Is.InstanceOf(Set));
           That(clone.Invoke("has", clone), Is.True);
           That(Object.Invoke("getOwnPropertyDescriptor", clone, "foo"), Is.Undefined, "own property is not copied");
+
+          clone.Invoke("delete", true);
+          clone.Invoke("add", false);
         });
+        That(set.Invoke("has", true), Is.True);
+        That(set.Invoke("has", false), Is.False);
       });
 
       It("should clone [[ArrayBufferData]] with same byte contents", () => {

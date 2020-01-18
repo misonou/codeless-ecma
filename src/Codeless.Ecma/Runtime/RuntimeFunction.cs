@@ -12,6 +12,11 @@ namespace Codeless.Ecma.Runtime {
     public RuntimeFunction()
       : base(WellKnownObject.FunctionPrototype) { }
 
+    public RuntimeFunction(WellKnownObject proto)
+      : base(proto) { }
+
+    public string Source { get; protected set; }
+
     public bool ContainsUseStrict { get; protected set; }
 
     public RuntimeObject HomeObject { get; private set; }
@@ -122,6 +127,10 @@ namespace Codeless.Ecma.Runtime {
         }
         return invocation.ThisValue;
       }
+    }
+
+    public override string ToString() {
+      return this.Source;
     }
 
     protected virtual EcmaValue Invoke(RuntimeFunctionInvocation invocation, EcmaValue[] arguments) {

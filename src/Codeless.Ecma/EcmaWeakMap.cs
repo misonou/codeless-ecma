@@ -14,7 +14,7 @@ namespace Codeless.Ecma {
 
     public EcmaWeakMap Set(RuntimeObject key, EcmaValue value) {
       if (key is TransientPrimitiveObject) {
-        throw new EcmaTypeErrorException("Invalid value used as weak map key");
+        throw new EcmaTypeErrorException(InternalString.Error.InvalidWeakMapKey);
       }
       Entry entry = collection.GetOrAdd(new Entry(key, value));
       entry.Value = value;

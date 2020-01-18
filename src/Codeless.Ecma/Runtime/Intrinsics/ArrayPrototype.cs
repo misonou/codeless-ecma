@@ -679,9 +679,9 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         EcmaValue v = compareFn.Call(EcmaValue.Undefined, x, y).ToNumber();
         return v.IsNaN || v == 0 ? 0 : v > 0 ? 1 : -1;
       }
-      string xString = x.ToString();
-      string yString = y.ToString();
-      return xString.CompareTo(yString);
+      string xString = x.ToStringOrThrow();
+      string yString = y.ToStringOrThrow();
+      return String.Compare(xString, yString, StringComparison.Ordinal);
     }
 
     public static void ThrowIfLengthExceeded(long newLen) {
