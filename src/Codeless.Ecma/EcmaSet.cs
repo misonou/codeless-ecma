@@ -8,11 +8,21 @@ namespace Codeless.Ecma {
     public EcmaSet()
       : base(WellKnownObject.SetPrototype) { }
 
-    protected override WellKnownObject DefaultIteratorPrototype => WellKnownObject.SetIteratorPrototype;
-
     public EcmaSet Add(EcmaValue key) {
       SetItem(key, key);
       return this;
+    }
+
+    public override EcmaIterator Keys() {
+      return new EcmaSetIterator(this, EcmaIteratorResultKind.Key);
+    }
+
+    public override EcmaIterator Values() {
+      return new EcmaSetIterator(this, EcmaIteratorResultKind.Value);
+    }
+
+    public override EcmaIterator Entries() {
+      return new EcmaSetIterator(this, EcmaIteratorResultKind.Entry);
     }
   }
 }

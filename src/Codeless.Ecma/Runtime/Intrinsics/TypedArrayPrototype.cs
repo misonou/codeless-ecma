@@ -41,14 +41,14 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Entries([This] EcmaValue thisValue) {
       TypedArray array = thisValue.GetUnderlyingObject<TypedArray>();
       Guard.BufferNotDetached(array);
-      return new EcmaIterator(thisValue, EcmaIteratorResultKind.Entry, WellKnownObject.ArrayIteratorPrototype);
+      return new EcmaArrayIterator(thisValue, EcmaIteratorResultKind.Entry);
     }
 
     [IntrinsicMember]
     public static EcmaValue Keys([This] EcmaValue thisValue) {
       TypedArray array = thisValue.GetUnderlyingObject<TypedArray>();
       Guard.BufferNotDetached(array);
-      return new EcmaIterator(thisValue, EcmaIteratorResultKind.Key, WellKnownObject.ArrayIteratorPrototype);
+      return new EcmaArrayIterator(thisValue, EcmaIteratorResultKind.Key);
     }
 
     [IntrinsicMember]
@@ -56,7 +56,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Values([This] EcmaValue thisValue) {
       TypedArray array = thisValue.GetUnderlyingObject<TypedArray>();
       Guard.BufferNotDetached(array);
-      return new EcmaIterator(thisValue, EcmaIteratorResultKind.Value, WellKnownObject.ArrayIteratorPrototype);
+      return new EcmaArrayIterator(thisValue, EcmaIteratorResultKind.Value);
     }
 
     [IntrinsicMember(FunctionLength = 2)]
@@ -518,6 +518,18 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
   internal static class Uint32ArrayPrototype {
     [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
     public const int BytesPerElement = sizeof(uint);
+  }
+
+  [IntrinsicObject(WellKnownObject.BigInt64ArrayPrototype, Prototype = WellKnownObject.TypedArrayPrototype)]
+  internal static class BigInt64ArrayPrototype {
+    [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
+    public const int BytesPerElement = sizeof(long);
+  }
+
+  [IntrinsicObject(WellKnownObject.BigUint64ArrayPrototype, Prototype = WellKnownObject.TypedArrayPrototype)]
+  internal static class BigUint64ArrayPrototype {
+    [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
+    public const int BytesPerElement = sizeof(ulong);
   }
   #endregion
 }

@@ -23,6 +23,14 @@ namespace Codeless.Ecma.Runtime {
 
     public override sealed bool IsCallable => true;
 
+    public bool IsHomedMethod {
+      get { return this.HomeObject != null && this.HomeObject != this; }
+    }
+
+    public bool IsDerivedConstructor {
+      get { return this.HomeObject == this && !this.GetPrototypeOf().IsWellknownObject(WellKnownObject.FunctionConstructor); }
+    }
+
     protected override string ToStringTag => InternalString.ObjectTag.Function;
 
     public RuntimeObject Prototype {
@@ -37,45 +45,61 @@ namespace Codeless.Ecma.Runtime {
       return current.FunctionObject;
     }
 
+    [Obsolete("Use Literal.FunctionLiteral()")]
     public static RuntimeFunction Create(Action fn) {
       return new DelegateRuntimeFunction(fn);
     }
 
+    [Obsolete("Use Literal.FunctionLiteral()")]
     public static RuntimeFunction Create(Action<EcmaValue> fn) {
       return new DelegateRuntimeFunction(fn);
     }
 
+    [Obsolete("Use Literal.FunctionLiteral()")]
     public static RuntimeFunction Create(Action<EcmaValue, EcmaValue> fn) {
       return new DelegateRuntimeFunction(fn);
     }
 
+    [Obsolete("Use Literal.FunctionLiteral()")]
     public static RuntimeFunction Create(Action<EcmaValue, EcmaValue, EcmaValue> fn) {
       return new DelegateRuntimeFunction(fn);
     }
 
+    [Obsolete("Use Literal.FunctionLiteral()")]
     public static RuntimeFunction Create(Func<EcmaValue> fn) {
       return new DelegateRuntimeFunction(fn);
     }
 
+    [Obsolete("Use Literal.FunctionLiteral()")]
     public static RuntimeFunction Create(Func<EcmaValue, EcmaValue> fn) {
       return new DelegateRuntimeFunction(fn);
     }
 
+    [Obsolete("Use Literal.FunctionLiteral()")]
     public static RuntimeFunction Create(Func<EcmaValue, EcmaValue, EcmaValue> fn) {
       return new DelegateRuntimeFunction(fn);
     }
 
+    [Obsolete("Use Literal.FunctionLiteral()")]
     public static RuntimeFunction Create(Func<EcmaValue, EcmaValue, EcmaValue, EcmaValue> fn) {
       return new DelegateRuntimeFunction(fn);
     }
 
+    [Obsolete("Use Literal.FunctionLiteral()")]
     public static RuntimeFunction Create(Func<EcmaValue, EcmaValue, EcmaValue, EcmaValue, EcmaValue> fn) {
       return new DelegateRuntimeFunction(fn);
     }
 
     public RuntimeFunction AsDerivedClassConstructorOf(RuntimeObject super) {
+      Guard.ArgumentNotNull(super, "super");
       if (this is IntrinsicFunction) {
         throw new InvalidOperationException("Cannot modified HomeObject internal slot for intrinsic function");
+      }
+      if (!super.IsConstructor) {
+        throw new ArgumentException("Supplied object must be constructor", "super");
+      }
+      if (this.HomeObject != null) {
+        throw new InvalidOperationException("Homed method cannot be invoked as class constructor");
       }
       RuntimeObject proto = Create(GetPrototypeFromConstructor(super, WellKnownObject.ObjectPrototype));
       SetPrototypeOf(super);
@@ -85,10 +109,16 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public RuntimeFunction AsHomedMethodOf(RuntimeObject homeObject) {
+      Guard.ArgumentNotNull(homeObject, "homeObject");
       if (this is IntrinsicFunction) {
         throw new InvalidOperationException("Cannot modified HomeObject internal slot for intrinsic function");
       }
-      Guard.ArgumentNotNull(homeObject, "homeObject");
+      if (homeObject == this) {
+        throw new ArgumentException("Supplied object cannot be object itself", "homeObject");
+      }
+      if (this.HomeObject != null && this.HomeObject != homeObject) {
+        throw new InvalidOperationException("HomeObject internal slot can only be modified once");
+      }
       this.HomeObject = homeObject;
       return this;
     }
@@ -99,6 +129,9 @@ namespace Codeless.Ecma.Runtime {
 
     public override EcmaValue Call(EcmaValue thisValue, params EcmaValue[] arguments) {
       Guard.ArgumentNotNull(arguments, "arguments");
+      if (this.HomeObject == this) {
+        throw new EcmaTypeErrorException(InternalString.Error.MustCallAsConstructor);
+      }
       using (RuntimeFunctionInvocation invocation = new RuntimeFunctionInvocation(this, thisValue, arguments)) {
         return Invoke(invocation, arguments);
       }
@@ -107,16 +140,10 @@ namespace Codeless.Ecma.Runtime {
     public override EcmaValue Construct(EcmaValue[] arguments, RuntimeObject newTarget) {
       Guard.ArgumentNotNull(arguments, "arguments");
       Guard.ArgumentNotNull(newTarget, "newTarget");
-      if (!this.IsConstructor) {
+      if (!this.IsConstructor || !newTarget.IsConstructor || (this.HomeObject != null && this.HomeObject != this)) {
         throw new EcmaTypeErrorException(InternalString.Error.NotConstructor);
       }
-      if (!newTarget.IsConstructor) {
-        throw new EcmaTypeErrorException(InternalString.Error.NotConstructor);
-      }
-      RuntimeObject thisValue = default;
-      if (this.HomeObject == null) {
-        thisValue = ConstructThisValue(newTarget);
-      }
+      RuntimeObject thisValue = IsDerivedFromInternalClass() ? default : ConstructThisValue(newTarget);
       using (RuntimeFunctionInvocation invocation = new RuntimeFunctionInvocation(this, thisValue, arguments, newTarget)) {
         EcmaValue returnValue = Invoke(invocation, arguments);
         if (returnValue.Type == EcmaValueType.Object) {
@@ -152,8 +179,22 @@ namespace Codeless.Ecma.Runtime {
       DefineOwnProperty(WellKnownProperty.Prototype, new EcmaPropertyDescriptor(proto, EcmaPropertyAttributes.Writable));
     }
 
+    private bool IsDerivedFromInternalClass() {
+      for (RuntimeObject cur = this.HomeObject; cur != null; cur = cur.GetPrototypeOf()) {
+        if (cur is RuntimeObjectProxy) {
+          // class is derived from a proxy of a constructor
+          // the proxy trap will be invoked and hence thisValue will be obtained from returned value
+          return true;
+        }
+        if (cur is IntrinsicFunction && !cur.IsWellknownObject(WellKnownObject.FunctionConstructor)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     public static implicit operator RuntimeFunction(Delegate del) {
-      return del != null ? new DelegateRuntimeFunction(del) : null;
+      return del != null ? DelegateRuntimeFunction.FromDelegate(del) : null;
     }
 
     public static explicit operator RuntimeFunction(WellKnownObject type) {

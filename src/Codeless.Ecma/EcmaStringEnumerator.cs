@@ -5,11 +5,12 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma {
-  public class EcmaStringEnumerator : IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> {
+  public class EcmaStringEnumerator : EcmaIterator, IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> {
     private readonly string target;
     private int nextIndex = -1;
 
-    public EcmaStringEnumerator(string target) {
+    public EcmaStringEnumerator(string target)
+      : base(target, EcmaIteratorResultKind.Value, WellKnownObject.StringIteratorPrototype) {
       this.target = target;
     }
 
@@ -28,12 +29,18 @@ namespace Codeless.Ecma {
       return false;
     }
 
-    public void Reset() {
-      nextIndex = -1;
+    protected override IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> GetEnumerator(object runtimeObject) {
+      return this;
     }
 
+    #region Interface
     object IEnumerator.Current => this.Current;
 
+    void IEnumerator.Reset() {
+      throw new InvalidOperationException();
+    }
+
     void IDisposable.Dispose() { }
+    #endregion
   }
 }

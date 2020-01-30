@@ -439,7 +439,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(WellKnownSymbol.Iterator)]
     public static EcmaValue Iterator([This] EcmaValue value) {
       Guard.RequireObjectCoercible(value);
-      return new EcmaIterator(new EcmaStringEnumerator(value.ToStringOrThrow()), EcmaIteratorResultKind.Value, WellKnownObject.StringIteratorPrototype);
+      return new EcmaStringEnumerator(value.ToStringOrThrow());
     }
 
     private static string MapLowerSpecialCase(char ch) {

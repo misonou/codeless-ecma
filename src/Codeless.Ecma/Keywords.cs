@@ -40,7 +40,7 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue Throw(EcmaValue value) {
-      throw new EcmaRuntimeException(value);
+      throw EcmaException.FromValue(value);
     }
 
     [EcmaSpecification("typeof", EcmaSpecificationKind.RuntimeSemantics)]
@@ -58,6 +58,8 @@ namespace Codeless.Ecma {
           return InternalString.TypeOf.String;
         case EcmaValueType.Symbol:
           return InternalString.TypeOf.Symbol;
+        case EcmaValueType.BigInt:
+          return InternalString.TypeOf.BigInt;
       }
       return value.IsCallable ? InternalString.TypeOf.Function : InternalString.TypeOf.Object;
     }

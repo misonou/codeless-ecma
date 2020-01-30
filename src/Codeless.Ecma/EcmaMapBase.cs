@@ -17,8 +17,6 @@ namespace Codeless.Ecma {
       get { return dict.Count; }
     }
 
-    protected abstract WellKnownObject DefaultIteratorPrototype { get; }
-
     public bool Has(EcmaValue key) {
       return TryGetValueChecked(key, out Entry entry);
     }
@@ -71,17 +69,11 @@ namespace Codeless.Ecma {
       }
     }
 
-    public EcmaIterator Keys() {
-      return new EcmaIterator(this, EcmaIteratorResultKind.Key, this.DefaultIteratorPrototype);
-    }
+    public abstract EcmaIterator Keys();
 
-    public EcmaIterator Values() {
-      return new EcmaIterator(this, EcmaIteratorResultKind.Value, this.DefaultIteratorPrototype);
-    }
+    public abstract EcmaIterator Values();
 
-    public EcmaIterator Entries() {
-      return new EcmaIterator(this, EcmaIteratorResultKind.Entry, this.DefaultIteratorPrototype);
-    }
+    public abstract EcmaIterator Entries();
 
     public IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> GetEnumerator() {
       return new Enumerator(this);

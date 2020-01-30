@@ -15,7 +15,9 @@ namespace Codeless.Ecma.Runtime {
     private static RuntimeFunctionInvocation current;
 
     private readonly EcmaValue[] arguments;
+    private RuntimeFunctionInvocation previous;
     private ArgumentList argumentObject;
+    private int childCount;
     private bool disposed;
 
     internal RuntimeFunctionInvocation(RuntimeFunction method, EcmaValue thisValue, EcmaValue[] arguments, RuntimeObject newTarget = null) {
@@ -24,7 +26,8 @@ namespace Codeless.Ecma.Runtime {
       this.ThisValue = thisValue;
       this.NewTarget = newTarget;
       this.arguments = arguments;
-      if (method.HomeObject != null) {
+      this.previous = current;
+      if (method.IsHomedMethod || method.IsDerivedConstructor) { 
         this.Super = new SuperAccessor(this, method.HomeObject);
       }
       current = this;
@@ -40,6 +43,8 @@ namespace Codeless.Ecma.Runtime {
     public EcmaValue ThisValue { get; internal set; }
     public SuperAccessor Super { get; private set; }
     public RuntimeObject NewTarget { get; private set; }
+    public IGeneratorContext Generator { get; internal set; }
+    public bool SuspendOnDispose { get; internal set; }
 
     public ArgumentList Arguments {
       get {
@@ -50,12 +55,37 @@ namespace Codeless.Ecma.Runtime {
       }
     }
 
-    public void Dispose() {
+    public IDisposable Resume() {
       if (disposed) {
         throw new ObjectDisposedException("");
       }
-      disposed = true;
-      current = Parent;
+      if (this.Parent != null) {
+        this.Parent.childCount--;
+      }
+      previous = current;
+      current = this;
+      return this;
+    }
+
+    public void Dispose() {
+      if (!disposed) {
+        RuntimeFunctionInvocation parent = this.Parent;
+        bool isSuspendedDispose = parent != null && previous != parent;
+        if (current == this) {
+          current = previous;
+        }
+        if (this.SuspendOnDispose) {
+          if (parent != null) {
+            parent.childCount++;
+          }
+        } else if (childCount == 0) {
+          disposed = true;
+          if (isSuspendedDispose && parent.childCount == 0) {
+            parent.Dispose();
+          }
+        }
+        previous = null;
+      }
     }
 
     internal string GetDebuggerDisplay() {

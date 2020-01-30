@@ -1,4 +1,4 @@
-using Codeless.Ecma.Diagnostics;
+﻿using Codeless.Ecma.Diagnostics;
 using Codeless.Ecma.Runtime;
 using Codeless.Ecma.UnitTest.Harness;
 using System;
@@ -24,6 +24,14 @@ namespace Codeless.Ecma.UnitTest {
 
     public static Func<EcmaValue> ThrowTest262WithMessage(string message) {
       return () => throw new Test262Exception(message);
+    }
+
+    public static IEnumerable<EcmaValue> EmptyGenerator() {
+      yield break;
+    }
+
+    public static IEnumerable<EcmaValue> EmptyGenerator(EcmaValue ex) {
+      yield break;
     }
 
     public static EcmaValue CreateObject(object anonymousObject) {

@@ -10,7 +10,7 @@ using System.Threading;
 
 namespace Codeless.Ecma {
   [IntrinsicObject(WellKnownObject.SymbolConstructor)]
-  public class Symbol {
+  public sealed class Symbol {
     private static readonly ConcurrentDictionary<string, Symbol> globalSymbolDict = new ConcurrentDictionary<string, Symbol>();
     private static readonly Symbol[] enumDict;
 

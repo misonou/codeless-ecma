@@ -49,13 +49,21 @@ namespace Codeless.Ecma {
     }
 
     public bool Wait(long position, int comparand, int ms, out bool comparandEquals) {
+      return Wait(position, comparand, ms, true, out comparandEquals);
+    }
+
+    public bool Wait(long position, long comparand, int ms, out bool comparandEquals) {
+      return Wait(position, comparand, ms, false, out comparandEquals);
+    }
+
+    private bool Wait(long position, long comparand, int ms, bool isInt32, out bool comparandEquals) {
       object syncRoot = this.SyncRoot;
       bool exitAtFinally = true;
       Monitor.Enter(syncRoot);
       try {
-        // compare value with bytes in position as a signed int
-        // because only Int32Array is waitable through the Atomics object
-        comparandEquals = GetInt32(position) == comparand;
+        // compare value with bytes in position as a signed int or long
+        // because only Int32Array and BigInt64Array are waitable through the Atomics object
+        comparandEquals = (isInt32 ? GetInt32(position) : GetInt64Shared(position)) == comparand;
         if (!comparandEquals) {
           return false;
         }

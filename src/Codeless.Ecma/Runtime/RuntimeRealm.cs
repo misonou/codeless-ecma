@@ -347,7 +347,8 @@ namespace Codeless.Ecma.Runtime {
     }
 
     private static void DefineIntrinsicDataProperty(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, object value, EcmaPropertyAttributes? attributes) {
-      ht[name] = new EcmaPropertyDescriptor(new EcmaValue(value), attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty) & (EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
+      attributes = attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty) & (EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
+      ht[name] = value is WellKnownObject type ? CreateWellknownObjectSharedDescriptor(type, attributes.Value) : new EcmaPropertyDescriptor(new EcmaValue(value), attributes.Value);
     }
 
     private static void DefineIntrinsicAccessorProperty(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, EcmaValue sharedValue, EcmaPropertyAttributes? attributes, bool isGetter) {

@@ -6,8 +6,6 @@ namespace Codeless.Ecma {
     public EcmaMap()
       : base(WellKnownObject.MapPrototype) { }
 
-    protected override WellKnownObject DefaultIteratorPrototype => WellKnownObject.MapIteratorPrototype;
-
     public EcmaValue Get(EcmaValue key) {
       return GetItem(key);
     }
@@ -15,6 +13,18 @@ namespace Codeless.Ecma {
     public EcmaMap Set(EcmaValue key, EcmaValue value) {
       SetItem(key, value);
       return this;
+    }
+
+    public override EcmaIterator Keys() {
+      return new EcmaMapIterator(this, EcmaIteratorResultKind.Key);
+    }
+
+    public override EcmaIterator Values() {
+      return new EcmaMapIterator(this, EcmaIteratorResultKind.Value);
+    }
+
+    public override EcmaIterator Entries() {
+      return new EcmaMapIterator(this, EcmaIteratorResultKind.Entry);
     }
   }
 }

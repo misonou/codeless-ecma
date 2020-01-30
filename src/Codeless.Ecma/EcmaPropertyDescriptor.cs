@@ -118,7 +118,7 @@ namespace Codeless.Ecma {
         return this.IsAccessorDescriptor ? getter : default;
       }
       set {
-        attributes = attributes & ~EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.HasGetter;
+        attributes = attributes & ~(EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.HasWritable) | EcmaPropertyAttributes.HasGetter;
         getter = value;
       }
     }
@@ -128,7 +128,7 @@ namespace Codeless.Ecma {
         return this.IsAccessorDescriptor ? setter : default;
       }
       set {
-        attributes = attributes & ~EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.HasSetter;
+        attributes = attributes & ~(EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.HasWritable) | EcmaPropertyAttributes.HasSetter;
         setter = value;
       }
     }

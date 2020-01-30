@@ -157,7 +157,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       Guard.ArgumentIsObject(thisValue);
       EcmaValue re = SpeciesConstruct(thisValue, false);
       string inputString = str.ToStringOrThrow();
-      return new EcmaIterator(new EcmaRegExpStringEnumerator(re, inputString), EcmaIteratorResultKind.Value, WellKnownObject.RegExpStringIteratorPrototype);
+      return new EcmaRegExpStringEnumerator(re, inputString);
     }
 
     [IntrinsicMember(WellKnownSymbol.Replace)]

@@ -8,7 +8,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     [IntrinsicMember]
     public static EcmaValue Next([This] EcmaValue thisValue) {
-      EcmaIterator iterator = thisValue.GetUnderlyingObject<EcmaIterator>();
+      EcmaArrayIterator iterator = thisValue.GetUnderlyingObject<EcmaArrayIterator>();
       return iterator.Next();
     }
   }

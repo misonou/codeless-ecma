@@ -1,21 +1,34 @@
-﻿using Codeless.Ecma.Primitives;
+﻿using Codeless.Ecma.Native;
+using Codeless.Ecma.Primitives;
 using Codeless.Ecma.Runtime;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Codeless.Ecma {
   public static class EcmaValueUtility {
+    private static readonly ConcurrentDictionary<Type, IEcmaValueBinder> binderTypes = new ConcurrentDictionary<Type, IEcmaValueBinder>(new Dictionary<Type, IEcmaValueBinder> {
+      [typeof(WellKnownSymbol)] = WellKnownSymbolBinder.Default
+    });
+    private static Dictionary<Type, ConstructorInfo> ecmaValueConstructors;
+
     public static T GetUnderlyingObject<T>(this EcmaValue thisValue) {
       if (thisValue.Type != EcmaValueType.Object) {
         throw new EcmaTypeErrorException(InternalString.Error.NotObject);
       }
-      if (thisValue.GetUnderlyingObject() is T value) {
+      object obj = thisValue.GetUnderlyingObject();
+      if (obj is T value) {
         return value;
+      }
+      if (obj is INativeObjectWrapper wrapper && wrapper.Target is T value2) {
+        return value2;
       }
       throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
     }
@@ -35,30 +48,6 @@ namespace Codeless.Ecma {
     public static int ToInteger(this EcmaValue thisValue, int min, int max) {
       EcmaValue value = thisValue.ToInteger();
       return value > max ? max : value < min ? min : (int)value;
-    }
-
-    [EcmaSpecification("InstanceofOperator", EcmaSpecificationKind.RuntimeSemantics)]
-    public static bool InstanceOf(this EcmaValue thisValue, EcmaValue constructor) {
-      if (constructor.Type != EcmaValueType.Object) {
-        throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
-      }
-      RuntimeObject obj = constructor.ToObject();
-      RuntimeObject instOfHandler = obj.GetMethod(Symbol.HasInstance);
-      if (instOfHandler != null) {
-        return instOfHandler.Call(constructor, thisValue).ToBoolean();
-      }
-      if (!constructor.IsCallable) {
-        throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
-      }
-      return obj.HasInstance(thisValue.ToObject());
-    }
-
-    [EcmaSpecification("Relational Operators `in`", EcmaSpecificationKind.RuntimeSemantics)]
-    public static bool In(this EcmaValue thisValue, EcmaValue other) {
-      if (other.Type != EcmaValueType.Object) {
-        throw new EcmaTypeErrorException(InternalString.Error.NotObject);
-      }
-      return other.HasProperty(EcmaPropertyKey.FromValue(thisValue));
     }
 
     [EcmaSpecification("CreateListFromArrayLike", EcmaSpecificationKind.AbstractOperations)]
@@ -114,8 +103,68 @@ namespace Codeless.Ecma {
       throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
     }
 
+    public static EcmaValue ConvertFromObject(object target) {
+      switch (target) {
+        case null:
+          return EcmaValue.Undefined;
+        case EcmaValue value:
+          return value;
+        case string str:
+          return new EcmaValue(str);
+        case Symbol sym:
+          return new EcmaValue(sym);
+        case RuntimeObject obj:
+          return new EcmaValue(obj);
+        case DateTime dt:
+          return new EcmaDate(dt);
+        case Delegate del:
+          return DelegateRuntimeFunction.FromDelegate(del);
+        case Task task:
+          return Promise.FromTask(task);
+        case Exception ex:
+          return GetValueFromException(ex);
+      }
+      Type type = target.GetType();
+      IEcmaValueBinder binder = null;
+      if (type.IsEnum) {
+        binder = binderTypes.GetOrAdd(type, t => (IEcmaValueBinder)Activator.CreateInstance(typeof(EnumBinder<>).MakeGenericType(t)));
+      } else {
+        switch (Type.GetTypeCode(type)) {
+          case TypeCode.Boolean:
+            return new EcmaValue(BooleanBinder.Default.ToHandle((bool)target), BooleanBinder.Default);
+          case TypeCode.Byte:
+          case TypeCode.SByte:
+          case TypeCode.Char:
+          case TypeCode.Int16:
+          case TypeCode.UInt16:
+            return new EcmaValue(Int32Binder.Default.ToHandle(Convert.ToInt32(target)), Int32Binder.Default);
+          case TypeCode.Int32:
+            return new EcmaValue(Int32Binder.Default.ToHandle((int)target), Int32Binder.Default);
+          case TypeCode.UInt32:
+            return new EcmaValue(Int64Binder.Default.ToHandle(Convert.ToInt64(target)), Int64Binder.Default);
+          case TypeCode.Int64:
+            return new EcmaValue(Int64Binder.Default.ToHandle((long)target), Int64Binder.Default);
+          case TypeCode.UInt64:
+          case TypeCode.Single:
+            return new EcmaValue(DoubleBinder.Default.ToHandle(Convert.ToDouble(target)), DoubleBinder.Default);
+          case TypeCode.Double:
+            return new EcmaValue(DoubleBinder.Default.ToHandle((double)target), DoubleBinder.Default);
+        }
+        binder = RuntimeRealm.Current.GetRuntimeObject(target);
+      }
+      return new EcmaValue(binder.ToHandle(target), binder);
+    }
+
     public static EcmaValue GetValueFromException(Exception ex) {
       return ex is EcmaException ex1 ? ex1.ToValue() : new EcmaError(ex);
+    }
+
+    [EcmaSpecification("CreateIterResultObject", EcmaSpecificationKind.AbstractOperations)]
+    public static EcmaValue CreateIterResultObject(EcmaValue value, bool done) {
+      EcmaObject o = new EcmaObject();
+      o.CreateDataProperty(WellKnownProperty.Value, value);
+      o.CreateDataProperty(WellKnownProperty.Done, done);
+      return o;
     }
 
     public static Expression ConvertToEcmaValueExpression(Expression value) {
@@ -130,9 +179,22 @@ namespace Codeless.Ecma {
         return Expression.Block(value, Expression.Constant(EcmaValue.Undefined));
 #endif
       }
-      ConstructorInfo ci = typeof(EcmaValue).GetConstructors().FirstOrDefault(v => v.GetParameters()[0].ParameterType.IsAssignableFrom(value.Type)) ??
-         typeof(EcmaValue).GetConstructors().FirstOrDefault(v => v.GetParameters()[0].ParameterType == typeof(object));
-      return Expression.New(ci, Expression.Convert(value, ci.GetParameters()[0].ParameterType));
+      if (ecmaValueConstructors == null) {
+        ecmaValueConstructors = typeof(EcmaValue).GetConstructors().Where(v => v.GetParameters().Length == 1 && v.GetParameters()[0].ParameterType.IsSealed).ToDictionary(v => v.GetParameters()[0].ParameterType);
+      }
+      if (ecmaValueConstructors.TryGetValue(value.Type, out ConstructorInfo ci)) {
+        return Expression.New(ci, value);
+      }
+      if (typeof(RuntimeObject).IsAssignableFrom(value.Type)) {
+        return Expression.Call(value, "ToValue", Type.EmptyTypes);
+      }
+      if (typeof(Task).IsAssignableFrom(value.Type)) {
+        return Expression.Call(Expression.Call(typeof(Promise), "FromTask", Type.EmptyTypes, value), "ToValue", Type.EmptyTypes);
+      }
+      if (typeof(Exception).IsAssignableFrom(value.Type)) {
+        return Expression.Call(typeof(EcmaValueUtility), "GetValueFromException", Type.EmptyTypes, Expression.Convert(value, typeof(Exception)));
+      }
+      return Expression.Call(typeof(EcmaValueUtility), "ConvertFromObject", Type.EmptyTypes, Expression.Convert(value, typeof(object)));
     }
 
     public static Expression ConvertFromEcmaValueExpression(Expression value, Type conversionType) {
@@ -191,6 +253,76 @@ namespace Codeless.Ecma {
         return Expression.Call(typeof(EcmaValueUtility), "GetUnderlyingObject", new[] { conversionType }, value);
       }
       return Expression.Convert(Expression.Call(typeof(EcmaValueUtility), "ConvertToUnknownType", Type.EmptyTypes, value, Expression.Constant(conversionType)), conversionType);
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void Deconstruct(this EcmaValue value, out EcmaValue item1, out EcmaValue rest) {
+      EcmaValue[] arr = CreateListFromArrayLike(value);
+      item1 = arr.ElementAtOrDefault(0);
+      rest = new EcmaArray(new List<EcmaValue>(arr.Skip(1)));
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void Deconstruct(this EcmaValue value, out EcmaValue item1, out EcmaValue item2, out EcmaValue rest) {
+      EcmaValue[] arr = CreateListFromArrayLike(value);
+      item1 = arr.ElementAtOrDefault(0);
+      item2 = arr.ElementAtOrDefault(1);
+      rest = new EcmaArray(new List<EcmaValue>(arr.Skip(2)));
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void Deconstruct(this EcmaValue value, out EcmaValue item1, out EcmaValue item2, out EcmaValue item3, out EcmaValue rest) {
+      EcmaValue[] arr = CreateListFromArrayLike(value);
+      item1 = arr.ElementAtOrDefault(0);
+      item2 = arr.ElementAtOrDefault(1);
+      item3 = arr.ElementAtOrDefault(2);
+      rest = new EcmaArray(new List<EcmaValue>(arr.Skip(3)));
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void Deconstruct(this EcmaValue value, out EcmaValue item1, out EcmaValue item2, out EcmaValue item3, out EcmaValue item4, out EcmaValue rest) {
+      EcmaValue[] arr = CreateListFromArrayLike(value);
+      item1 = arr.ElementAtOrDefault(0);
+      item2 = arr.ElementAtOrDefault(1);
+      item3 = arr.ElementAtOrDefault(2);
+      item4 = arr.ElementAtOrDefault(3);
+      rest = new EcmaArray(new List<EcmaValue>(arr.Skip(4)));
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void Deconstruct(this EcmaValue value, out EcmaValue item1, out EcmaValue item2, out EcmaValue item3, out EcmaValue item4, out EcmaValue item5, out EcmaValue rest) {
+      EcmaValue[] arr = CreateListFromArrayLike(value);
+      item1 = arr.ElementAtOrDefault(0);
+      item2 = arr.ElementAtOrDefault(1);
+      item3 = arr.ElementAtOrDefault(2);
+      item4 = arr.ElementAtOrDefault(3);
+      item5 = arr.ElementAtOrDefault(4);
+      rest = new EcmaArray(new List<EcmaValue>(arr.Skip(5)));
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void Deconstruct(this EcmaValue value, out EcmaValue item1, out EcmaValue item2, out EcmaValue item3, out EcmaValue item4, out EcmaValue item5, out EcmaValue item6, out EcmaValue rest) {
+      EcmaValue[] arr = CreateListFromArrayLike(value);
+      item1 = arr.ElementAtOrDefault(0);
+      item2 = arr.ElementAtOrDefault(1);
+      item3 = arr.ElementAtOrDefault(2);
+      item4 = arr.ElementAtOrDefault(3);
+      item5 = arr.ElementAtOrDefault(4);
+      item6 = arr.ElementAtOrDefault(5);
+      rest = new EcmaArray(new List<EcmaValue>(arr.Skip(6)));
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void Deconstruct(this EcmaValue value, out EcmaValue item1, out EcmaValue item2, out EcmaValue item3, out EcmaValue item4, out EcmaValue item5, out EcmaValue item6, out EcmaValue item7, out EcmaValue rest) {
+      EcmaValue[] arr = CreateListFromArrayLike(value);
+      item1 = arr.ElementAtOrDefault(0);
+      item2 = arr.ElementAtOrDefault(1);
+      item3 = arr.ElementAtOrDefault(2);
+      item4 = arr.ElementAtOrDefault(3);
+      item5 = arr.ElementAtOrDefault(4);
+      item6 = arr.ElementAtOrDefault(5);
+      item7 = arr.ElementAtOrDefault(6);
+      rest = new EcmaArray(new List<EcmaValue>(arr.Skip(7)));
     }
 
     [EcmaSpecification("StringNumericLiteral", EcmaSpecificationKind.RuntimeSemantics)]

@@ -10,63 +10,49 @@ namespace Codeless.Ecma {
     Entry
   }
 
-  public class EcmaIterator : RuntimeObject, IInspectorMetaProvider {
+  public abstract class EcmaIterator : RuntimeObject, IInspectorMetaProvider {
     private static readonly string[] KindString = { "key", "value", "entry" };
     private readonly IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> iterator;
 
-    public EcmaIterator(EcmaValue target, EcmaIteratorResultKind kind, WellKnownObject proto)
-      : base(proto) {
-      this.iterator = new EcmaArrayEnumerator(target.ToObject());
-      this.IteratedObject = target.ToObject();
-      this.ResultKind = kind;
-    }
-
-    public EcmaIterator(EcmaMapBase target, EcmaIteratorResultKind kind, WellKnownObject proto)
+    public EcmaIterator(object target, EcmaIteratorResultKind kind, WellKnownObject proto)
       : base(proto) {
       Guard.ArgumentNotNull(target, "target");
-      this.iterator = target.GetEnumerator();
+      this.iterator = GetEnumerator(target);
       this.IteratedObject = target;
-      this.ResultKind = kind;
-    }
-
-    public EcmaIterator(IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> iterator, EcmaIteratorResultKind kind, WellKnownObject proto)
-      : base(proto) {
-      Guard.ArgumentNotNull(iterator, "iterator");
-      this.iterator = iterator;
-      this.IteratedObject = RuntimeRealm.Current.GetRuntimeObject(iterator);
       this.ResultKind = kind;
     }
 
     public EcmaIteratorResultKind ResultKind { get; private set; }
 
-    public RuntimeObject IteratedObject { get; private set; }
+    public object IteratedObject { get; private set; }
 
-    public EcmaValue Next() {
+    public virtual EcmaValue Next() {
       if (this.IteratedObject == null) {
-        return CreateIterResultObject(EcmaValue.Undefined, true);
+        return EcmaValueUtility.CreateIterResultObject(EcmaValue.Undefined, true);
       }
       if (iterator.MoveNext()) {
         KeyValuePair<EcmaValue, EcmaValue> entry = iterator.Current;
         switch (this.ResultKind) {
           case EcmaIteratorResultKind.Key:
-            return CreateIterResultObject(entry.Key, false);
+            return EcmaValueUtility.CreateIterResultObject(entry.Key, false);
           case EcmaIteratorResultKind.Value:
-            return CreateIterResultObject(entry.Value, false);
+            return EcmaValueUtility.CreateIterResultObject(entry.Value, false);
           case EcmaIteratorResultKind.Entry:
-            return CreateIterResultObject(new EcmaArray(new[] { entry.Key, entry.Value }), false);
+            return EcmaValueUtility.CreateIterResultObject(new EcmaArray(new[] { entry.Key, entry.Value }), false);
         }
         throw new InvalidOperationException("Unknown kind value");
       }
-      this.IteratedObject = null;
-      return CreateIterResultObject(EcmaValue.Undefined, true);
+      Close();
+      return EcmaValueUtility.CreateIterResultObject(EcmaValue.Undefined, true);
     }
 
-    [EcmaSpecification("CreateIterResultObject", EcmaSpecificationKind.AbstractOperations)]
-    private EcmaValue CreateIterResultObject(EcmaValue value, bool done) {
-      EcmaObject o = new EcmaObject();
-      o.CreateDataProperty(WellKnownProperty.Value, value);
-      o.CreateDataProperty(WellKnownProperty.Done, done);
-      return o;
+    protected abstract IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> GetEnumerator(object runtimeObject);
+
+    protected void Close() {
+      if (this.IteratedObject != null) {
+        iterator.Dispose();
+        this.IteratedObject = null;
+      }
     }
 
     void IInspectorMetaProvider.FillInInspectorMetaObject(InspectorMetaObject meta) {

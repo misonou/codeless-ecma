@@ -77,7 +77,7 @@ namespace Codeless.Ecma.UnitTest {
     public static void VerifyIteratorResult(EcmaValue result, bool done, object value = default) {
       That(result, Is.TypeOf("object"), "iterator return must be an Object");
       That(result["done"], Is.EqualTo(done), "expected iteration done: {0}", done);
-      if (!done) {
+      if (value != null) {
         if (value is Delegate d) {
           d.DynamicInvoke(result["value"]);
         } else {

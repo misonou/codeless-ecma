@@ -101,7 +101,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
     private const string letters = "0123456789abcdefghijklmnopqrstuvwxyz";
 
-    private static string GetString(long signedValue, int radix) {
+    public static string GetString(long signedValue, int radix) {
       StringBuilder sb = new StringBuilder();
       long value = Math.Abs(signedValue);
       if (signedValue == 0) {
@@ -122,7 +122,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return sb.ToString();
     }
 
-    private static string GetString(double signedValue, int radix) {
+    public static string GetString(double signedValue, int radix) {
       double value = Math.Abs(signedValue);
       int exp = 0;
       if (value > Int64.MaxValue) {
@@ -152,7 +152,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return sb.ToString();
     }
 
-    private static string GetString(double signedValue, int precision, bool useExponent) {
+    public static string GetString(double signedValue, int precision, bool useExponent) {
       double value = Math.Abs(signedValue);
       int exp = (int)Math.Floor(Math.Log(value, 10));
       if (value / Math.Pow(10, exp) >= 10) {

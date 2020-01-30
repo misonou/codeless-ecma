@@ -21,7 +21,7 @@ namespace Codeless.Ecma.Runtime {
       throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
     }
 
-    [EcmaSpecification("GetIterator", EcmaSpecificationKind.AbstractOperations)]
+    [EcmaSpecification("GetIterator", EcmaSpecificationKind.AbstractOperations, Description = "equivalent to hint is sync")]
     public static EcmaIteratorEnumerator GetIterator(this RuntimeObject obj) {
       Guard.ArgumentNotNull(obj, "obj");
       RuntimeObject method = obj.GetMethod(Symbol.Iterator);
@@ -31,6 +31,19 @@ namespace Codeless.Ecma.Runtime {
       EcmaValue iterator = method.Call(obj);
       Guard.ArgumentIsObject(iterator);
       return new EcmaIteratorEnumerator(iterator);
+    }
+
+    [EcmaSpecification("GetIterator", EcmaSpecificationKind.AbstractOperations, Description = "equivalent to hint is async")]
+    public static StatefulIterator GetAsyncIterator(this RuntimeObject obj) {
+      Guard.ArgumentNotNull(obj, "obj");
+      RuntimeObject method = obj.GetMethod(Symbol.AsyncIterator);
+      if (method == null) {
+        EcmaIteratorEnumerator syncIterator = GetIterator(obj);
+        return new AsyncFromSyncIterator(syncIterator);
+      }
+      EcmaValue iterator = method.Call(obj);
+      Guard.ArgumentIsObject(iterator);
+      return iterator.GetUnderlyingObject<AsyncGenerator>();
     }
 
     [EcmaSpecification("CreateDataProperty", EcmaSpecificationKind.AbstractOperations)]

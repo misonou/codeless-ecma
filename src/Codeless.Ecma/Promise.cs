@@ -19,7 +19,7 @@ namespace Codeless.Ecma {
 
   public delegate void PromiseExecutor(PromiseResolver resolve, PromiseResolver reject);
 
-  public class Promise : RuntimeObject, IInspectorMetaProvider {
+  public partial class Promise : RuntimeObject, IInspectorMetaProvider {
     private static int accum;
     private PromiseCallback fulfilledCallback;
     private PromiseCallback rejectedCallback;
@@ -27,15 +27,6 @@ namespace Codeless.Ecma {
 
     public Promise()
       : base(WellKnownObject.PromisePrototype) { }
-
-    public Promise(Task task)
-      : this() {
-      Guard.ArgumentNotNull(task, "task");
-      RuntimeExecution.Enqueue(() => HandleCompletedTask(task), task);
-    }
-
-    public Promise(Exception ex)
-      : this(PromiseState.Rejected, EcmaValueUtility.GetValueFromException(ex)) { }
 
     public Promise(PromiseState state, EcmaValue value)
       : this() {
@@ -48,18 +39,17 @@ namespace Codeless.Ecma {
       ExecuteCallback(callback);
     }
 
-    public Promise(Promise previous, PromiseCallback fulfilledCallback = null, PromiseCallback rejectedCallback = null)
-      : this() {
-      InitWithCallback(previous, fulfilledCallback, rejectedCallback);
-    }
-
     public int ID { get; } = Interlocked.Increment(ref accum);
 
     public PromiseState State { get; private set; }
 
     public EcmaValue Value { get; private set; }
 
-    public static EcmaValue All(IEnumerable<Promise> promises) {
+    public static Promise All(IEnumerable<EcmaValue> values) {
+      return All(values.Select(Resolve));
+    }
+
+    public static Promise All(IEnumerable<Promise> promises) {
       Guard.ArgumentNotNull(promises, "promises");
       List<Promise> list = new List<Promise>(promises);
       if (list.Count == 0) {
@@ -70,13 +60,17 @@ namespace Codeless.Ecma {
       foreach (Promise p in list) {
         p.ContinueWith(other => {
           if (other.State == PromiseState.Rejected) {
-            promise.Reject(other.Value);
+            promise.RejectSelf(other.Value);
           } else if (++count == list.Count) {
-            promise.Resolve(new EcmaArray(list.Select(v => v.Value).ToList()));
+            promise.ResolveSelf(new EcmaArray(list.Select(v => v.Value).ToList()));
           }
         });
       }
       return promise;
+    }
+
+    public static Promise Race(IEnumerable<EcmaValue> values) {
+      return Race(values.Select(Resolve));
     }
 
     public static Promise Race(IEnumerable<Promise> promises) {
@@ -89,6 +83,38 @@ namespace Codeless.Ecma {
       foreach (Promise p in list) {
         p.ContinueWith(promise.HandleCompletedPromise);
       }
+      return promise;
+    }
+
+    public static Promise Resolve(EcmaValue value) {
+      if (value.GetUnderlyingObject() is Promise p && p[WellKnownProperty.Constructor].ToObject().IsWellknownObject(WellKnownObject.PromiseConstructor)) {
+        return p;
+      }
+      Promise promise = new Promise();
+      promise.ResolveSelf(value);
+      return promise;
+    }
+
+    public static Promise Resolve(EcmaValue value, PromiseCallback fulfilledCallback, PromiseCallback rejectedCallback) {
+      Promise promise = new Promise();
+      promise.InitWithCallback(Promise.Resolve(value), fulfilledCallback, rejectedCallback);
+      return promise;
+    }
+
+    public static Promise Reject(Exception ex) {
+      return Reject(EcmaValueUtility.GetValueFromException(ex));
+    }
+
+    public static Promise Reject(EcmaValue value) {
+      Promise promise = new Promise();
+      promise.RejectSelf(value);
+      return promise;
+    }
+
+    public static Promise FromTask(Task task) {
+      Guard.ArgumentNotNull(task, "task");
+      Promise promise = new Promise();
+      RuntimeExecution.Enqueue(() => promise.HandleCompletedTask(task), task);
       return promise;
     }
 
@@ -125,19 +151,19 @@ namespace Codeless.Ecma {
     }
 
     [IntrinsicMember(null)]
-    private void Resolve(EcmaValue value) {
-      Resolve(value, false);
+    private void ResolveSelf(EcmaValue value) {
+      ResolveSelf(value, false);
     }
 
     [IntrinsicMember(null)]
     [EcmaSpecification("Promise Reject Functions", EcmaSpecificationKind.AbstractOperations)]
-    private void Reject(EcmaValue value) {
+    private void RejectSelf(EcmaValue value) {
       SetState(PromiseState.Rejected, value, false);
     }
 
     [EcmaSpecification("Promise Resolve Functions", EcmaSpecificationKind.AbstractOperations)]
     [EcmaSpecification("PromiseResolveThenableJob", EcmaSpecificationKind.AbstractOperations)]
-    private void Resolve(EcmaValue value, bool finalize) {
+    private void ResolveSelf(EcmaValue value, bool finalize) {
       if (value.Type == EcmaValueType.Object) {
         RuntimeObject obj = value.ToObject();
         if (obj == this) {
@@ -147,7 +173,7 @@ namespace Codeless.Ecma {
         try {
           RuntimeObject then = obj.GetMethod(WellKnownProperty.Then);
           if (then != null) {
-            then.Call(value, (PromiseResolver)Resolve, (PromiseResolver)Reject);
+            then.Call(value, (PromiseResolver)ResolveSelf, (PromiseResolver)RejectSelf);
             return;
           }
         } catch (Exception ex) {
@@ -169,7 +195,7 @@ namespace Codeless.Ecma {
         RuntimeExecution.Enqueue(() => {
           try {
             value = callback(value);
-            Resolve(value, true);
+            ResolveSelf(value, true);
           } catch (Exception ex) {
             SetStateFinalize(PromiseState.Rejected, EcmaValueUtility.GetValueFromException(ex));
           }
@@ -196,9 +222,9 @@ namespace Codeless.Ecma {
     [EcmaSpecification("IfAbruptRejectPromise", EcmaSpecificationKind.AbstractOperations)]
     private void ExecuteCallback(PromiseExecutor executor) {
       try {
-        executor(Resolve, Reject);
+        executor(ResolveSelf, RejectSelf);
       } catch (Exception ex) {
-        Reject(EcmaValueUtility.GetValueFromException(ex));
+        RejectSelf(EcmaValueUtility.GetValueFromException(ex));
       }
     }
 
@@ -214,9 +240,11 @@ namespace Codeless.Ecma {
         RejectFromFaultedTask(task);
       } else {
         EcmaValue value = default;
-        Type type = task.GetType();
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Task<>)) {
-          value = new EcmaValue(type.GetProperty("Result").GetValue(type, null));
+        for (Type type = task.GetType(); type != typeof(Task); type = type.BaseType) {
+          if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Task<>)) {
+            value = new EcmaValue(type.GetProperty("Result").GetValue(task, null));
+            break;
+          }
         }
         SetState(PromiseState.Fulfilled, value, false);
       }
@@ -236,7 +264,7 @@ namespace Codeless.Ecma {
       if (ex.InnerExceptions.Count == 1) {
         reason = ex.InnerExceptions[0];
       }
-      SetState(PromiseState.Rejected, new EcmaError(reason), false);
+      SetState(PromiseState.Rejected, EcmaValueUtility.GetValueFromException(reason), false);
     }
 
     void IInspectorMetaProvider.FillInInspectorMetaObject(InspectorMetaObject meta) {

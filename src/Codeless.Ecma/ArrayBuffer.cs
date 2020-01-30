@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 
 namespace Codeless.Ecma {
   public interface IArrayBufferView {
@@ -271,6 +272,15 @@ namespace Codeless.Ecma {
           return *(long*)(ptr + index);
         }
       }
+    }
+
+    public long GetInt64Shared(long index) {
+      ThrowIfBufferDetached();
+      ThrowIfIndexOutOfBound(index, sizeof(long));
+      if ((index % sizeof(long)) == 0) {
+        return Interlocked.Read(ref buffer.Int64Buffer[index / sizeof(long)]);
+      }
+      throw new EcmaRangeErrorException(InternalString.Error.TypedArrayInvalidOffset, index, sizeof(long));
     }
 
     public ulong GetUInt64(long index) {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Codeless.Ecma.Runtime {
   internal class DelegateRuntimeFunction : NativeRuntimeFunction {
@@ -8,8 +9,22 @@ namespace Codeless.Ecma.Runtime {
     private readonly object target;
 
     public DelegateRuntimeFunction(Delegate callback)
-      : base(String.Empty, GetInvokeMethod(callback, out _target)) {
+      : this(String.Empty, callback, WellKnownObject.FunctionPrototype) { }
+
+    public DelegateRuntimeFunction(string name, Delegate callback)
+      : this(name, callback, WellKnownObject.FunctionPrototype) { }
+
+    public DelegateRuntimeFunction(string name, Delegate callback, WellKnownObject proto)
+      : base(name, GetInvokeMethod(callback, out _target), proto) {
       target = _target;
+    }
+
+    public static RuntimeFunction FromDelegate(Delegate callback) {
+      Guard.ArgumentNotNull(callback, "callback");
+      if (typeof(Task).IsAssignableFrom(callback.Method.ReturnType)) {
+        return new AsyncFunction(callback);
+      }
+      return new DelegateRuntimeFunction(callback);
     }
 
     protected override EcmaValue Invoke(RuntimeFunctionInvocation invocation, EcmaValue[] arguments) {

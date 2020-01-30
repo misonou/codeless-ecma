@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Codeless.Ecma {
-  public class EcmaRegExpStringEnumerator : IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> {
+  public class EcmaRegExpStringEnumerator : EcmaIterator, IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> {
     private readonly EcmaValue re;
     private readonly bool unicode;
     private readonly bool global;
@@ -15,7 +15,8 @@ namespace Codeless.Ecma {
     private bool done;
     private IEcmaRegExpResult result;
 
-    public EcmaRegExpStringEnumerator(EcmaValue re, string inputString) {
+    public EcmaRegExpStringEnumerator(EcmaValue re, string inputString)
+      : base(re, EcmaIteratorResultKind.Value, WellKnownObject.RegExpStringIteratorPrototype) {
       this.re = re;
       this.global = re[WellKnownProperty.Global].ToBoolean();
       this.unicode = re[WellKnownProperty.Unicode].ToBoolean();
@@ -41,13 +42,17 @@ namespace Codeless.Ecma {
       return success;
     }
 
-    public void Reset() {
-      throw new InvalidOperationException();
+    protected override IEnumerator<KeyValuePair<EcmaValue, EcmaValue>> GetEnumerator(object runtimeObject) {
+      return this;
     }
 
     #region Interface
     object IEnumerator.Current {
       get { return this.Current; }
+    }
+
+    void IEnumerator.Reset() {
+      throw new InvalidOperationException();
     }
 
     void IDisposable.Dispose() { }

@@ -18,14 +18,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (onreject.IsCallable) {
         c2 = v => onreject.Call(EcmaValue.Undefined, v);
       }
-      PromiseCapability capability =  PromiseCapability.CreateFromConstructor(constructor);
-      if (capability.Promise.GetUnderlyingObject() is Promise p) {
-        p.InitWithCallback(promise, c1, c2);
-      } else {
-        capability.OnFulfill = c1;
-        capability.OnReject = c2;
-        promise.ContinueWith(capability.HandleCompletedPromise);
-      }
+      PromiseCapability capability = PromiseCapability.CreateFromConstructor(constructor);
+      capability.HandlePromise(promise, c1, c2);
       return capability.Promise;
     }
 
@@ -80,8 +74,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
 
       [IntrinsicMember(null)]
       private EcmaValue ThrowOriginalValue(EcmaValue _) {
-        Keywords.Throw(originalValue);
-        return EcmaValue.Undefined;
+        throw EcmaException.FromValue(originalValue);
       }
     }
   }

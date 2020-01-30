@@ -98,6 +98,14 @@ namespace Codeless.Ecma {
 
     public static RuntimeFunction Uint32Array => (RuntimeFunction)WellKnownObject.Uint32Array;
 
+#if BIGINTEGER
+    public static RuntimeFunction BigInt => (RuntimeFunction)WellKnownObject.BigIntConstructor;
+
+    public static RuntimeFunction BigInt64Array => (RuntimeFunction)WellKnownObject.BigInt64Array;
+
+    public static RuntimeFunction BigUint64Array => (RuntimeFunction)WellKnownObject.BigUint64Array;
+#endif
+
     [IntrinsicMember]
     public static EcmaValue IsFinite(EcmaValue value) {
       return value.ToNumber().IsFinite;

@@ -13,7 +13,9 @@ namespace Codeless.Ecma {
     Uint8Array,
     Uint8ClampedArray,
     Uint16Array,
-    Uint32Array
+    Uint32Array,
+    BigInt64Array,
+    BigUint64Array
   }
 
   public class TypedArrayInfo {
@@ -27,6 +29,8 @@ namespace Codeless.Ecma {
       new TypedArrayInfo(TypedArrayKind.Uint8ClampedArray, WellKnownObject.Uint8ClampedArray, WellKnownObject.Uint8ClampedArrayPrototype, sizeof(byte), "Uint8ClampedArray"),
       new TypedArrayInfo(TypedArrayKind.Uint16Array, WellKnownObject.Uint16Array, WellKnownObject.Uint16ArrayPrototype, sizeof(ushort), "Uint16Array"),
       new TypedArrayInfo(TypedArrayKind.Uint32Array, WellKnownObject.Uint32Array, WellKnownObject.Uint32ArrayPrototype, sizeof(uint), "Uint32Array"),
+      new TypedArrayInfo(TypedArrayKind.BigInt64Array, WellKnownObject.BigInt64Array, WellKnownObject.BigInt64ArrayPrototype, sizeof(long), "BigInt64Array"),
+      new TypedArrayInfo(TypedArrayKind.BigUint64Array, WellKnownObject.BigUint64Array, WellKnownObject.BigUint64ArrayPrototype, sizeof(ulong), "BigUint64Array"),
     };
 
     private TypedArrayInfo(TypedArrayKind kind, WellKnownObject defaultConstructor, WellKnownObject proto, int elementSize, string typeName) {
@@ -155,7 +159,7 @@ namespace Codeless.Ecma {
     [EcmaSpecification("IntegerIndexedElementSet", EcmaSpecificationKind.AbstractOperations)]
     [EcmaSpecification("SetValueInBuffer", EcmaSpecificationKind.AbstractOperations)]
     public void SetValueInBuffer(int index, EcmaValue value) {
-      value = value.ToNumber();
+      value = CoerceValue(value);
       Guard.BufferNotDetached(this);
       SetValueInBufferImpl(index, value);
     }
@@ -218,7 +222,7 @@ namespace Codeless.Ecma {
 
     public override bool Set(EcmaPropertyKey propertyKey, EcmaValue value, RuntimeObject receiver) {
       if (propertyKey.IsCanonicalNumericIndex) {
-        value = value.ToNumber();
+        value = CoerceValue(value);
         Guard.BufferNotDetached(this);
         if (IsValidIndex(propertyKey, out int index)) {
           SetValueInBuffer(index, value);
@@ -236,6 +240,10 @@ namespace Codeless.Ecma {
     protected abstract EcmaValue GetValueFromBufferImpl(int index);
 
     protected abstract void SetValueInBufferImpl(int index, EcmaValue value);
+
+    protected virtual EcmaValue CoerceValue(EcmaValue value) {
+      return value.ToNumber();
+    }
 
     protected override void OnCloned(RuntimeObject sourceObj, bool isTransfer, CloneContext context) {
       base.OnCloned(sourceObj, isTransfer, context);
@@ -788,6 +796,112 @@ namespace Codeless.Ecma {
 
     protected override EcmaValue CallSortCallback(RuntimeObject callback, uint x, uint y) {
       return callback.Call(EcmaValue.Undefined, x, y);
+    }
+  }
+
+  [Cloneable(false)]
+  public class BigInt64Array : TypedArray<long> {
+    private const TypedArrayKind arrayKind = TypedArrayKind.BigInt64Array;
+
+    public BigInt64Array()
+      : base(arrayKind) { }
+
+    public BigInt64Array(int length)
+    : base(arrayKind) {
+      Init(length);
+    }
+
+    public BigInt64Array(byte[] bytes)
+      : base(arrayKind) {
+      Init(new ArrayBuffer(bytes));
+    }
+
+    public BigInt64Array(byte[] bytes, long byteOffset, long byteLength)
+      : base(arrayKind) {
+      Init(new ArrayBuffer(bytes), byteOffset, byteLength);
+    }
+
+    public BigInt64Array(ArrayBuffer buffer)
+      : base(arrayKind) {
+      Init(buffer);
+    }
+
+    public BigInt64Array(ArrayBuffer buffer, long byteOffset, long byteLength)
+      : base(arrayKind) {
+      Init(buffer, byteOffset, byteLength);
+    }
+
+    protected override EcmaValue GetValueFromBufferImpl(int index) {
+      return BigIntHelper.ToBigInt(this.BufferView[index]);
+    }
+
+    protected override void SetValueInBufferImpl(int index, EcmaValue value) {
+      this.BufferView[index] = BigIntHelper.ToInt64(value);
+    }
+
+    protected override ArrayBufferView<long> GetArrayBufferView(ArrayBuffer buffer, long byteOffset, long byteLength) {
+      return buffer.GetInt64BufferView(byteOffset, byteLength, true);
+    }
+
+    protected override EcmaValue CallSortCallback(RuntimeObject callback, long x, long y) {
+      return callback.Call(EcmaValue.Undefined, BigIntHelper.ToBigInt(x), BigIntHelper.ToBigInt(y));
+    }
+
+    protected override EcmaValue CoerceValue(EcmaValue value) {
+      return BigIntHelper.ToBigInt(value);
+    }
+  }
+
+  [Cloneable(false)]
+  public class BigUint64Array : TypedArray<ulong> {
+    private const TypedArrayKind arrayKind = TypedArrayKind.BigUint64Array;
+
+    public BigUint64Array()
+      : base(arrayKind) { }
+
+    public BigUint64Array(int length)
+    : base(arrayKind) {
+      Init(length);
+    }
+
+    public BigUint64Array(byte[] bytes)
+      : base(arrayKind) {
+      Init(new ArrayBuffer(bytes));
+    }
+
+    public BigUint64Array(byte[] bytes, long byteOffset, long byteLength)
+      : base(arrayKind) {
+      Init(new ArrayBuffer(bytes), byteOffset, byteLength);
+    }
+
+    public BigUint64Array(ArrayBuffer buffer)
+      : base(arrayKind) {
+      Init(buffer);
+    }
+
+    public BigUint64Array(ArrayBuffer buffer, long byteOffset, long byteLength)
+      : base(arrayKind) {
+      Init(buffer, byteOffset, byteLength);
+    }
+
+    protected override EcmaValue GetValueFromBufferImpl(int index) {
+      return BigIntHelper.ToBigInt(this.BufferView[index]);
+    }
+
+    protected override void SetValueInBufferImpl(int index, EcmaValue value) {
+      this.BufferView[index] = BigIntHelper.ToUInt64(value);
+    }
+
+    protected override ArrayBufferView<ulong> GetArrayBufferView(ArrayBuffer buffer, long byteOffset, long byteLength) {
+      return buffer.GetUInt64BufferView(byteOffset, byteLength, true);
+    }
+
+    protected override EcmaValue CallSortCallback(RuntimeObject callback, ulong x, ulong y) {
+      return callback.Call(EcmaValue.Undefined, BigIntHelper.ToBigInt(x), BigIntHelper.ToBigInt(y));
+    }
+
+    protected override EcmaValue CoerceValue(EcmaValue value) {
+      return BigIntHelper.ToBigInt(value);
     }
   }
   #endregion

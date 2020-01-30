@@ -24,6 +24,15 @@ namespace Codeless.Ecma {
       return capability;
     }
 
+    public static PromiseCapability Create() {
+      PromiseCapability capability = new PromiseCapability();
+      capability.Promise = new Promise((resolve, reject) => {
+        capability.ResolveCallback = resolve;
+        capability.RejectCallback = reject;
+      });
+      return capability;
+    }
+
     public void Resolve(EcmaValue value) {
       HandleResult(PromiseState.Fulfilled, value);
     }
@@ -32,11 +41,15 @@ namespace Codeless.Ecma {
       HandleResult(PromiseState.Rejected, value);
     }
 
-    public void HandleCompletedPromise(Promise previous) {
-      try {
-        HandleResult(previous.State, previous.Value);
-      } catch (Exception ex) {
-        RejectCallback.Call(EcmaValue.Undefined, EcmaValueUtility.GetValueFromException(ex));
+    [EcmaSpecification("PerformPromiseThen", EcmaSpecificationKind.RuntimeSemantics)]
+    public void HandlePromise(Promise promise, PromiseCallback onfulfill, PromiseCallback onreject) {
+      Guard.ArgumentNotNull(promise, "promise");
+      if (this.Promise.GetUnderlyingObject() is Promise p) {
+        p.InitWithCallback(promise, onfulfill, onreject);
+      } else {
+        this.OnFulfill = onfulfill;
+        this.OnReject = onreject;
+        promise.ContinueWith(HandleCompletedPromise);
       }
     }
 
@@ -65,6 +78,14 @@ namespace Codeless.Ecma {
     private void EnsureValidResolver() {
       if (!ResolveCallback.IsCallable || !RejectCallback.IsCallable) {
         throw new EcmaTypeErrorException(InternalString.Error.ResolverNotCallable);
+      }
+    }
+
+    private void HandleCompletedPromise(Promise previous) {
+      try {
+        HandleResult(previous.State, previous.Value);
+      } catch (Exception ex) {
+        RejectCallback.Call(EcmaValue.Undefined, EcmaValueUtility.GetValueFromException(ex));
       }
     }
   }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -533,7 +533,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (thisValue.GetUnderlyingObject() is EcmaArray arr && !arr.FallbackMode) {
         return arr.Entries();
       }
-      return new EcmaIterator(thisValue, EcmaIteratorResultKind.Entry, WellKnownObject.ArrayIteratorPrototype);
+      return new EcmaArrayIterator(thisValue, EcmaIteratorResultKind.Entry);
     }
 
     [IntrinsicMember(FunctionLength = 1)]
@@ -558,7 +558,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (thisValue.GetUnderlyingObject() is EcmaArray arr && !arr.FallbackMode) {
         return arr.Keys();
       }
-      return new EcmaIterator(thisValue, EcmaIteratorResultKind.Key, WellKnownObject.ArrayIteratorPrototype);
+      return new EcmaArrayIterator(thisValue, EcmaIteratorResultKind.Key);
     }
 
     [IntrinsicMember]
@@ -613,7 +613,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (thisValue.GetUnderlyingObject() is EcmaArray arr && !arr.FallbackMode) {
         return arr.Values();
       }
-      return new EcmaIterator(thisValue, EcmaIteratorResultKind.Value, WellKnownObject.ArrayIteratorPrototype);
+      return new EcmaArrayIterator(thisValue, EcmaIteratorResultKind.Value);
     }
 
     [IntrinsicMember(WellKnownSymbol.Unscopables, EcmaPropertyAttributes.Configurable, Getter = true)]

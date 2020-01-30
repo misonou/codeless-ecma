@@ -251,7 +251,7 @@ namespace Codeless.Ecma.Runtime {
         ex = e.Exception;
       }
       RuntimeExecution current = EnsureInstance();
-      current.UnhandledException?.Invoke(null, new RuntimeUnhandledExceptionEventArgs(ex ?? new EcmaRuntimeException(value), value));
+      current.UnhandledException?.Invoke(null, new RuntimeUnhandledExceptionEventArgs(ex ?? EcmaException.FromValue(value), value));
     }
 
     public static void SendUnhandledException(Exception ex) {

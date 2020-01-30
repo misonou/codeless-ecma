@@ -257,5 +257,29 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return TypedArrayConstructor.ConstructTypedArray(TypedArrayKind.Uint32Array, thisValue, args);
     }
   }
+
+  [IntrinsicObject(WellKnownObject.BigInt64Array)]
+  internal static class BigInt64ArrayConstructor {
+    [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
+    public const int BytesPerElement = sizeof(long);
+
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(BigInt64Array), SuperClass = WellKnownObject.TypedArray, Prototype = WellKnownObject.BigInt64ArrayPrototype)]
+    [IntrinsicMember(FunctionLength = 3)]
+    public static EcmaValue BigInt64Array([This] EcmaValue thisValue, params EcmaValue[] args) {
+      return TypedArrayConstructor.ConstructTypedArray(TypedArrayKind.BigInt64Array, thisValue, args);
+    }
+  }
+
+  [IntrinsicObject(WellKnownObject.BigUint64Array)]
+  internal static class BigUint64ArrayConstructor {
+    [IntrinsicMember("BYTES_PER_ELEMENT", EcmaPropertyAttributes.None)]
+    public const int BytesPerElement = sizeof(ulong);
+
+    [IntrinsicConstructor(NativeRuntimeFunctionConstraint.DenyCall, ObjectType = typeof(BigUint64Array), SuperClass = WellKnownObject.TypedArray, Prototype = WellKnownObject.BigUint64ArrayPrototype)]
+    [IntrinsicMember(FunctionLength = 3)]
+    public static EcmaValue BigUint64Array([This] EcmaValue thisValue, params EcmaValue[] args) {
+      return TypedArrayConstructor.ConstructTypedArray(TypedArrayKind.BigUint64Array, thisValue, args);
+    }
+  }
   #endregion
 }

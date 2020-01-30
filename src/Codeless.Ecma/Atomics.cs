@@ -74,14 +74,21 @@ namespace Codeless.Ecma {
     [IntrinsicMember]
     public static EcmaValue Wait(TypedArray array, EcmaValue index, EcmaValue value, EcmaValue timeout) {
       int pos = ValidateWaitableArrayAndIndex(array, index);
-      int intValue = value.ToInt32();
+      bool isInt32 = array.ArrayKind == TypedArrayKind.Int32Array;
+      long longValue = isInt32 ? value.ToInt32() : value.ToBigInt64().ToInt64();
       timeout = timeout.ToNumber();
       if (!RuntimeExecution.Current.CanSuspend) {
         throw new EcmaTypeErrorException("Atomics.wait cannot be called in this context");
       }
+      bool comparandEquals, result;
       int milliseconds = timeout.IsNaN || timeout > Int32.MaxValue ? -1 : timeout < 0 ? 0 : timeout.ToInt32();
       SharedArrayBuffer buffer = (SharedArrayBuffer)array.Buffer;
-      return buffer.Wait(array.GetByteOffset(pos), intValue, milliseconds, out bool comparandEquals) ? "ok" : comparandEquals ? "timed-out" : "not-equal";
+      if (isInt32) {
+        result = buffer.Wait(array.GetByteOffset(pos), (int)longValue, milliseconds, out comparandEquals);
+      } else {
+        result = buffer.Wait(array.GetByteOffset(pos), longValue, milliseconds, out comparandEquals);
+      }
+      return result ? "ok" : comparandEquals ? "timed-out" : "not-equal";
     }
 
     [IntrinsicMember]
@@ -205,7 +212,7 @@ namespace Codeless.Ecma {
     }
 
     private static int ValidateWaitableArrayAndIndex(TypedArray array, EcmaValue index) {
-      if (array.ArrayKind != TypedArrayKind.Int32Array) {
+      if (array.ArrayKind != TypedArrayKind.Int32Array && array.ArrayKind != TypedArrayKind.BigInt64Array) {
         throw new EcmaTypeErrorException(InternalString.Error.TypedArrayNotWaitable);
       }
       if (!array.Buffer.IsShared) {

@@ -51,5 +51,6 @@
     public static readonly EcmaPropertyKey Status = new EcmaPropertyKey("status");
     public static readonly EcmaPropertyKey Reason = new EcmaPropertyKey("reason");
     public static readonly EcmaPropertyKey Resolve = new EcmaPropertyKey("resolve");
+    public static readonly EcmaPropertyKey Throw = new EcmaPropertyKey("throw");
   }
 }

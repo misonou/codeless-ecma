@@ -88,16 +88,20 @@ namespace Codeless.Ecma {
           return sizeof(short);
         case TypeCode.Int32:
           return sizeof(int);
+        case TypeCode.Int64:
+          return sizeof(long);
         case TypeCode.UInt16:
           return sizeof(ushort);
         case TypeCode.UInt32:
           return sizeof(uint);
+        case TypeCode.UInt64:
+          return sizeof(ulong);
         case TypeCode.Single:
           return sizeof(float);
         case TypeCode.Double:
           return sizeof(double);
       }
-      throw new InvalidOperationException();
+      throw new InvalidOperationException("Unsupported array type");
     }
 
     #region Interfaces

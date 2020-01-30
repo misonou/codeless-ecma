@@ -1,5 +1,5 @@
-﻿using NUnit.Framework.Constraints;
-using System;
+﻿using Codeless.Ecma.UnitTest.Constraints;
+using NUnit.Framework.Constraints;
 using System.Collections.Generic;
 using System.Text;
 
@@ -14,5 +14,9 @@ namespace Codeless.Ecma.UnitTest {
     public static IResolveConstraint URIError => InstanceOf<EcmaUriErrorException>();
 
     public static IResolveConstraint Test262 => InstanceOf<Test262Exception>();
+
+    public static IResolveConstraint InstanceOf(EcmaValue constructor) {
+      return new ConstraintExpression().Append(new ThrowsOperator()).Append(new ThrowInstanceOfTypeConstraint(constructor));
+    }
   }
 }

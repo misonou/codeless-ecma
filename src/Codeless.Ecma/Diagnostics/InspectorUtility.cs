@@ -1,4 +1,4 @@
-using Codeless.Ecma.Runtime;
+﻿using Codeless.Ecma.Runtime;
 using Codeless.Ecma.Runtime.Intrinsics;
 using System;
 using System.Collections.Generic;
@@ -14,6 +14,8 @@ namespace Codeless.Ecma.Diagnostics {
           return WriteValue(value.ToObject());
         case EcmaValueType.String:
           return "\"" + value.ToString().Replace("\"", "\\\"") + "\"";
+        case EcmaValueType.BigInt:
+          return value.ToString() + "n";
         case EcmaValueType.Number:
           if (value.Equals(EcmaValue.NegativeZero, EcmaValueComparison.SameValue)) {
             return "-0";

@@ -32,6 +32,13 @@ namespace Codeless.Ecma {
     public virtual EcmaValue ToValue() {
       return new EcmaError(this);
     }
+
+    public static EcmaException FromValue(EcmaValue value) {
+      if (value.GetUnderlyingObject() is EcmaError error && error.Exception is EcmaException ex) {
+        return ex;
+      }
+      return new EcmaRuntimeException(value);
+    }
   }
 
   public class EcmaTypeErrorException : EcmaException {

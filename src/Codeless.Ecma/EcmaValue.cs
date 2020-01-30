@@ -18,14 +18,18 @@ namespace Codeless.Ecma {
     Number,
     String,
     Boolean,
-    Symbol
+    Symbol,
+    BigInt
   }
 
   public enum EcmaNumberType {
     Invalid,
     Int32,
     Int64,
-    Double
+    Double,
+    BigInt64,
+    BigUInt64,
+    BigInt
   }
 
   public enum EcmaValueComparison {
@@ -49,6 +53,7 @@ namespace Codeless.Ecma {
   [DebuggerDisplay("{DebuggerDisplay,nq}")]
   public partial struct EcmaValue : IEquatable<EcmaValue>, IComparable<EcmaValue>, ISerializable, IConvertible {
     public const long MaxSafeInteger = (1L << 53) - 1;
+    public const bool SupportBigInt = BigIntHelper.Supported;
 
     /// <summary>
     /// Represents an undefined value. It is similar to *undefined* in ECMAScript which could be returned when accessing an undefined property.
@@ -171,7 +176,7 @@ namespace Codeless.Ecma {
 
     [DebuggerStepThrough]
     public EcmaValue(object value) {
-      EcmaValue resolved = UnboxObject(value);
+      EcmaValue resolved = EcmaValueUtility.ConvertFromObject(value);
       this.handle = resolved.handle;
       this.binder_ = resolved.binder;
     }
@@ -180,7 +185,7 @@ namespace Codeless.Ecma {
     public EcmaValue(SerializationInfo info, StreamingContext context) {
       Type type = (Type)info.GetValue("ut", typeof(Type));
       object value = info.GetValue("uo", type);
-      EcmaValue resolved = UnboxObject(value);
+      EcmaValue resolved = EcmaValueUtility.ConvertFromObject(value);
       this.handle = resolved.handle;
       this.binder_ = resolved.binder;
     }
@@ -721,6 +726,24 @@ namespace Codeless.Ecma {
       return typeX > typeY ? typeX : typeY;
     }
 
+    public static EcmaNumberType GetCompareCoercion(EcmaValue x, EcmaValue y) {
+      EcmaNumberType typeX = x.binder.GetNumberType(y.handle);
+      EcmaNumberType typeY = y.binder.GetNumberType(y.handle);
+      if (typeX == EcmaNumberType.BigInt64) {
+        typeX = EcmaNumberType.Int64;
+      }
+      if (typeY == EcmaNumberType.BigInt64) {
+        typeY = EcmaNumberType.Int64;
+      }
+      if (typeX == typeY) {
+        return typeX;
+      }
+      if (typeX == EcmaNumberType.Invalid || typeY == EcmaNumberType.Invalid) {
+        return EcmaNumberType.Invalid;
+      }
+      return typeX > typeY ? typeX : typeY;
+    }
+
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private string DebuggerDisplay {
       get { return InspectorUtility.WriteValue(this); }
@@ -734,12 +757,24 @@ namespace Codeless.Ecma {
       if (xType == EcmaValueType.String && yType == EcmaValueType.String) {
         return String.Compare(x.ToString(), y.ToString(), StringComparison.Ordinal);
       }
-      x = x.ToNumber();
-      y = y.ToNumber();
+      if (xType == EcmaValueType.BigInt && yType == EcmaValueType.String) {
+        return BigIntHelper.TryParse(y.ToString(), out EcmaValue ny) ? BigIntHelper.Compare(x, ny) : 0;
+      }
+      if (xType == EcmaValueType.String && yType == EcmaValueType.BigInt) {
+        return BigIntHelper.TryParse(x.ToString(), out EcmaValue nx) ? BigIntHelper.Compare(nx, y) : 0;
+      }
+      if (xType != EcmaValueType.BigInt) {
+        x = x.ToNumber();
+      }
+      if (yType != EcmaValueType.BigInt) {
+        y = y.ToNumber();
+      }
       if (x.IsNaN || y.IsNaN) {
         return null;
       }
-      switch (GetNumberCoercion(x, y)) {
+      switch (GetCompareCoercion(x, y)) {
+        case EcmaNumberType.BigInt:
+          return BigIntHelper.Compare(x, y);
         case EcmaNumberType.Double:
           return x.ToDouble().CompareTo(y.ToDouble());
         case EcmaNumberType.Int64:
@@ -776,58 +811,6 @@ namespace Codeless.Ecma {
       } catch (OverflowException) {
         return x < 0 ^ y < 0 ? Double.NegativeInfinity : Double.PositiveInfinity;
       }
-    }
-
-    private static readonly ConcurrentDictionary<Type, IEcmaValueBinder> binderTypes = new ConcurrentDictionary<Type, IEcmaValueBinder>(new Dictionary<Type, IEcmaValueBinder> {
-      { typeof(WellKnownSymbol), WellKnownSymbolBinder.Default }
-    });
-
-    private static EcmaValue UnboxObject(object target) {
-      switch (target) {
-        case null:
-          return EcmaValue.Undefined;
-        case EcmaValue value:
-          return value;
-        case string str:
-          return new EcmaValue(str);
-        case Symbol sym:
-          return new EcmaValue(sym);
-        case RuntimeObject obj:
-          return new EcmaValue(obj);
-        case DateTime dt:
-          return new EcmaDate(dt);
-      }
-      Type type = target.GetType();
-      IEcmaValueBinder binder = null;
-      if (type.IsEnum) {
-        binder = binderTypes.GetOrAdd(type, t => (IEcmaValueBinder)Activator.CreateInstance(typeof(EnumBinder<>).MakeGenericType(t)));
-      } else if (type.IsSubclassOf(typeof(Delegate))) {
-        binder = new DelegateRuntimeFunction((Delegate)target);
-      } else {
-        switch (System.Type.GetTypeCode(type)) {
-          case TypeCode.Boolean:
-            return new EcmaValue(BooleanBinder.Default.ToHandle((bool)target), BooleanBinder.Default);
-          case TypeCode.Byte:
-          case TypeCode.SByte:
-          case TypeCode.Char:
-          case TypeCode.Int16:
-          case TypeCode.UInt16:
-            return new EcmaValue(Int32Binder.Default.ToHandle(Convert.ToInt32(target)), Int32Binder.Default);
-          case TypeCode.Int32:
-            return new EcmaValue(Int32Binder.Default.ToHandle((int)target), Int32Binder.Default);
-          case TypeCode.UInt32:
-            return new EcmaValue(Int64Binder.Default.ToHandle(Convert.ToInt64(target)), Int64Binder.Default);
-          case TypeCode.Int64:
-            return new EcmaValue(Int64Binder.Default.ToHandle((long)target), Int64Binder.Default);
-          case TypeCode.UInt64:
-          case TypeCode.Single:
-            return new EcmaValue(DoubleBinder.Default.ToHandle(Convert.ToDouble(target)), DoubleBinder.Default);
-          case TypeCode.Double:
-            return new EcmaValue(DoubleBinder.Default.ToHandle((double)target), DoubleBinder.Default);
-        }
-        binder = RuntimeRealm.Current.GetRuntimeObject(target);
-      }
-      return new EcmaValue(binder.ToHandle(target), binder);
     }
 
     #region Operator overloading
@@ -880,7 +863,7 @@ namespace Codeless.Ecma {
     }
 
     public static implicit operator EcmaValue(Delegate del) {
-      return del != null ? new DelegateRuntimeFunction(del).ToValue() : EcmaValue.Undefined;
+      return del != null ? DelegateRuntimeFunction.FromDelegate(del).ToValue() : EcmaValue.Undefined;
     }
 
     public static bool operator ==(EcmaValue x, EcmaValue y) {
@@ -924,15 +907,17 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue operator -(EcmaValue x) {
-      if (x.Type == EcmaValueType.Number) {
-        switch (x.binder.GetNumberType(x.handle)) {
-          case EcmaNumberType.Double:
-            return -x.ToDouble();
-          case EcmaNumberType.Int64:
-            return x.ToInt64() == 0 ? EcmaValue.NegativeZero : new EcmaValue(-x.ToInt64());
-          case EcmaNumberType.Int32:
-            return x.ToInt32() == 0 ? EcmaValue.NegativeZero : new EcmaValue(-x.ToInt32());
-        }
+      switch (x.binder.GetNumberType(x.handle)) {
+        case EcmaNumberType.BigInt:
+          return BigIntHelper.Negate(x);
+        case EcmaNumberType.BigInt64:
+          return BigIntHelper.Negate64(x);
+        case EcmaNumberType.Double:
+          return -x.ToDouble();
+        case EcmaNumberType.Int64:
+          return x.ToInt64() == 0 ? EcmaValue.NegativeZero : new EcmaValue(-x.ToInt64());
+        case EcmaNumberType.Int32:
+          return x.ToInt32() == 0 ? EcmaValue.NegativeZero : new EcmaValue(-x.ToInt32());
       }
       return -x.ToDouble();
     }
@@ -946,15 +931,19 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue operator ++(EcmaValue x) {
-      return x + 1;
+      return x.Type == EcmaValueType.BigInt ? x + BigIntHelper.One : x + 1;
     }
 
     public static EcmaValue operator --(EcmaValue x) {
-      return x - 1;
+      return x.Type == EcmaValueType.BigInt ? x - BigIntHelper.One : x - 1;
     }
 
     public static EcmaValue operator +(EcmaValue x, EcmaValue y) {
       switch (GetNumberCoercion(x, y)) {
+        case EcmaNumberType.BigInt:
+          return BigIntHelper.Add(x, y);
+        case EcmaNumberType.BigInt64:
+          return BigIntHelper.Add64(x, y);
         case EcmaNumberType.Double:
           return new EcmaValue(x.ToDouble() + y.ToDouble());
         case EcmaNumberType.Int64:
@@ -975,9 +964,13 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue operator -(EcmaValue x, EcmaValue y) {
-      x = +x;
-      y = +y;
+      x = x.binder.GetNumberType(x.handle) != EcmaNumberType.Invalid ? x : x.ToDouble();
+      y = y.binder.GetNumberType(y.handle) != EcmaNumberType.Invalid ? y : y.ToDouble();
       switch (GetNumberCoercion(x, y)) {
+        case EcmaNumberType.BigInt:
+          return BigIntHelper.Subtract(x, y);
+        case EcmaNumberType.BigInt64:
+          return BigIntHelper.Subtract64(x, y);
         case EcmaNumberType.Double:
           return new EcmaValue(x.ToDouble() - y.ToDouble());
         case EcmaNumberType.Int64:
@@ -997,9 +990,13 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue operator *(EcmaValue x, EcmaValue y) {
-      x = +x;
-      y = +y;
+      x = x.binder.GetNumberType(x.handle) != EcmaNumberType.Invalid ? x : x.ToDouble();
+      y = y.binder.GetNumberType(y.handle) != EcmaNumberType.Invalid ? y : y.ToDouble();
       switch (GetNumberCoercion(x, y)) {
+        case EcmaNumberType.BigInt:
+          return BigIntHelper.Multiply(x, y);
+        case EcmaNumberType.BigInt64:
+          return BigIntHelper.Multiply64(x, y);
         case EcmaNumberType.Double:
           return MultiplyDouble(x.ToDouble(), y.ToDouble());
         case EcmaNumberType.Int64:
@@ -1019,8 +1016,14 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue operator /(EcmaValue x, EcmaValue y) {
-      x = +x;
-      y = +y;
+      x = x.binder.GetNumberType(x.handle) != EcmaNumberType.Invalid ? x : x.ToDouble();
+      y = y.binder.GetNumberType(y.handle) != EcmaNumberType.Invalid ? y : y.ToDouble();
+      switch (GetNumberCoercion(x, y)) {
+        case EcmaNumberType.BigInt:
+          return BigIntHelper.Divide(x, y);
+        case EcmaNumberType.BigInt64:
+          return BigIntHelper.Divide64(x, y);
+      }
       try {
         return new EcmaValue(x.ToDouble() / y.ToDouble());
       } catch (DivideByZeroException) {
@@ -1029,10 +1032,14 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue operator %(EcmaValue x, EcmaValue y) {
-      x = +x;
-      y = +y;
+      x = x.binder.GetNumberType(x.handle) != EcmaNumberType.Invalid ? x : x.ToDouble();
+      y = y.binder.GetNumberType(y.handle) != EcmaNumberType.Invalid ? y : y.ToDouble();
       try {
         switch (GetNumberCoercion(x, y)) {
+          case EcmaNumberType.BigInt:
+            return BigIntHelper.Mod(x, y);
+          case EcmaNumberType.BigInt64:
+            return BigIntHelper.Mod64(x, y);
           case EcmaNumberType.Double:
             return new EcmaValue(x.ToDouble() % y.ToDouble());
           case EcmaNumberType.Int64:
@@ -1045,6 +1052,9 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue operator &(EcmaValue x, int y) {
+      if (x.Type == EcmaValueType.BigInt) {
+        throw new EcmaTypeErrorException(InternalString.Error.BigIntNotConvertibleToNumber);
+      }
       return new EcmaValue((+x).ToInt32() & y);
     }
 
@@ -1053,6 +1063,9 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue operator |(EcmaValue x, int y) {
+      if (x.Type == EcmaValueType.BigInt) {
+        throw new EcmaTypeErrorException(InternalString.Error.BigIntNotConvertibleToNumber);
+      }
       return new EcmaValue((+x).ToInt32() | y);
     }
 
@@ -1061,14 +1074,26 @@ namespace Codeless.Ecma {
     }
 
     public static EcmaValue operator ^(EcmaValue x, EcmaValue y) {
+      switch (GetNumberCoercion(x)) {
+        case EcmaNumberType.BigInt:
+          return BigIntHelper.ExclusiveOr(x, y);
+        case EcmaNumberType.BigInt64:
+          return BigIntHelper.ExclusiveOr64(x, y);
+      }
       return (+x).ToInt32() ^ (+y).ToInt32();
     }
 
     public static EcmaValue operator <<(EcmaValue x, int y) {
+      if (x.Type == EcmaValueType.BigInt) {
+        throw new EcmaTypeErrorException(InternalString.Error.BigIntNotConvertibleToNumber);
+      }
       return new EcmaValue(unchecked((+x).ToInt32() << y));
     }
 
     public static EcmaValue operator >>(EcmaValue x, int y) {
+      if (x.Type == EcmaValueType.BigInt) {
+        throw new EcmaTypeErrorException(InternalString.Error.BigIntNotConvertibleToNumber);
+      }
       return new EcmaValue((+x).ToInt32() >> y);
     }
     #endregion

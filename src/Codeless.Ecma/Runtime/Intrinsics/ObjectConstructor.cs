@@ -21,6 +21,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
           return new PrimitiveObject(value, WellKnownObject.StringPrototype);
         case EcmaValueType.Symbol:
           return new PrimitiveObject(value, WellKnownObject.SymbolPrototype);
+        case EcmaValueType.BigInt:
+          return new PrimitiveObject(value, WellKnownObject.BigIntPrototype);
         case EcmaValueType.Object:
           return value;
       }

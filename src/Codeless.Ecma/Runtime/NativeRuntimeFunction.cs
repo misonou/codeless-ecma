@@ -26,7 +26,11 @@ namespace Codeless.Ecma.Runtime {
     private readonly MethodInfo method;
     private RuntimeFunctionDelegate fn;
 
-    public NativeRuntimeFunction(string name, MethodInfo method) {
+    public NativeRuntimeFunction(string name, MethodInfo method)
+      : this(name, method, WellKnownObject.FunctionPrototype) { }
+
+    public NativeRuntimeFunction(string name, MethodInfo method, WellKnownObject proto)
+      : base(proto) {
       Guard.ArgumentNotNull(method, "method");
       this.method = method;
 

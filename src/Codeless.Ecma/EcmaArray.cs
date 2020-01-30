@@ -540,23 +540,23 @@ namespace Codeless.Ecma {
 
     public EcmaIterator Keys() {
       if (!this.FallbackMode) {
-        return new EcmaIterator(EnumerateEntries(false).GetEnumerator(), EcmaIteratorResultKind.Key, WellKnownObject.ArrayIteratorPrototype);
+        return new EcmaArrayIterator(EnumerateEntries(false).GetEnumerator(), EcmaIteratorResultKind.Key);
       }
-      return new EcmaIterator(this, EcmaIteratorResultKind.Key, WellKnownObject.ArrayIteratorPrototype);
+      return new EcmaArrayIterator(this, EcmaIteratorResultKind.Key);
     }
 
     public EcmaIterator Values() {
       if (!this.FallbackMode) {
-        return new EcmaIterator(EnumerateEntries(false).GetEnumerator(), EcmaIteratorResultKind.Value, WellKnownObject.ArrayIteratorPrototype);
+        return new EcmaArrayIterator(EnumerateEntries(false).GetEnumerator(), EcmaIteratorResultKind.Value);
       }
-      return new EcmaIterator(this, EcmaIteratorResultKind.Value, WellKnownObject.ArrayIteratorPrototype);
+      return new EcmaArrayIterator(this, EcmaIteratorResultKind.Value);
     }
 
     public EcmaIterator Entries() {
       if (!this.FallbackMode) {
-        return new EcmaIterator(EnumerateEntries(false).GetEnumerator(), EcmaIteratorResultKind.Entry, WellKnownObject.ArrayIteratorPrototype);
+        return new EcmaArrayIterator(EnumerateEntries(false).GetEnumerator(), EcmaIteratorResultKind.Entry);
       }
-      return new EcmaIterator(this, EcmaIteratorResultKind.Entry, WellKnownObject.ArrayIteratorPrototype);
+      return new EcmaArrayIterator(this, EcmaIteratorResultKind.Entry);
     }
 
     internal void SliceInternal(long start, long count, EcmaArray target) {

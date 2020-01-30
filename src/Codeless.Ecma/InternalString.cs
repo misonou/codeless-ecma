@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,6 +13,7 @@ namespace Codeless.Ecma {
       public const string String = "string";
       public const string Symbol = "symbol";
       public const string Function = "function";
+      public const string BigInt = "bigint";
     }
 
     public static class ObjectTag {
@@ -44,6 +45,12 @@ namespace Codeless.Ecma {
       public const string DataView = "DataView";
       public const string SharedArrayBuffer = "SharedArrayBuffer";
       public const string Atomics = "Atomics";
+      public const string Generator = "Generator";
+      public const string GeneratorFunction = "GeneratorFunction";
+      public const string AsyncFunction = "AsyncFunction";
+      public const string AsyncGenerator = "AsyncGenerator";
+      public const string AsyncGeneratorFunction = "AsyncGeneratorFunction";
+      public const string BigInt = "BigInt";
     }
 
     public static class Error {
@@ -119,6 +126,14 @@ namespace Codeless.Ecma {
       public const string SourceTooLarge = "Source is too large";
       public const string DataViewInvalidOffset = "Offset is outside the bounds of the DataView";
       public const string DataViewInvalidLength = "Invalid DataView length: {0}";
+      public const string InvalidBigIntSyntax = "Cannot convert {0} to a BigInt";
+      public const string BigIntNotConvertibleToNumber = "Cannot convert a BigInt value to a number";
+      public const string BigIntOverflow = "Maximum BigInt size exceeded";
+      public const string ExponentMustBePositive = "Exponent must be positive";
+      public const string CannotMixBigIntAndNumber = "Cannot mix BigInt and other types, use explicit conversions";
+      public const string NumberNotConvertibleToBigInt = "The number {0} cannot be converted to a BigInt because it is not an integer";
+      public const string NotConvertibleToBigInt = "Cannot convert {0} to BigInt";
+      public const string GeneratorRunning = "Generator is already running";
     }
   }
 }

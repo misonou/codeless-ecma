@@ -91,6 +91,18 @@ namespace Codeless.Ecma {
     Int16ArrayPrototype,
     Int32Array,
     Int32ArrayPrototype,
+    Generator,
+    AsyncFunctionPrototype,
+    AsyncGeneratorFunction,
+    AsyncGenerator,
+    AsyncGeneratorPrototype,
+    AsyncFromSyncIteratorPrototype,
+    BigIntConstructor,
+    BigIntPrototype,
+    BigInt64Array,
+    BigInt64ArrayPrototype,
+    BigUint64Array,
+    BigUint64ArrayPrototype,
     MaxValue
   }
 }

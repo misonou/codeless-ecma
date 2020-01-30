@@ -6,7 +6,7 @@
 
     [IntrinsicMember]
     public static EcmaValue Next([This] EcmaValue thisValue) {
-      EcmaIterator iterator = thisValue.GetUnderlyingObject<EcmaIterator>();
+      EcmaSetIterator iterator = thisValue.GetUnderlyingObject<EcmaSetIterator>();
       return iterator.Next();
     }
   }
