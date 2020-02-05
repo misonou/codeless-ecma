@@ -44,7 +44,7 @@ namespace Codeless.Ecma.UnitTest {
     }
 
     public static EcmaValue CreateObject(Func<EcmaValue> toString = null, Func<EcmaValue> valueOf = null, Func<EcmaValue> toPrimitive = null) {
-      return CreateObject(toString == null ? null : RuntimeFunction.Create(toString), valueOf == null ? null : RuntimeFunction.Create(valueOf), toPrimitive == null ? null : RuntimeFunction.Create(toPrimitive));
+      return CreateObject(toString == null ? default(EcmaValue?) : Literal.FunctionLiteral(toString), valueOf == null ? default(EcmaValue?) : Literal.FunctionLiteral(valueOf), toPrimitive == null ? default(EcmaValue?) : Literal.FunctionLiteral(toPrimitive));
     }
 
     public static EcmaValue CreateObject(RuntimeFunction toString = null, RuntimeFunction valueOf = null, RuntimeFunction toPrimitive = null) {
@@ -106,10 +106,10 @@ namespace Codeless.Ecma.UnitTest {
         properties["value"] = value.Value;
       }
       if (get != null) {
-        properties["get"] = RuntimeFunction.Create(get);
+        properties["get"] = Literal.FunctionLiteral(get);
       }
       if (set != null) {
-        properties["set"] = RuntimeFunction.Create(set);
+        properties["set"] = Literal.FunctionLiteral(set);
       }
       Global.Object.Invoke("defineProperty", obj, propertyKey, new EcmaObject(properties));
     }

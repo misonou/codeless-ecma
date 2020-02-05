@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System.Linq;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -226,61 +227,73 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("calls the SpeciesConstructor and creates the right amount of promises", () => {
-        EcmaValue FooPromise = RuntimeFunction.Create(Intercept((resolve, reject) => {
-          return Super.Construct(resolve, reject);
-        })).AsDerivedClassConstructorOf(Promise);
+        EcmaValue FooPromise = new ClassLiteral(Extends(Promise)) {
+          ["constructor"] = FunctionLiteral(Intercept((resolve, reject) => {
+            return Super.Construct(resolve, reject);
+          }))
+        };
 
-        FooPromise.Construct(RuntimeFunction.Create(resolve => resolve.Call())).Invoke("finally", Noop).Invoke("then", RuntimeFunction.Create(() => That(Logs.Count, Is.EqualTo(6))), UnexpectedReject);
+        FooPromise.Construct(FunctionLiteral(resolve => resolve.Call())).Invoke("finally", Noop).Invoke("then", FunctionLiteral(() => That(Logs.Count, Is.EqualTo(6))), UnexpectedReject);
         VerifyPromiseSettled();
       });
 
       It("creates the proper number of subclassed promises on rejected", () => {
-        EcmaValue FooPromise = RuntimeFunction.Create(Intercept((resolve, reject) => {
-          return Super.Construct(resolve, reject);
-        })).AsDerivedClassConstructorOf(Promise);
+        EcmaValue FooPromise = new ClassLiteral(Extends(Promise)) {
+          ["constructor"] = FunctionLiteral(Intercept((resolve, reject) => {
+            return Super.Construct(resolve, reject);
+          }))
+        };
 
-        FooPromise.Invoke("reject").Invoke("finally", Noop).Invoke("then", UnexpectedFulfill).Invoke("catch", RuntimeFunction.Create(() => That(Logs.Count, Is.EqualTo(7))));
+        FooPromise.Invoke("reject").Invoke("finally", Noop).Invoke("then", UnexpectedFulfill).Invoke("catch", FunctionLiteral(() => That(Logs.Count, Is.EqualTo(7))));
         VerifyPromiseSettled();
       });
 
       It("creates the proper number of subclassed promises on resolved", () => {
-        EcmaValue FooPromise = RuntimeFunction.Create(Intercept((resolve, reject) => {
-          return Super.Construct(resolve, reject);
-        })).AsDerivedClassConstructorOf(Promise);
+        EcmaValue FooPromise = new ClassLiteral(Extends(Promise)) {
+          ["constructor"] = FunctionLiteral(Intercept((resolve, reject) => {
+            return Super.Construct(resolve, reject);
+          }))
+        };
 
-        FooPromise.Invoke("resolve").Invoke("finally", Noop).Invoke("then", RuntimeFunction.Create(() => That(Logs.Count, Is.EqualTo(6))));
+        FooPromise.Invoke("resolve").Invoke("finally", Noop).Invoke("then", FunctionLiteral(() => That(Logs.Count, Is.EqualTo(6))));
         VerifyPromiseSettled();
       });
 
       It("calls the SpeciesConstructor", () => {
-        EcmaValue MyPromise = RuntimeFunction.Create(Intercept((resolve, reject) => {
-          return Super.Construct(resolve, reject);
-        })).AsDerivedClassConstructorOf(Promise);
-        Object.Invoke("defineProperty", MyPromise, Symbol.Species, CreateObject(new { get = RuntimeFunction.Create(() => Promise) }));
+        EcmaValue MyPromise = new ClassLiteral(Extends(Promise)) {
+          ["constructor"] = FunctionLiteral(Intercept((resolve, reject) => {
+            return Super.Construct(resolve, reject);
+          }))
+        };
+        Object.Invoke("defineProperty", MyPromise, Symbol.Species, CreateObject(new { get = FunctionLiteral(() => Promise) }));
 
-        EcmaValue p = Promise.Invoke("resolve").Invoke("finally", RuntimeFunction.Create(() => MyPromise.Invoke("resolve")));
+        EcmaValue p = Promise.Invoke("resolve").Invoke("finally", FunctionLiteral(() => MyPromise.Invoke("resolve")));
         That(p.InstanceOf(Promise), Is.True);
         That(p.InstanceOf(MyPromise), Is.False);
       });
 
       It("calls the SpeciesConstructor on rejected", () => {
-        EcmaValue MyPromise = RuntimeFunction.Create(Intercept((resolve, reject) => {
-          return Super.Construct(resolve, reject);
-        })).AsDerivedClassConstructorOf(Promise);
-        Object.Invoke("defineProperty", MyPromise, Symbol.Species, CreateObject(new { get = RuntimeFunction.Create(() => Promise) }));
+        EcmaValue MyPromise = new ClassLiteral(Extends(Promise)) {
+          ["constructor"] = FunctionLiteral(Intercept((resolve, reject) => {
+            return Super.Construct(resolve, reject);
+          }))
+        };
+        Object.Invoke("defineProperty", MyPromise, Symbol.Species, CreateObject(new { get = FunctionLiteral(() => Promise) }));
 
-        EcmaValue p = Promise.Invoke("reject").Invoke("finally", RuntimeFunction.Create(() => MyPromise.Invoke("reject")));
+        EcmaValue p = Promise.Invoke("reject").Invoke("finally", FunctionLiteral(() => MyPromise.Invoke("reject")));
         That(p.InstanceOf(Promise), Is.True);
         That(p.InstanceOf(MyPromise), Is.False);
       });
 
       It("calls the SpeciesConstructor on resolved", () => {
-        EcmaValue MyPromise = RuntimeFunction.Create(Intercept((resolve, reject) => {
-          return Super.Construct(resolve, reject);
-        })).AsDerivedClassConstructorOf(Promise);
-        Object.Invoke("defineProperty", MyPromise, Symbol.Species, CreateObject(new { get = RuntimeFunction.Create(() => Promise) }));
+        EcmaValue MyPromise = new ClassLiteral(Extends(Promise)) {
+          ["constructor"] = FunctionLiteral(Intercept((resolve, reject) => {
+            return Super.Construct(resolve, reject);
+          }))
+        };
+        Object.Invoke("defineProperty", MyPromise, Symbol.Species, CreateObject(new { get = FunctionLiteral(() => Promise) }));
 
-        EcmaValue p = Promise.Invoke("resolve").Invoke("finally", RuntimeFunction.Create(() => MyPromise.Invoke("resolve")));
+        EcmaValue p = Promise.Invoke("resolve").Invoke("finally", FunctionLiteral(() => MyPromise.Invoke("resolve")));
         That(p.InstanceOf(Promise), Is.True);
         That(p.InstanceOf(MyPromise), Is.False);
       });
@@ -320,7 +333,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should immediately queue handler if rejected", () => {
         EcmaValue pReject = default;
-        EcmaValue p = Promise.Construct(RuntimeFunction.Create((resolve, reject) => pReject = reject));
+        EcmaValue p = Promise.Construct(FunctionLiteral((resolve, reject) => pReject = reject));
 
         Logs.Add("1");
         pReject.Call();
@@ -338,14 +351,16 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("does not check for cyclic resolutions in promise reaction jobs", () => {
         EcmaValue createBadPromise = false;
         EcmaValue obj = new EcmaObject();
-        EcmaValue P = RuntimeFunction.Create((executor) => {
-          if (createBadPromise) {
-            executor.Call(Undefined, RuntimeFunction.Create(v => That(v, Is.EqualTo(obj))), Noop);
-            return obj;
-          }
-          Super.Construct(executor);
-          return Undefined;
-        }).AsDerivedClassConstructorOf(Promise);
+        EcmaValue P = new ClassLiteral(Extends(Promise)) {
+          ["constructor"] = FunctionLiteral((executor) => {
+            if (createBadPromise) {
+              executor.Call(Undefined, FunctionLiteral(v => That(v, Is.EqualTo(obj))), Noop);
+              return obj;
+            }
+            Super.Construct(executor);
+            return Undefined;
+          })
+        };
         EcmaValue p = P.Invoke("resolve", obj);
         createBadPromise = true;
         p.Invoke("then");
@@ -373,7 +388,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return abrupt from custom constructor", () => {
         EcmaValue BadCtor = ThrowTest262Exception;
         using (TempProperty(Promise, Symbol.Species, BadCtor)) {
-          EcmaValue p = Promise.Construct(RuntimeFunction.Create(resolve => resolve.Call()));
+          EcmaValue p = Promise.Construct(FunctionLiteral(resolve => resolve.Call()));
           Case(p, Throws.Test262);
         }
       });
@@ -389,13 +404,15 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue thisValue = default, callCount = 0, argLength = default, getCapabilitiesExecutor = default;
         EcmaValue executor = Noop;
         EcmaValue p1 = Promise.Construct(Noop);
-        EcmaValue SpeciesConstructor = RuntimeFunction.Create((a) => {
-          Super.Construct(a);
-          callCount += 1;
-          thisValue = This;
-          getCapabilitiesExecutor = a;
-          argLength = Arguments["length"];
-        }).AsDerivedClassConstructorOf(Promise);
+        EcmaValue SpeciesConstructor = new ClassLiteral(Extends(Promise)) {
+          ["constructor"] = FunctionLiteral((a) => {
+            Super.Construct(a);
+            callCount += 1;
+            thisValue = This;
+            getCapabilitiesExecutor = a;
+            argLength = Arguments["length"];
+          })
+        };
 
         EcmaValue constructor = Noop;
         p1["constructor"] = constructor;
@@ -412,17 +429,19 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should throw a TypeError if either resolve or reject capability is not callable", () => {
         EcmaValue constructorFunction = default;
-        EcmaValue promise = RuntimeFunction.Create(executor => {
-          if (constructorFunction) {
-            constructorFunction.Call(Undefined, executor);
-            return new EcmaObject();
-          }
-          return Super.Construct(executor);
-        }).AsDerivedClassConstructorOf(Promise).Construct(Noop);
+        EcmaValue promise = new ClassLiteral(Extends(Promise)) {
+          ["constructor"] = FunctionLiteral(executor => {
+            if (constructorFunction) {
+              constructorFunction.Call(Undefined, executor);
+              return new EcmaObject();
+            }
+            return Super.Construct(executor);
+          })
+        }.ToValue().Construct(Noop);
 
         EcmaValue checkPoint = "";
         That(() => {
-          constructorFunction = RuntimeFunction.Create((executor) => {
+          constructorFunction = FunctionLiteral((executor) => {
             checkPoint += "a";
           });
           promise.Invoke("then");
@@ -431,7 +450,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
         checkPoint = "";
         That(() => {
-          constructorFunction = RuntimeFunction.Create((executor) => {
+          constructorFunction = FunctionLiteral((executor) => {
             checkPoint += "a";
             executor.Call(Undefined);
             checkPoint += "b";
@@ -442,7 +461,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
         checkPoint = "";
         That(() => {
-          constructorFunction = RuntimeFunction.Create((executor) => {
+          constructorFunction = FunctionLiteral((executor) => {
             checkPoint += "a";
             executor.Call(Undefined, Undefined, Undefined);
             checkPoint += "b";
@@ -453,7 +472,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
         checkPoint = "";
         That(() => {
-          constructorFunction = RuntimeFunction.Create((executor) => {
+          constructorFunction = FunctionLiteral((executor) => {
             checkPoint += "a";
             executor.Call(Undefined, Undefined, Noop);
             checkPoint += "b";
@@ -464,7 +483,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
         checkPoint = "";
         That(() => {
-          constructorFunction = RuntimeFunction.Create((executor) => {
+          constructorFunction = FunctionLiteral((executor) => {
             checkPoint += "a";
             executor.Call(Undefined, Noop, Undefined);
             checkPoint += "b";
@@ -475,7 +494,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
         checkPoint = "";
         That(() => {
-          constructorFunction = RuntimeFunction.Create((executor) => {
+          constructorFunction = FunctionLiteral((executor) => {
             checkPoint += "a";
             executor.Call(Undefined, 123, "invalid value");
             checkPoint += "b";
@@ -487,16 +506,18 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should throw a TypeError if capabilities executor already called with non-undefined values", () => {
         EcmaValue constructorFunction = default;
-        EcmaValue promise = RuntimeFunction.Create(executor => {
-          if (constructorFunction) {
-            constructorFunction.Call(Undefined, executor);
-            return new EcmaObject();
-          }
-          return Super.Construct(executor);
-        }).AsDerivedClassConstructorOf(Promise).Construct(Noop);
+        EcmaValue promise = new ClassLiteral(Extends(Promise)) {
+          ["constructor"] = FunctionLiteral(executor => {
+            if (constructorFunction) {
+              constructorFunction.Call(Undefined, executor);
+              return new EcmaObject();
+            }
+            return Super.Construct(executor);
+          })
+        }.ToValue().Construct(Noop);
 
         EcmaValue checkPoint = "";
-        constructorFunction = RuntimeFunction.Create((executor) => {
+        constructorFunction = FunctionLiteral((executor) => {
           checkPoint += "a";
           executor.Call(Undefined);
           checkPoint += "b";
@@ -507,7 +528,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         That(checkPoint, Is.EqualTo("abc"), "executor initially called with no arguments");
 
         checkPoint = "";
-        constructorFunction = RuntimeFunction.Create((executor) => {
+        constructorFunction = FunctionLiteral((executor) => {
           checkPoint += "a";
           executor.Call(Undefined, Undefined, Undefined);
           checkPoint += "b";
@@ -519,7 +540,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
         checkPoint = "";
         That(() => {
-          constructorFunction = RuntimeFunction.Create((executor) => {
+          constructorFunction = FunctionLiteral((executor) => {
             checkPoint += "a";
             executor.Call(Undefined, Undefined, Noop);
             checkPoint += "b";
@@ -532,7 +553,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
         checkPoint = "";
         That(() => {
-          constructorFunction = RuntimeFunction.Create((executor) => {
+          constructorFunction = FunctionLiteral((executor) => {
             checkPoint += "a";
             executor.Call(Undefined, Noop, Undefined);
             checkPoint += "b";
@@ -545,7 +566,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
         checkPoint = "";
         That(() => {
-          constructorFunction = RuntimeFunction.Create((executor) => {
+          constructorFunction = FunctionLiteral((executor) => {
             checkPoint += "a";
             executor.Call(Undefined, "invalid value", 123);
             checkPoint += "b";

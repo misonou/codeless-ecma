@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System.Collections;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -129,15 +130,15 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return abrupt completion from reviver", () => {
         Case((_, "[0,0]", ThrowTest262Exception), Throws.Test262);
-        Case((_, "{\"0\":0,\"1\":0}", RuntimeFunction.Create(v => DefineProperty(This, "1", get: ThrowTest262Exception))), Throws.Test262);
-        Case((_, "{\"0\":0,\"1\":0}", RuntimeFunction.Create(v => Void(This.ToObject()[1] = Proxy.Construct(new EcmaObject(), CreateObject(("ownKeys", ThrowTest262Exception)))))), Throws.Test262);
-        Case((_, "{\"0\":0,\"1\":0}", RuntimeFunction.Create(v => Void(This.ToObject()[1] = Proxy.Construct(CreateObject(("a", 1)), CreateObject(("deleteProperty", ThrowTest262Exception)))))), Throws.Test262);
-        Case((_, "{\"0\":0,\"1\":0}", RuntimeFunction.Create((k, v) => v == 0 ? Void(This.ToObject()[1] = Proxy.Construct(CreateObject(("0", Null)), CreateObject(("defineProperty", ThrowTest262Exception)))) : v)), Throws.Test262);
+        Case((_, "{\"0\":0,\"1\":0}", FunctionLiteral(v => DefineProperty(This, "1", get: ThrowTest262Exception))), Throws.Test262);
+        Case((_, "{\"0\":0,\"1\":0}", FunctionLiteral(v => Void(This.ToObject()[1] = Proxy.Construct(new EcmaObject(), CreateObject(("ownKeys", ThrowTest262Exception)))))), Throws.Test262);
+        Case((_, "{\"0\":0,\"1\":0}", FunctionLiteral(v => Void(This.ToObject()[1] = Proxy.Construct(CreateObject(("a", 1)), CreateObject(("deleteProperty", ThrowTest262Exception)))))), Throws.Test262);
+        Case((_, "{\"0\":0,\"1\":0}", FunctionLiteral((k, v) => v == 0 ? Void(This.ToObject()[1] = Proxy.Construct(CreateObject(("0", Null)), CreateObject(("defineProperty", ThrowTest262Exception)))) : v)), Throws.Test262);
 
         EcmaValue revoked = Proxy.Invoke("revocable", new EcmaObject(), new EcmaObject());
         revoked.Invoke("revoke");
         int returnCount = 0;
-        Case((_, "{\"0\":0,\"1\":0}", RuntimeFunction.Create(v => Void(This.ToObject()[1] = revoked, returnCount++))), Throws.TypeError);
+        Case((_, "{\"0\":0,\"1\":0}", FunctionLiteral(v => Void(This.ToObject()[1] = revoked, returnCount++))), Throws.TypeError);
         That(returnCount, Is.EqualTo(1));
       });
     }
@@ -158,16 +159,16 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should not serialize root object or properties which values are undefined or functions", () => {
         Case((_, Undefined), Undefined);
-        Case((_, RuntimeFunction.Create(() => Undefined)), Undefined);
+        Case((_, FunctionLiteral(() => Undefined)), Undefined);
       });
 
       It("should replace values by that returned from the replacer function", () => {
-        Case((_, Undefined, RuntimeFunction.Create((k, v) => "replacement")), "\"replacement\"");
-        Case((_, 42, RuntimeFunction.Create((k, v) => Undefined)), Undefined);
-        Case((_, 42, RuntimeFunction.Create((k, v) => v == 42 ? EcmaArray.Of(4, 2) : v)), "[4,2]");
-        Case((_, 42, RuntimeFunction.Create((k, v) => v == 42 ? CreateObject(("forty", 2)) : v)), "{\"forty\":2}");
-        Case((_, RuntimeFunction.Create(() => Undefined), RuntimeFunction.Create((k, v) => 99)), "99");
-        Case((_, CreateObject(("prop", 1)), RuntimeFunction.Create((k, v) => Undefined)), Undefined);
+        Case((_, Undefined, FunctionLiteral((k, v) => "replacement")), "\"replacement\"");
+        Case((_, 42, FunctionLiteral((k, v) => Undefined)), Undefined);
+        Case((_, 42, FunctionLiteral((k, v) => v == 42 ? EcmaArray.Of(4, 2) : v)), "[4,2]");
+        Case((_, 42, FunctionLiteral((k, v) => v == 42 ? CreateObject(("forty", 2)) : v)), "{\"forty\":2}");
+        Case((_, FunctionLiteral(() => Undefined), FunctionLiteral((k, v) => 99)), "99");
+        Case((_, CreateObject(("prop", 1)), FunctionLiteral((k, v) => Undefined)), Undefined);
       });
 
       It("should ignore replacer argument that are not functions or arrays", () => {
@@ -175,22 +176,22 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should coerce Number, Boolean and String objects returned from replacer to their internal values", () => {
-        Case((_, EcmaArray.Of(42), RuntimeFunction.Create((k, v) => v == 42 ? String.Construct("fortytwo") : v)), "[\"fortytwo\"]");
-        Case((_, EcmaArray.Of(42), RuntimeFunction.Create((k, v) => v == 42 ? Number.Construct(84) : v)), "[84]");
-        Case((_, EcmaArray.Of(42), RuntimeFunction.Create((k, v) => v == 42 ? Boolean.Construct(false) : v)), "[false]");
+        Case((_, EcmaArray.Of(42), FunctionLiteral((k, v) => v == 42 ? String.Construct("fortytwo") : v)), "[\"fortytwo\"]");
+        Case((_, EcmaArray.Of(42), FunctionLiteral((k, v) => v == 42 ? Number.Construct(84) : v)), "[84]");
+        Case((_, EcmaArray.Of(42), FunctionLiteral((k, v) => v == 42 ? Boolean.Construct(false) : v)), "[false]");
       });
 
       It("should replace object by value returned from toJSON()", () => {
         EcmaValue obj = new EcmaObject();
         obj["prop"] = 42;
 
-        obj["toJSON"] = RuntimeFunction.Create(() => Boolean.Construct(true));
+        obj["toJSON"] = FunctionLiteral(() => Boolean.Construct(true));
         Case((_, EcmaArray.Of(obj)), "[true]");
 
-        obj["toJSON"] = RuntimeFunction.Create(() => Number.Construct(42));
+        obj["toJSON"] = FunctionLiteral(() => Number.Construct(42));
         Case((_, EcmaArray.Of(obj)), "[42]");
 
-        obj["toJSON"] = RuntimeFunction.Create(() => "fortytwo objects");
+        obj["toJSON"] = FunctionLiteral(() => "fortytwo objects");
         Case((_, EcmaArray.Of(obj)), "[\"fortytwo objects\"]");
       });
 

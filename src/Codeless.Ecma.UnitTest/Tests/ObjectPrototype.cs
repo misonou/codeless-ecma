@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -33,14 +34,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
       Case((Object.Invoke("create", CreateObject(("foo", 42))), "foo"), false);
 
       Symbol sym = new Symbol();
-      EcmaValue returnSym = RuntimeFunction.Create(() => sym);
+      EcmaValue returnSym = FunctionLiteral(() => sym);
       Case((CreateObject((sym, 42)), sym), true);
       Case((CreateObject((sym, 42)), CreateObject((Symbol.ToPrimitive, returnSym))), true);
       Case((CreateObject((sym, 42)), CreateObject(("toString", returnSym), ("valueOf", Null))), true);
       Case((CreateObject((sym, 42)), CreateObject(("valueOf", returnSym), ("toString", Null))), true);
 
       EcmaValue o;
-      o = RuntimeFunction.Create(() => Void(This.ToObject()["foo"] = 42)).Construct();
+      o = FunctionLiteral(() => Void(This.ToObject()["foo"] = 42)).Construct();
       Case((o, "foo"), true);
 
       o = new EcmaObject();
@@ -148,10 +149,10 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(isPrototypeOf, "isPrototypeOf", 1);
       IsAbruptedFromToObject(isPrototypeOf);
 
-      EcmaValue userFactory = RuntimeFunction.Create(() => Undefined);
+      EcmaValue userFactory = FunctionLiteral(() => Undefined);
       EcmaValue proto = userFactory.Construct();
 
-      EcmaValue forceUserFactory = RuntimeFunction.Create(() => Undefined);
+      EcmaValue forceUserFactory = FunctionLiteral(() => Undefined);
       forceUserFactory["prototype"] = proto;
 
       Case((proto, forceUserFactory.Construct()), true);
@@ -163,14 +164,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(propertyIsEnumerable, "propertyIsEnumerable", 1);
       IsAbruptedFromToObject(propertyIsEnumerable);
 
-      RuntimeFunction factory = RuntimeFunction.Create(v => Void(This.ToObject()["name"] = v));
-      factory.Prototype.Set("rootprop", true);
+      EcmaValue factory = FunctionLiteral(v => Void(This.ToObject()["name"] = v));
+      factory["prototype"].ToObject().Set("rootprop", true);
       EcmaValue obj = factory.Construct("name");
       Case((obj, "name"), true);
       Case((obj, "rootprop"), false, "propertyIsEnumerable method does not consider objects in the prototype chain");
 
       Symbol sym = new Symbol();
-      EcmaValue returnSym = RuntimeFunction.Create(() => sym);
+      EcmaValue returnSym = FunctionLiteral(() => sym);
       Case((CreateObject((sym, 42)), sym), true);
       Case((CreateObject((sym, 42)), CreateObject((Symbol.ToPrimitive, returnSym))), true);
       Case((CreateObject((sym, 42)), CreateObject(("toString", returnSym), ("valueOf", Null))), true);
@@ -194,7 +195,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       Case(obj, Throws.Test262);
 
       EcmaValue args = default;
-      RuntimeFunction.Create(() => args = Arguments).Call();
+      FunctionLiteral(() => args = Arguments).Call();
       Case(args, "[object Arguments]");
 
       Case(new EcmaArray(), "[object Array]");
@@ -209,7 +210,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       Case(new EcmaDate(), "[object Date]");
       Case(Object.Call(_, new EcmaDate()), "[object Date]");
 
-      Case(RuntimeFunction.Create(() => Undefined), "[object Function]");
+      Case(FunctionLiteral(() => Undefined), "[object Function]");
 
       Case(Null, "[object Null]");
 
@@ -243,7 +244,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       Case(CreateObject((Symbol.ToStringTag, 42)), "[object Object]");
       Case(CreateObject((Symbol.ToStringTag, String.Construct(""))), "[object Object]");
       Case(CreateObject((Symbol.ToStringTag, new EcmaObject())), "[object Object]");
-      Case(CreateObject((Symbol.ToStringTag, RuntimeFunction.Create(() => ""))), "[object Object]");
+      Case(CreateObject((Symbol.ToStringTag, FunctionLiteral(() => ""))), "[object Object]");
     }
 
     [Test, RuntimeFunctionInjection]

@@ -4,6 +4,7 @@ using NUnit.Framework;
 using System.Linq;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -1954,7 +1955,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((_, Global.SharedArrayBuffer.Construct(128), 0, 0), Throws.TypeError);
         Case((_, Error.Construct("Ouch"), 0, 0), Throws.TypeError);
         Case((_, EcmaArray.Of(1, 1, 2, 3, 5, 8), 0, 0), Throws.TypeError);
-        Case((_, RuntimeFunction.Create(x => -x), 0, 0), Throws.TypeError);
+        Case((_, FunctionLiteral(x => -x), 0, 0), Throws.TypeError);
         Case((_, new Symbol("halleluja"), 0, 0), Throws.TypeError);
         Case((_, Object, 0, 0), Throws.TypeError);
         Case((_, Global.Int32Array, 0, 0), Throws.TypeError);

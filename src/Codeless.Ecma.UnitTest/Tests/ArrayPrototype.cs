@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -154,7 +155,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case(handle["proxy"], Throws.TypeError);
 
         EcmaValue handle2 = default;
-        handle2 = Proxy.Invoke("revocable", EcmaArray.Of(), CreateObject(("get", RuntimeFunction.Create((target, key) => {
+        handle2 = Proxy.Invoke("revocable", EcmaArray.Of(), CreateObject(("get", FunctionLiteral((target, key) => {
           // Defer proxy revocation until after property access to ensure that the
           // expected TypeError originates from the IsArray operation.
           if (key == Symbol.IsConcatSpreadable) {
@@ -169,7 +170,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         int callCount = 0;
         EcmaValue instance = EcmaArray.Of();
         EcmaValue thisValue = default, args = default;
-        EcmaValue ConstructorFn = RuntimeFunction.Create(() => {
+        EcmaValue ConstructorFn = FunctionLiteral(() => {
           callCount++;
           thisValue = This;
           args = Arguments;
@@ -471,12 +472,12 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return true when all calls to callback return true", () => {
-        Case((EcmaArray.Of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), RuntimeFunction.Create(() => true)), true);
-        Case((EcmaArray.Of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), RuntimeFunction.Create((v, i) => i == 9 ? false : true)), false);
+        Case((EcmaArray.Of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), FunctionLiteral(() => true)), true);
+        Case((EcmaArray.Of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), FunctionLiteral((v, i) => i == 9 ? false : true)), false);
       });
 
       It("should return true when length is zero", () => {
-        RuntimeFunction cb = RuntimeFunction.Create(() => Undefined);
+        EcmaValue cb = FunctionLiteral(() => Undefined);
         Case((EcmaArray.Of(), cb), true);
 
         Case((CreateObject(("length", 0), (0, "1")), cb), true);
@@ -488,11 +489,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should coerce length of array-like objects to integer between 0 and 2^53-1", () => {
-        Case((CreateObject(("length", 2.5), (0, true), (1, true), (2, false)), RuntimeFunction.Create(v => v)), true);
-        Case((CreateObject(("length", "2"), (0, true), (1, true), (2, false)), RuntimeFunction.Create(v => v)), true);
-        Case((CreateObject(("length", -Infinity), (0, false), (1, false), (2, false)), RuntimeFunction.Create(v => v)), true);
-        Case((CreateObject(("length", NaN), (0, false), (1, false), (2, false)), RuntimeFunction.Create(v => v)), true);
-        Case((CreateObject(("length", CreateObject(valueOf: () => "2")), (0, true), (1, true), (2, false)), RuntimeFunction.Create(v => v)), true);
+        Case((CreateObject(("length", 2.5), (0, true), (1, true), (2, false)), FunctionLiteral(v => v)), true);
+        Case((CreateObject(("length", "2"), (0, true), (1, true), (2, false)), FunctionLiteral(v => v)), true);
+        Case((CreateObject(("length", -Infinity), (0, false), (1, false), (2, false)), FunctionLiteral(v => v)), true);
+        Case((CreateObject(("length", NaN), (0, false), (1, false), (2, false)), FunctionLiteral(v => v)), true);
+        Case((CreateObject(("length", CreateObject(valueOf: () => "2")), (0, true), (1, true), (2, false)), FunctionLiteral(v => v)), true);
         Case(CreateObject(("length", new Symbol())), Throws.TypeError);
       });
 
@@ -507,21 +508,21 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should coerce return value of callbackFn to boolean", () => {
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => Undefined)), false);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => Null)), false);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => NaN)), false);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => 0)), false);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => -0d)), false);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => Infinity)), true);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => -Infinity)), true);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => 5)), true);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => -5)), true);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => "")), false);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => "string")), true);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => Number.Construct(0))), true);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => String.Construct(""))), true);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => Boolean.Construct(false))), true);
-        Case((EcmaArray.Of(11), RuntimeFunction.Create(() => EcmaArray.Of())), true);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => Undefined)), false);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => Null)), false);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => NaN)), false);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => 0)), false);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => -0d)), false);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => Infinity)), true);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => -Infinity)), true);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => 5)), true);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => -5)), true);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => "")), false);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => "string")), true);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => Number.Construct(0))), true);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => String.Construct(""))), true);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => Boolean.Construct(false))), true);
+        Case((EcmaArray.Of(11), FunctionLiteral(() => EcmaArray.Of())), true);
       });
 
       It("should call predicate with correct arguments and in correct sequence", () => {
@@ -529,7 +530,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue obj = new EcmaObject();
         EcmaValue arr = EcmaArray.Of(0, 1, true, Null, obj, "five");
         arr[7] = "seven";
-        every.Call(arr, RuntimeFunction.Create(() => Return(args.Push(Arguments), true)));
+        every.Call(arr, FunctionLiteral(() => Return(args.Push(Arguments), true)));
         That(args[0], Is.EquivalentTo(new[] { 0, 0, arr }));
         That(args[1], Is.EquivalentTo(new[] { 1, 1, arr }));
         That(args[2], Is.EquivalentTo(new[] { true, 2, arr }));
@@ -541,11 +542,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should call predicate with this value", () => {
         EcmaValue thisValue = default;
-        every.Call(EcmaArray.Of(1), RuntimeFunction.Create(() => Void(thisValue = This)));
+        every.Call(EcmaArray.Of(1), FunctionLiteral(() => Void(thisValue = This)));
         That(thisValue, Is.Undefined);
 
         EcmaValue obj = new EcmaObject();
-        every.Call(EcmaArray.Of(1), RuntimeFunction.Create(() => Void(thisValue = This)), obj);
+        every.Call(EcmaArray.Of(1), FunctionLiteral(() => Void(thisValue = This)), obj);
         That(thisValue, Is.EqualTo(obj));
       });
 
@@ -560,7 +561,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue obj = CreateObject(new { length = 2 });
         DefineProperty(obj, 0, get: Intercept(ThrowTest262Exception));
         DefineProperty(obj, 1, get: Intercept(ThrowTest262Exception));
-        Case((obj, RuntimeFunction.Create(() => Undefined)), Throws.Test262);
+        Case((obj, FunctionLiteral(() => Undefined)), Throws.Test262);
         That(Logs, Has.Exactly(1).Items);
       });
 
@@ -581,11 +582,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should not see deleted elements before visit", () => {
-        Case((EcmaArray.Of(1, 2), RuntimeFunction.Create((v, i, o) => Return(o.ToObject().Delete(1), i))), false);
+        Case((EcmaArray.Of(1, 2), FunctionLiteral((v, i, o) => Return(o.ToObject().Delete(1), i))), false);
       });
 
       It("should see updated elements before visit", () => {
-        Case((EcmaArray.Of(1, 2, 3), RuntimeFunction.Create((v, i, o) => Return(o.Invoke("fill", 0, 0), v > 0))), false);
+        Case((EcmaArray.Of(1, 2, 3), FunctionLiteral((v, i, o) => Return(o.Invoke("fill", 0, 0), v > 0))), false);
       });
     }
 
@@ -706,44 +707,44 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return found value if predicate return a boolean true value", () => {
         EcmaValue arr = EcmaArray.Of("Shoes", "Car", "Bike");
         int called = 0;
-        Case((arr, RuntimeFunction.Create(() => Return(called++, true))), "Shoes");
+        Case((arr, FunctionLiteral(() => Return(called++, true))), "Shoes");
         That(called, Is.EqualTo(1));
 
         called = 0;
-        Case((arr, RuntimeFunction.Create(v => Return(called++, v == "Bike"))), "Bike");
+        Case((arr, FunctionLiteral(v => Return(called++, v == "Bike"))), "Bike");
         That(called, Is.EqualTo(3));
       });
 
       It("should return undefined if predicate always returns a boolean false value", () => {
         EcmaValue arr = EcmaArray.Of("Shoes", "Car", "Bike");
         int called = 0;
-        Case((arr, RuntimeFunction.Create(() => Return(called++, false))), Undefined);
+        Case((arr, FunctionLiteral(() => Return(called++, false))), Undefined);
         That(called, Is.EqualTo(3));
       });
 
       It("should coerce return value of callbackFn to boolean", () => {
         EcmaValue arr = EcmaArray.Of("Shoes", "Car", "Bike");
-        Case((arr, RuntimeFunction.Create(() => Undefined)), Undefined);
-        Case((arr, RuntimeFunction.Create(() => Null)), Undefined);
-        Case((arr, RuntimeFunction.Create(() => NaN)), Undefined);
-        Case((arr, RuntimeFunction.Create(() => 0)), Undefined);
-        Case((arr, RuntimeFunction.Create(() => -0d)), Undefined);
-        Case((arr, RuntimeFunction.Create(() => Infinity)), "Shoes");
-        Case((arr, RuntimeFunction.Create(() => -Infinity)), "Shoes");
-        Case((arr, RuntimeFunction.Create(() => 5)), "Shoes");
-        Case((arr, RuntimeFunction.Create(() => -5)), "Shoes");
-        Case((arr, RuntimeFunction.Create(() => "")), Undefined);
-        Case((arr, RuntimeFunction.Create(() => "string")), "Shoes");
-        Case((arr, RuntimeFunction.Create(() => Number.Construct(0))), "Shoes");
-        Case((arr, RuntimeFunction.Create(() => String.Construct(""))), "Shoes");
-        Case((arr, RuntimeFunction.Create(() => Boolean.Construct(false))), "Shoes");
-        Case((arr, RuntimeFunction.Create(() => EcmaArray.Of())), "Shoes");
+        Case((arr, FunctionLiteral(() => Undefined)), Undefined);
+        Case((arr, FunctionLiteral(() => Null)), Undefined);
+        Case((arr, FunctionLiteral(() => NaN)), Undefined);
+        Case((arr, FunctionLiteral(() => 0)), Undefined);
+        Case((arr, FunctionLiteral(() => -0d)), Undefined);
+        Case((arr, FunctionLiteral(() => Infinity)), "Shoes");
+        Case((arr, FunctionLiteral(() => -Infinity)), "Shoes");
+        Case((arr, FunctionLiteral(() => 5)), "Shoes");
+        Case((arr, FunctionLiteral(() => -5)), "Shoes");
+        Case((arr, FunctionLiteral(() => "")), Undefined);
+        Case((arr, FunctionLiteral(() => "string")), "Shoes");
+        Case((arr, FunctionLiteral(() => Number.Construct(0))), "Shoes");
+        Case((arr, FunctionLiteral(() => String.Construct(""))), "Shoes");
+        Case((arr, FunctionLiteral(() => Boolean.Construct(false))), "Shoes");
+        Case((arr, FunctionLiteral(() => EcmaArray.Of())), "Shoes");
       });
 
       It("should call predicate for each array entry and holes", () => {
         EcmaValue arr = EcmaArray.Of("Mike", "Rick", "Leo");
         EcmaValue results = new EcmaArray();
-        find.Call(arr, RuntimeFunction.Create(() => Void(results.Invoke("push", Arguments))));
+        find.Call(arr, FunctionLiteral(() => Void(results.Invoke("push", Arguments))));
         That(results, Is.EquivalentTo(new[] {
           new[] { "Mike", 0, arr },
           new[] { "Rick", 1, arr },
@@ -754,17 +755,17 @@ namespace Codeless.Ecma.UnitTest.Tests {
         arr[0] = Undefined;
         arr[3] = "foo";
         int called = 0;
-        find.Call(arr, RuntimeFunction.Create(() => Void(called++)));
+        find.Call(arr, FunctionLiteral(() => Void(called++)));
         That(called, Is.EqualTo(4));
       });
 
       It("should call predicate with this value", () => {
         EcmaValue thisValue = default;
-        find.Call(EcmaArray.Of(1), RuntimeFunction.Create(() => Void(thisValue = This)));
+        find.Call(EcmaArray.Of(1), FunctionLiteral(() => Void(thisValue = This)));
         That(thisValue, Is.Undefined);
 
         EcmaValue obj = new EcmaObject();
-        find.Call(EcmaArray.Of(1), RuntimeFunction.Create(() => Void(thisValue = This)), obj);
+        find.Call(EcmaArray.Of(1), FunctionLiteral(() => Void(thisValue = This)), obj);
         That(thisValue, Is.EqualTo(obj));
       });
 
@@ -773,7 +774,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue obj = CreateObject(new { length = 2 });
         DefineProperty(obj, 0, get: Intercept(ThrowTest262Exception));
         DefineProperty(obj, 1, get: Intercept(ThrowTest262Exception));
-        Case((obj, RuntimeFunction.Create(() => Undefined)), Throws.Test262);
+        Case((obj, FunctionLiteral(() => Undefined)), Throws.Test262);
         That(Logs, Has.Exactly(1).Items);
       });
 
@@ -786,7 +787,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should see array altered during iteration", () => {
         EcmaValue arr = EcmaArray.Of("Shoes", "Car", "Bike");
         EcmaValue results = new EcmaArray();
-        find.Call(arr, RuntimeFunction.Create(v => {
+        find.Call(arr, FunctionLiteral(v => {
           if (results["length"] == 0) {
             arr.Invoke("splice", 1, 1);
           }
@@ -796,7 +797,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
         arr = EcmaArray.Of("Skateboard", "Barefoot");
         results = new EcmaArray();
-        find.Call(arr, RuntimeFunction.Create(v => {
+        find.Call(arr, FunctionLiteral(v => {
           if (results["length"] == 0) {
             arr.Invoke("push", "Motorcycle");
             arr[1] = "Magic Carpet";
@@ -838,44 +839,44 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return index if predicate return a boolean true value", () => {
         EcmaValue arr = EcmaArray.Of("Shoes", "Car", "Bike");
         int called = 0;
-        Case((arr, RuntimeFunction.Create(() => Return(called++, true))), 0);
+        Case((arr, FunctionLiteral(() => Return(called++, true))), 0);
         That(called, Is.EqualTo(1));
 
         called = 0;
-        Case((arr, RuntimeFunction.Create(v => Return(called++, v == "Bike"))), 2);
+        Case((arr, FunctionLiteral(v => Return(called++, v == "Bike"))), 2);
         That(called, Is.EqualTo(3));
       });
 
       It("should return -1 if predicate always returns a boolean false value", () => {
         EcmaValue arr = EcmaArray.Of("Shoes", "Car", "Bike");
         int called = 0;
-        Case((arr, RuntimeFunction.Create(() => Return(called++, false))), -1);
+        Case((arr, FunctionLiteral(() => Return(called++, false))), -1);
         That(called, Is.EqualTo(3));
       });
 
       It("should coerce return value of callbackFn to boolean", () => {
         EcmaValue arr = EcmaArray.Of("Shoes", "Car", "Bike");
-        Case((arr, RuntimeFunction.Create(() => Undefined)), -1);
-        Case((arr, RuntimeFunction.Create(() => Null)), -1);
-        Case((arr, RuntimeFunction.Create(() => NaN)), -1);
-        Case((arr, RuntimeFunction.Create(() => 0)), -1);
-        Case((arr, RuntimeFunction.Create(() => -0d)), -1);
-        Case((arr, RuntimeFunction.Create(() => Infinity)), 0);
-        Case((arr, RuntimeFunction.Create(() => -Infinity)), 0);
-        Case((arr, RuntimeFunction.Create(() => 5)), 0);
-        Case((arr, RuntimeFunction.Create(() => -5)), 0);
-        Case((arr, RuntimeFunction.Create(() => "")), -1);
-        Case((arr, RuntimeFunction.Create(() => "string")),0);
-        Case((arr, RuntimeFunction.Create(() => Number.Construct(0))), 0);
-        Case((arr, RuntimeFunction.Create(() => String.Construct(""))), 0);
-        Case((arr, RuntimeFunction.Create(() => Boolean.Construct(false))), 0);
-        Case((arr, RuntimeFunction.Create(() => EcmaArray.Of())), 0);
+        Case((arr, FunctionLiteral(() => Undefined)), -1);
+        Case((arr, FunctionLiteral(() => Null)), -1);
+        Case((arr, FunctionLiteral(() => NaN)), -1);
+        Case((arr, FunctionLiteral(() => 0)), -1);
+        Case((arr, FunctionLiteral(() => -0d)), -1);
+        Case((arr, FunctionLiteral(() => Infinity)), 0);
+        Case((arr, FunctionLiteral(() => -Infinity)), 0);
+        Case((arr, FunctionLiteral(() => 5)), 0);
+        Case((arr, FunctionLiteral(() => -5)), 0);
+        Case((arr, FunctionLiteral(() => "")), -1);
+        Case((arr, FunctionLiteral(() => "string")),0);
+        Case((arr, FunctionLiteral(() => Number.Construct(0))), 0);
+        Case((arr, FunctionLiteral(() => String.Construct(""))), 0);
+        Case((arr, FunctionLiteral(() => Boolean.Construct(false))), 0);
+        Case((arr, FunctionLiteral(() => EcmaArray.Of())), 0);
       });
 
       It("should call predicate for each array entry and holes", () => {
         EcmaValue arr = EcmaArray.Of("Mike", "Rick", "Leo");
         EcmaValue results = new EcmaArray();
-        findIndex.Call(arr, RuntimeFunction.Create(() => Void(results.Invoke("push", Arguments))));
+        findIndex.Call(arr, FunctionLiteral(() => Void(results.Invoke("push", Arguments))));
         That(results, Is.EquivalentTo(new[] {
           new[] { "Mike", 0, arr },
           new[] { "Rick", 1, arr },
@@ -886,17 +887,17 @@ namespace Codeless.Ecma.UnitTest.Tests {
         arr[0] = Undefined;
         arr[3] = "foo";
         int called = 0;
-        findIndex.Call(arr, RuntimeFunction.Create(() => Void(called++)));
+        findIndex.Call(arr, FunctionLiteral(() => Void(called++)));
         That(called, Is.EqualTo(4));
       });
 
       It("should call predicate with this value", () => {
         EcmaValue thisValue = default;
-        findIndex.Call(EcmaArray.Of(1), RuntimeFunction.Create(() => Void(thisValue = This)));
+        findIndex.Call(EcmaArray.Of(1), FunctionLiteral(() => Void(thisValue = This)));
         That(thisValue, Is.Undefined);
 
         EcmaValue obj = new EcmaObject();
-        findIndex.Call(EcmaArray.Of(1), RuntimeFunction.Create(() => Void(thisValue = This)), obj);
+        findIndex.Call(EcmaArray.Of(1), FunctionLiteral(() => Void(thisValue = This)), obj);
         That(thisValue, Is.EqualTo(obj));
       });
 
@@ -905,7 +906,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue obj = CreateObject(new { length = 2 });
         DefineProperty(obj, 0, get: Intercept(ThrowTest262Exception));
         DefineProperty(obj, 1, get: Intercept(ThrowTest262Exception));
-        Case((obj, RuntimeFunction.Create(() => Undefined)), Throws.Test262);
+        Case((obj, FunctionLiteral(() => Undefined)), Throws.Test262);
         That(Logs, Has.Exactly(1).Items);
       });
 
@@ -918,7 +919,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should see array altered during iteration", () => {
         EcmaValue arr = EcmaArray.Of("Shoes", "Car", "Bike");
         EcmaValue results = new EcmaArray();
-        findIndex.Call(arr, RuntimeFunction.Create(v => {
+        findIndex.Call(arr, FunctionLiteral(v => {
           if (results["length"] == 0) {
             arr.Invoke("splice", 1, 1);
           }
@@ -928,7 +929,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
         arr = EcmaArray.Of("Skateboard", "Barefoot");
         results = new EcmaArray();
-        findIndex.Call(arr, RuntimeFunction.Create(v => {
+        findIndex.Call(arr, FunctionLiteral(v => {
           if (results["length"] == 0) {
             arr.Invoke("push", "Motorcycle");
             arr[1] = "Magic Carpet";
@@ -1083,7 +1084,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should use [[HasProperty]] to check for existing elements", () => {
         EcmaValue arr = EcmaArray.Of(1, Null, 3);
-        Object.Invoke("setPrototypeOf", arr, CreateProxyCompleteTraps(Array.Prototype, CreateObject(new { has = RuntimeFunction.Create((t, pk) => pk.In(t)) })));
+        Object.Invoke("setPrototypeOf", arr, CreateProxyCompleteTraps(Array.Prototype, CreateObject(new { has = FunctionLiteral((t, pk) => pk.In(t)) })));
         indexOf.Call(arr, 100, CreateObject(valueOf: () => Return(arr["length"] = 0, 0)));
       });
 
@@ -1286,7 +1287,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should use [[HasProperty]] to check for existing elements", () => {
         EcmaValue arr = EcmaArray.Of(1, Null, 3);
-        Object.Invoke("setPrototypeOf", arr, CreateProxyCompleteTraps(Array.Prototype, CreateObject(new { has = RuntimeFunction.Create((t, pk) => pk.In(t)) })));
+        Object.Invoke("setPrototypeOf", arr, CreateProxyCompleteTraps(Array.Prototype, CreateObject(new { has = FunctionLiteral((t, pk) => pk.In(t)) })));
         lastIndexOf.Call(arr, 100, CreateObject(valueOf: () => Return(arr["length"] = 0, 2)));
       });
 
@@ -1444,17 +1445,18 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should see inherited properties", () => {
-        RuntimeFunction ConstructorFn = RuntimeFunction.Create(() => Undefined);
-        ConstructorFn.Prototype[1] = -1;
-        ConstructorFn.Prototype["length"] = 2;
+        EcmaValue ConstructorFn = FunctionLiteral(() => Undefined);
+        EcmaValue ConstructorFnPrototype = ConstructorFn["prototype"];
+        ConstructorFnPrototype[1] = -1;
+        ConstructorFnPrototype["length"] = 2;
 
         EcmaValue x = ConstructorFn.Construct();
         x[0] = 0;
         x[1] = 1;
         Case(x, 1);
         That(x, Is.EquivalentTo(new[] { 0 }));
-        That(ConstructorFn.Prototype[1], Is.EqualTo(-1));
-        That(ConstructorFn.Prototype["length"], Is.EqualTo(2));
+        That(ConstructorFnPrototype[1], Is.EqualTo(-1));
+        That(ConstructorFnPrototype["length"], Is.EqualTo(2));
       });
     }
 
@@ -1571,16 +1573,17 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should see inherited properties", () => {
-        RuntimeFunction ConstructorFn = RuntimeFunction.Create(() => Undefined);
-        ConstructorFn.Prototype[1] = -1;
-        ConstructorFn.Prototype["length"] = 1;
+        EcmaValue ConstructorFn = FunctionLiteral(() => Undefined);
+        EcmaValue ConstructorFnPrototype = ConstructorFn["prototype"];
+        ConstructorFnPrototype[1] = -1;
+        ConstructorFnPrototype["length"] = 1;
 
         EcmaValue x = ConstructorFn.Construct();
         x[0] = 0;
         Case((x, 1), 2);
         That(x, Is.EquivalentTo(new[] { 0, 1 }));
-        That(ConstructorFn.Prototype[1], Is.EqualTo(-1));
-        That(ConstructorFn.Prototype["length"], Is.EqualTo(1));
+        That(ConstructorFnPrototype[1], Is.EqualTo(-1));
+        That(ConstructorFnPrototype["length"], Is.EqualTo(1));
       });
     }
 
@@ -1814,16 +1817,17 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should see inherited properties", () => {
-        RuntimeFunction ConstructorFn = RuntimeFunction.Create(() => Undefined);
-        ConstructorFn.Prototype[1] = 1;
-        ConstructorFn.Prototype["length"] = 2;
+        EcmaValue ConstructorFn = FunctionLiteral(() => Undefined);
+        EcmaValue ConstructorFnPrototype = ConstructorFn["prototype"];
+        ConstructorFnPrototype[1] = 1;
+        ConstructorFnPrototype["length"] = 2;
 
         EcmaValue x = ConstructorFn.Construct();
         x[0] = 0;
         Case(x, 0);
         That(x, Is.EquivalentTo(new[] { 1 }));
-        That(ConstructorFn.Prototype[0], Is.Undefined);
-        That(ConstructorFn.Prototype["length"], Is.EqualTo(2));
+        That(ConstructorFnPrototype[0], Is.Undefined);
+        That(ConstructorFnPrototype["length"], Is.EqualTo(2));
       });
     }
 
@@ -1892,14 +1896,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should convert value -0 to 0", () => {
         EcmaValue arr = EcmaArray.Of();
         EcmaValue args = default;
-        arr["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create(() => Void(args = Arguments))));
+        arr["constructor"] = CreateObject((Symbol.Species, FunctionLiteral(() => Void(args = Arguments))));
         slice.Call(arr, 0, -0d);
         That(args, Is.EquivalentTo(new[] { 0 }));
       });
 
       It("should overwrite non-writable properties by CreateDataPropertyOrThrow", () => {
         EcmaValue a = EcmaArray.Of(1);
-        a["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create(() => {
+        a["constructor"] = CreateObject((Symbol.Species, FunctionLiteral(() => {
           EcmaValue q = Array.Construct(0);
           DefineProperty(q, 0, value: 0, writable: false, enumerable: false, configurable: true);
           return q;
@@ -1956,7 +1960,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should accept non-Array constructors from other realms", () => {
         EcmaValue arr = EcmaArray.Of();
-        EcmaValue CustomCtor = RuntimeFunction.Create(() => Undefined);
+        EcmaValue CustomCtor = FunctionLiteral(() => Undefined);
         EcmaValue OObject = new RuntimeRealm().GetRuntimeObject(WellKnownObject.ObjectConstructor);
         arr["constructor"] = OObject;
         OObject[Symbol.Species] = CustomCtor;
@@ -1970,8 +1974,8 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should use species constructor of a Proxy object whose target is an array", () => {
         EcmaValue arr = EcmaArray.Of();
         EcmaValue proxy = Proxy.Construct(Proxy.Construct(arr, new EcmaObject()), new EcmaObject());
-        EcmaValue Ctor = RuntimeFunction.Create(() => Undefined);
-        arr["constructor"] = RuntimeFunction.Create(() => Undefined);
+        EcmaValue Ctor = FunctionLiteral(() => Undefined);
+        arr["constructor"] = FunctionLiteral(() => Undefined);
         arr["constructor"].ToObject()[Symbol.Species] = Ctor;
         That(Object.Invoke("getPrototypeOf", slice.Call(proxy)), Is.EqualTo(Ctor["prototype"]));
       });
@@ -2223,7 +2227,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should convert deleteCount of value -0 to 0", () => {
         EcmaValue arr = EcmaArray.Of();
         EcmaValue args = default;
-        arr["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create(() => Void(args = Arguments))));
+        arr["constructor"] = CreateObject((Symbol.Species, FunctionLiteral(() => Void(args = Arguments))));
         splice.Call(arr, 0, -0d);
         That(args, Is.EquivalentTo(new[] { 0 }));
       });
@@ -2275,7 +2279,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should overwrite non-writable properties by CreateDataPropertyOrThrow", () => {
         EcmaValue a = EcmaArray.Of(1);
-        a["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create(() => {
+        a["constructor"] = CreateObject((Symbol.Species, FunctionLiteral(() => {
           EcmaValue q = Array.Construct(0);
           DefineProperty(q, 0, value: 0, writable: false, enumerable: false, configurable: true);
           return q;
@@ -2292,7 +2296,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should call correct property traps on the new array", () => {
         EcmaValue a = EcmaArray.Of(0, 1);
-        a["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create(len => {
+        a["constructor"] = CreateObject((Symbol.Species, FunctionLiteral(len => {
           return Proxy.Construct(Array.Construct(len), Proxy.Construct(new EcmaObject(), CreateObject(new {
             get = Intercept(() => Undefined, "{1}")
           })));
@@ -2350,7 +2354,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should accept non-Array constructors from other realms", () => {
         EcmaValue arr = EcmaArray.Of();
-        EcmaValue CustomCtor = RuntimeFunction.Create(() => Undefined);
+        EcmaValue CustomCtor = FunctionLiteral(() => Undefined);
         EcmaValue OObject = new RuntimeRealm().GetRuntimeObject(WellKnownObject.ObjectConstructor);
         arr["constructor"] = OObject;
         OObject[Symbol.Species] = CustomCtor;
@@ -2364,8 +2368,8 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should use species constructor of a Proxy object whose target is an array", () => {
         EcmaValue arr = EcmaArray.Of();
         EcmaValue proxy = Proxy.Construct(Proxy.Construct(arr, new EcmaObject()), new EcmaObject());
-        EcmaValue Ctor = RuntimeFunction.Create(() => Undefined);
-        arr["constructor"] = RuntimeFunction.Create(() => Undefined);
+        EcmaValue Ctor = FunctionLiteral(() => Undefined);
+        arr["constructor"] = FunctionLiteral(() => Undefined);
         arr["constructor"].ToObject()[Symbol.Species] = Ctor;
         That(Object.Invoke("getPrototypeOf", splice.Call(proxy)), Is.EqualTo(Ctor["prototype"]));
       });
@@ -2595,15 +2599,16 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should see inherited properties", () => {
-        RuntimeFunction ConstructorFn = RuntimeFunction.Create(() => Undefined);
-        ConstructorFn.Prototype[0] = 1;
-        ConstructorFn.Prototype["length"] = 1;
+        EcmaValue ConstructorFn = FunctionLiteral(() => Undefined);
+        EcmaValue ConstructorFnPrototype = ConstructorFn["prototype"];
+        ConstructorFnPrototype[0] = 1;
+        ConstructorFnPrototype["length"] = 1;
 
         EcmaValue x = ConstructorFn.Construct();
         Case((x, 0), 2);
         That(x, Is.EquivalentTo(new[] { 0, 1 }));
-        That(ConstructorFn.Prototype[0], Is.EqualTo(1));
-        That(ConstructorFn.Prototype["length"], Is.EqualTo(1));
+        That(ConstructorFnPrototype[0], Is.EqualTo(1));
+        That(ConstructorFnPrototype["length"], Is.EqualTo(1));
       });
     }
 

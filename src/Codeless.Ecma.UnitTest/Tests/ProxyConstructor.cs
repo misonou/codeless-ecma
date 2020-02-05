@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -61,7 +62,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("The returned object has a proxy property which is the created Proxy object built with the given target and handler given parameters", () => {
         EcmaValue target = CreateObject(new { attr = "foo" });
-        EcmaValue r = revocable.Call(_, target, CreateObject(new { get = RuntimeFunction.Create((t, prop) => t[prop] + "!") }));
+        EcmaValue r = revocable.Call(_, target, CreateObject(new { get = FunctionLiteral((t, prop) => t[prop] + "!") }));
         That(r["proxy"]["attr"], Is.EqualTo("foo!"));
       });
 

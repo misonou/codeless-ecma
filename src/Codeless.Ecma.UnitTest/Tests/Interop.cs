@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -55,7 +56,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         obj["stringObj"] = String.Construct("");
         obj[new Symbol()] = "foo";
         Object.Invoke("defineProperty", obj, "foo", CreateObject(new { enumerable = true, value = 1 }));
-        Object.Invoke("defineProperty", obj, "bar", CreateObject(new { enumerable = true, get = RuntimeFunction.Create(() => 0) }));
+        Object.Invoke("defineProperty", obj, "bar", CreateObject(new { enumerable = true, get = FunctionLiteral(() => 0) }));
         Object.Invoke("defineProperty", obj, "baz", CreateObject(new { enumerable = false, value = 1 }));
 
         other.Execute(() => {
@@ -256,7 +257,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should throw if object is callable", () => {
-        EcmaValue fn = RuntimeFunction.Create(Noop);
+        EcmaValue fn = FunctionLiteral(Noop);
         That(() => fn.ToObject().Clone(other), Throws.Exception);
       });
 

@@ -3,6 +3,7 @@ using Codeless.Ecma.UnitTest.Harness;
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -614,7 +615,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue results = EcmaArray.Of();
           sample["foo"] = 42;
           sample[new Symbol()] = 43;
-          every.Call(sample, RuntimeFunction.Create(() => {
+          every.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", Arguments);
             return true;
           }));
@@ -644,7 +645,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue newVal = 0;
-          every.Call(sample, RuntimeFunction.Create((val, i) => {
+          every.Call(sample, FunctionLiteral((val, i) => {
             if (i > 0) {
               That(sample[i - 1], Is.EqualTo(newVal - 1), "get the changed value during the loop");
               That(Reflect.Invoke("set", sample, 0, 7), Is.True, "re-set a value for sample[0]");
@@ -661,7 +662,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue results = EcmaArray.Of();
-          every.Call(sample, RuntimeFunction.Create(() => {
+          every.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", Arguments);
             return true;
           }));
@@ -673,7 +674,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
           EcmaValue thisArg = EcmaArray.Of("test262", 0, "ecma262", 0);
           results = EcmaArray.Of();
-          every.Call(sample, RuntimeFunction.Create(() => {
+          every.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", Arguments);
             return true;
           }), thisArg);
@@ -689,7 +690,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(3);
           EcmaValue results = EcmaArray.Of();
-          every.Call(sample, RuntimeFunction.Create(() => {
+          every.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", This);
             return true;
           }));
@@ -697,7 +698,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
           EcmaValue thisArg = Object.Construct();
           results = EcmaArray.Of();
-          every.Call(sample, RuntimeFunction.Create(() => {
+          every.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", This);
             return true;
           }), thisArg);
@@ -964,7 +965,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue results = EcmaArray.Of();
-          filter.Call(sample, RuntimeFunction.Create(() => Void(results.Invoke("push", Arguments))));
+          filter.Call(sample, FunctionLiteral(() => Void(results.Invoke("push", Arguments))));
           That(results, Is.EquivalentTo(new[] {
             new[] { 42, 0, sample },
             new[] { 43, 1, sample },
@@ -973,7 +974,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
           EcmaValue thisArg = EcmaArray.Of("test262", 0, "ecma262", 0);
           results = EcmaArray.Of();
-          filter.Call(sample, RuntimeFunction.Create(() => Void(results.Invoke("push", Arguments))), thisArg);
+          filter.Call(sample, FunctionLiteral(() => Void(results.Invoke("push", Arguments))), thisArg);
           That(results, Is.EquivalentTo(new[] {
             new[] { 42, 0, sample },
             new[] { 43, 1, sample },
@@ -986,14 +987,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(3);
           EcmaValue results = EcmaArray.Of();
-          filter.Call(sample, RuntimeFunction.Create(() => {
+          filter.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", This);
           }));
           That(results, Is.EquivalentTo(new[] { Undefined, Undefined, Undefined }));
 
           EcmaValue thisArg = Object.Construct();
           results = EcmaArray.Of();
-          filter.Call(sample, RuntimeFunction.Create(() => {
+          filter.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", This);
           }), thisArg);
           That(results, Is.EquivalentTo(new[] { thisArg, thisArg, thisArg }));
@@ -1006,7 +1007,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue sample = TA.Construct(length);
           bool before = false;
 
-          Object.Invoke("defineProperty", sample, "constructor", CreateObject(new { get = RuntimeFunction.Create(() => Void(before = Logs.Count == 42)) }));
+          Object.Invoke("defineProperty", sample, "constructor", CreateObject(new { get = FunctionLiteral(() => Void(before = Logs.Count == 42)) }));
           filter.Call(sample, Intercept(Noop));
           That(Logs.Count, Is.EqualTo(42));
           That(before, Is.True);
@@ -1020,7 +1021,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           bool before = false;
 
           sample["constructor"] = Object.Construct();
-          Object.Invoke("defineProperty", sample["constructor"], Symbol.Species, CreateObject(new { get = RuntimeFunction.Create(() => Void(before = Logs.Count == 42)) }));
+          Object.Invoke("defineProperty", sample["constructor"], Symbol.Species, CreateObject(new { get = FunctionLiteral(() => Void(before = Logs.Count == 42)) }));
           filter.Call(sample, Intercept(Noop));
           That(Logs.Count, Is.EqualTo(42));
           That(before, Is.True);
@@ -1046,7 +1047,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue results = EcmaArray.Of();
           sample["foo"] = 42;
           sample[new Symbol()] = 43;
-          filter.Call(sample, RuntimeFunction.Create(() => {
+          filter.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", Arguments);
             return true;
           }));
@@ -1076,7 +1077,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue newVal = 0;
-          filter.Call(sample, RuntimeFunction.Create((val, i) => {
+          filter.Call(sample, FunctionLiteral((val, i) => {
             if (i > 0) {
               That(sample[i - 1], Is.EqualTo(newVal - 1), "get the changed value during the loop");
               That(Reflect.Invoke("set", sample, 0, 7), Is.True, "re-set a value for sample[0]");
@@ -1099,8 +1100,8 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return a TypedArray instance with a different buffer", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(40, 41, 42));
-          That(filter.Call(sample, RuntimeFunction.Create(() => true))["buffer"], Is.Not.EqualTo(sample["buffer"]));
-          That(filter.Call(sample, RuntimeFunction.Create(() => false))["buffer"], Is.Not.EqualTo(sample["buffer"]));
+          That(filter.Call(sample, FunctionLiteral(() => true))["buffer"], Is.Not.EqualTo(sample["buffer"]));
+          That(filter.Call(sample, FunctionLiteral(() => false))["buffer"], Is.Not.EqualTo(sample["buffer"]));
         });
       });
 
@@ -1125,7 +1126,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return instance with filtered values set on it", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(41, 1, 42, 7));
-          Case((sample, RuntimeFunction.Create(v => v > 40)), new[] { 41, 42 });
+          Case((sample, FunctionLiteral(v => v > 40)), new[] { 41, 42 });
         });
       });
 
@@ -1205,7 +1206,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(40, 41, 42));
           sample["constructor"] = CreateObject((Symbol.Species, Intercept(count => TA.Construct(count))));
-          Case((sample, RuntimeFunction.Create(() => true)), new[] { 40, 41, 42 });
+          Case((sample, FunctionLiteral(() => true)), new[] { 40, 41, 42 });
           That(Logs.Count, Is.EqualTo(1));
         });
       });
@@ -1220,7 +1221,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
             ctorThis = This;
             return TA.Construct(count);
           })));
-          filter.Call(sample, RuntimeFunction.Create(v => v == 42));
+          filter.Call(sample, FunctionLiteral(v => v == 42));
           That(result, Is.EquivalentTo(new[] { 2 }));
           That(ctorThis, Is.InstanceOf(sample["constructor"][Symbol.Species]));
         });
@@ -1239,20 +1240,20 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue customCount = default;
           EcmaValue sample = TA.Construct(2);
-          sample["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create(() => TA.Construct(customCount))));
+          sample["constructor"] = CreateObject((Symbol.Species, FunctionLiteral(() => TA.Construct(customCount))));
 
           customCount = 2;
-          That(filter.Call(sample, RuntimeFunction.Create(() => true))["length"], Is.EqualTo(customCount));
+          That(filter.Call(sample, FunctionLiteral(() => true))["length"], Is.EqualTo(customCount));
           customCount = 5;
-          That(filter.Call(sample, RuntimeFunction.Create(() => true))["length"], Is.EqualTo(customCount));
+          That(filter.Call(sample, FunctionLiteral(() => true))["length"], Is.EqualTo(customCount));
         });
       });
 
       It("should throw a TypeError if new typedArray's length < count", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(2);
-          sample["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create(() => TA.Construct())));
-          Case((sample, RuntimeFunction.Create(() => true)), Throws.TypeError);
+          sample["constructor"] = CreateObject((Symbol.Species, FunctionLiteral(() => TA.Construct())));
+          Case((sample, FunctionLiteral(() => true)), Throws.TypeError);
         });
       });
 
@@ -1341,7 +1342,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           using (TempProperty(TA.Prototype, "length", EcmaPropertyDescriptor.FromValue(CreateObject(new { get = ThrowTest262Exception })))) {
             EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43));
             Object.Invoke("defineProperty", sample, "length", CreateObject(new { get = ThrowTest262Exception }));
-            Case((sample, RuntimeFunction.Create(() => true)), 42);
+            Case((sample, FunctionLiteral(() => true)), 42);
           }
         });
       });
@@ -1352,7 +1353,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue results = EcmaArray.Of();
           sample["foo"] = "bar";
 
-          find.Call(sample, RuntimeFunction.Create(() => Void(results.Invoke("push", Arguments))));
+          find.Call(sample, FunctionLiteral(() => Void(results.Invoke("push", Arguments))));
           That(results, Is.EquivalentTo(new[] {
             new[] { 39, 0, sample },
             new[] { 2, 1, sample },
@@ -1365,11 +1366,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(1);
           EcmaValue result = Null;
-          find.Call(sample, RuntimeFunction.Create(() => result = This));
+          find.Call(sample, FunctionLiteral(() => result = This));
           That(result, Is.Undefined);
 
           EcmaValue o = Object.Construct();
-          find.Call(sample, RuntimeFunction.Create(() => result = This), o);
+          find.Call(sample, FunctionLiteral(() => result = This), o);
           That(result, Is.EqualTo(o));
         });
       });
@@ -1409,14 +1410,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue sample, result;
 
           sample = TA.Construct(3);
-          find.Call(sample, RuntimeFunction.Create((v, i) => {
+          find.Call(sample, FunctionLiteral((v, i) => {
             sample[i] = arr[i];
             That(v, Is.EqualTo(0), "value is not mapped to instance");
           }));
           That(sample, Is.EquivalentTo(new[] { 1, 2, 3 }), "values set during each predicate call");
 
           sample = TA.Construct(arr);
-          result = find.Call(sample, RuntimeFunction.Create((val, i) => {
+          result = find.Call(sample, FunctionLiteral((val, i) => {
             if (i == 0) {
               sample[2] = 7;
             }
@@ -1425,7 +1426,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           That(result, Is.EqualTo(7), "value found");
 
           sample = TA.Construct(arr);
-          result = find.Call(sample, RuntimeFunction.Create((val, i) => {
+          result = find.Call(sample, FunctionLiteral((val, i) => {
             if (i == 0) {
               sample[2] = 7;
             }
@@ -1434,7 +1435,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           That(result, Is.Undefined, "value not found");
 
           sample = TA.Construct(arr);
-          result = find.Call(sample, RuntimeFunction.Create((val, i) => {
+          result = find.Call(sample, FunctionLiteral((val, i) => {
             if (i > 0) {
               sample[0] = 7;
             }
@@ -1443,7 +1444,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           That(result, Is.Undefined, "value not found - changed after call");
 
           sample = TA.Construct(arr);
-          result = find.Call(sample, RuntimeFunction.Create(() => {
+          result = find.Call(sample, FunctionLiteral(() => {
             sample[0] = 7;
             return true;
           }));
@@ -1464,7 +1465,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue called, result;
 
           called = 0;
-          result = find.Call(sample, RuntimeFunction.Create(() => {
+          result = find.Call(sample, FunctionLiteral(() => {
             called += 1;
             return true;
           }));
@@ -1472,26 +1473,26 @@ namespace Codeless.Ecma.UnitTest.Tests {
           That(called, Is.EqualTo(1), "predicate was called once");
 
           called = 0;
-          result = find.Call(sample, RuntimeFunction.Create((val) => {
+          result = find.Call(sample, FunctionLiteral((val) => {
             called += 1;
             return val == 62;
           }));
           That(called, Is.EqualTo(3), "predicate was called three times");
           That(result, Is.EqualTo(62), "returned true on sample[3]");
 
-          result = find.Call(sample, RuntimeFunction.Create(() => "string"));
+          result = find.Call(sample, FunctionLiteral(() => "string"));
           That(result, Is.EqualTo(39), "ToBoolean(string)");
 
-          result = find.Call(sample, RuntimeFunction.Create(() => Object.Construct()));
+          result = find.Call(sample, FunctionLiteral(() => Object.Construct()));
           That(result, Is.EqualTo(39), "ToBoolean(object)");
 
-          result = find.Call(sample, RuntimeFunction.Create(() => new Symbol("")));
+          result = find.Call(sample, FunctionLiteral(() => new Symbol("")));
           That(result, Is.EqualTo(39), "ToBoolean(symbol)");
 
-          result = find.Call(sample, RuntimeFunction.Create(() => 1));
+          result = find.Call(sample, FunctionLiteral(() => 1));
           That(result, Is.EqualTo(39), "ToBoolean(number)");
 
-          result = find.Call(sample, RuntimeFunction.Create(() => -1));
+          result = find.Call(sample, FunctionLiteral(() => -1));
           That(result, Is.EqualTo(39), "ToBoolean(negative number)");
         });
       });
@@ -1501,7 +1502,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue sample = TA.Construct(3);
           EcmaValue called = 0;
 
-          EcmaValue result = find.Call(sample, RuntimeFunction.Create(() => {
+          EcmaValue result = find.Call(sample, FunctionLiteral(() => {
             called += 1;
             return false;
           }));
@@ -1509,22 +1510,22 @@ namespace Codeless.Ecma.UnitTest.Tests {
           That(called, Is.EqualTo(3), "predicate was called three times");
           That(result, Is.Undefined);
 
-          result = find.Call(sample, RuntimeFunction.Create(() => ""));
+          result = find.Call(sample, FunctionLiteral(() => ""));
           That(result, Is.Undefined, "ToBoolean(empty string)");
 
-          result = find.Call(sample, RuntimeFunction.Create(() => Undefined));
+          result = find.Call(sample, FunctionLiteral(() => Undefined));
           That(result, Is.Undefined, "ToBoolean(undefined)");
 
-          result = find.Call(sample, RuntimeFunction.Create(() => Null));
+          result = find.Call(sample, FunctionLiteral(() => Null));
           That(result, Is.Undefined, "ToBoolean(null)");
 
-          result = find.Call(sample, RuntimeFunction.Create(() => 0));
+          result = find.Call(sample, FunctionLiteral(() => 0));
           That(result, Is.Undefined, "ToBoolean(0)");
 
-          result = find.Call(sample, RuntimeFunction.Create(() => -0));
+          result = find.Call(sample, FunctionLiteral(() => -0));
           That(result, Is.Undefined, "ToBoolean(-0)");
 
-          result = find.Call(sample, RuntimeFunction.Create(() => NaN));
+          result = find.Call(sample, FunctionLiteral(() => NaN));
           That(result, Is.Undefined, "ToBoolean(NaN)");
         });
       });
@@ -1576,7 +1577,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           using (TempProperty(TA.Prototype, "length", EcmaPropertyDescriptor.FromValue(CreateObject(new { get = ThrowTest262Exception })))) {
             EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43));
             Object.Invoke("defineProperty", sample, "length", CreateObject(new { get = ThrowTest262Exception }));
-            Case((sample, RuntimeFunction.Create(() => true)), 0);
+            Case((sample, FunctionLiteral(() => true)), 0);
           }
         });
       });
@@ -1587,7 +1588,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue results = EcmaArray.Of();
           sample["foo"] = "bar";
 
-          findIndex.Call(sample, RuntimeFunction.Create(() => Void(results.Invoke("push", Arguments))));
+          findIndex.Call(sample, FunctionLiteral(() => Void(results.Invoke("push", Arguments))));
           That(results, Is.EquivalentTo(new[] {
             new[] { 39, 0, sample },
             new[] { 2, 1, sample },
@@ -1600,11 +1601,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(1);
           EcmaValue result = Null;
-          findIndex.Call(sample, RuntimeFunction.Create(() => result = This));
+          findIndex.Call(sample, FunctionLiteral(() => result = This));
           That(result, Is.Undefined);
 
           EcmaValue o = Object.Construct();
-          findIndex.Call(sample, RuntimeFunction.Create(() => result = This), o);
+          findIndex.Call(sample, FunctionLiteral(() => result = This), o);
           That(result, Is.EqualTo(o));
         });
       });
@@ -1644,14 +1645,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue sample, result;
 
           sample = TA.Construct(3);
-          findIndex.Call(sample, RuntimeFunction.Create((v, i) => {
+          findIndex.Call(sample, FunctionLiteral((v, i) => {
             sample[i] = arr[i];
             That(v, Is.EqualTo(0), "value is not mapped to instance");
           }));
           That(sample, Is.EquivalentTo(new[] { 10, 20, 30 }), "values set during each predicate call");
 
           sample = TA.Construct(arr);
-          result = findIndex.Call(sample, RuntimeFunction.Create((val, i) => {
+          result = findIndex.Call(sample, FunctionLiteral((val, i) => {
             if (i == 0) {
               sample[2] = 7;
             }
@@ -1660,7 +1661,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           That(result, Is.EqualTo(2), "value found");
 
           sample = TA.Construct(arr);
-          result = findIndex.Call(sample, RuntimeFunction.Create((val, i) => {
+          result = findIndex.Call(sample, FunctionLiteral((val, i) => {
             if (i == 0) {
               sample[2] = 7;
             }
@@ -1669,7 +1670,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           That(result, Is.EqualTo(-1), "value not found");
 
           sample = TA.Construct(arr);
-          result = findIndex.Call(sample, RuntimeFunction.Create((val, i) => {
+          result = findIndex.Call(sample, FunctionLiteral((val, i) => {
             if (i > 0) {
               sample[0] = 7;
             }
@@ -1692,7 +1693,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue called, result;
 
           called = 0;
-          result = findIndex.Call(sample, RuntimeFunction.Create(() => {
+          result = findIndex.Call(sample, FunctionLiteral(() => {
             called += 1;
             return true;
           }));
@@ -1700,26 +1701,26 @@ namespace Codeless.Ecma.UnitTest.Tests {
           That(called, Is.EqualTo(1), "predicate was called once");
 
           called = 0;
-          result = findIndex.Call(sample, RuntimeFunction.Create((val) => {
+          result = findIndex.Call(sample, FunctionLiteral((val) => {
             called += 1;
             return val == 62;
           }));
           That(called, Is.EqualTo(3), "predicate was called three times");
           That(result, Is.EqualTo(2), "returned true on sample[3]");
 
-          result = findIndex.Call(sample, RuntimeFunction.Create(() => "string"));
+          result = findIndex.Call(sample, FunctionLiteral(() => "string"));
           That(result, Is.EqualTo(0), "ToBoolean(string)");
 
-          result = findIndex.Call(sample, RuntimeFunction.Create(() => Object.Construct()));
+          result = findIndex.Call(sample, FunctionLiteral(() => Object.Construct()));
           That(result, Is.EqualTo(0), "ToBoolean(object)");
 
-          result = findIndex.Call(sample, RuntimeFunction.Create(() => new Symbol("")));
+          result = findIndex.Call(sample, FunctionLiteral(() => new Symbol("")));
           That(result, Is.EqualTo(0), "ToBoolean(symbol)");
 
-          result = findIndex.Call(sample, RuntimeFunction.Create(() => 1));
+          result = findIndex.Call(sample, FunctionLiteral(() => 1));
           That(result, Is.EqualTo(0), "ToBoolean(number)");
 
-          result = findIndex.Call(sample, RuntimeFunction.Create(() => -1));
+          result = findIndex.Call(sample, FunctionLiteral(() => -1));
           That(result, Is.EqualTo(0), "ToBoolean(negative number)");
         });
       });
@@ -1729,7 +1730,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue sample = TA.Construct(3);
           EcmaValue called = 0;
 
-          EcmaValue result = findIndex.Call(sample, RuntimeFunction.Create(() => {
+          EcmaValue result = findIndex.Call(sample, FunctionLiteral(() => {
             called += 1;
             return false;
           }));
@@ -1737,22 +1738,22 @@ namespace Codeless.Ecma.UnitTest.Tests {
           That(called, Is.EqualTo(3), "predicate was called three times");
           That(result, Is.EqualTo(-1));
 
-          result = findIndex.Call(sample, RuntimeFunction.Create(() => ""));
+          result = findIndex.Call(sample, FunctionLiteral(() => ""));
           That(result, Is.EqualTo(-1), "ToBoolean(empty string)");
 
-          result = findIndex.Call(sample, RuntimeFunction.Create(() => Undefined));
+          result = findIndex.Call(sample, FunctionLiteral(() => Undefined));
           That(result, Is.EqualTo(-1), "ToBoolean(undefined)");
 
-          result = findIndex.Call(sample, RuntimeFunction.Create(() => Null));
+          result = findIndex.Call(sample, FunctionLiteral(() => Null));
           That(result, Is.EqualTo(-1), "ToBoolean(null)");
 
-          result = findIndex.Call(sample, RuntimeFunction.Create(() => 0));
+          result = findIndex.Call(sample, FunctionLiteral(() => 0));
           That(result, Is.EqualTo(-1), "ToBoolean(0)");
 
-          result = findIndex.Call(sample, RuntimeFunction.Create(() => -0));
+          result = findIndex.Call(sample, FunctionLiteral(() => -0));
           That(result, Is.EqualTo(-1), "ToBoolean(-0)");
 
-          result = findIndex.Call(sample, RuntimeFunction.Create(() => NaN));
+          result = findIndex.Call(sample, FunctionLiteral(() => NaN));
           That(result, Is.EqualTo(-1), "ToBoolean(NaN)");
         });
       });
@@ -1846,7 +1847,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue results = EcmaArray.Of();
           sample["foo"] = 42;
           sample[new Symbol()] = 43;
-          forEach.Call(sample, RuntimeFunction.Create(() => {
+          forEach.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", Arguments);
           }));
           That(results, Is.EquivalentTo(new[] {
@@ -1860,7 +1861,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue newVal = 0;
-          forEach.Call(sample, RuntimeFunction.Create((val, i) => {
+          forEach.Call(sample, FunctionLiteral((val, i) => {
             if (i > 0) {
               That(sample[i - 1], Is.EqualTo(newVal - 1), "get the changed value during the loop");
               That(Reflect.Invoke("set", sample, 0, 7), Is.True, "re-set a value for sample[0]");
@@ -1891,7 +1892,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue results = EcmaArray.Of();
-          forEach.Call(sample, RuntimeFunction.Create(() => {
+          forEach.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", Arguments);
           }));
           That(results, Is.EquivalentTo(new[] {
@@ -1902,7 +1903,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
           EcmaValue thisArg = EcmaArray.Of("test262", 0, "ecma262", 0);
           results = EcmaArray.Of();
-          forEach.Call(sample, RuntimeFunction.Create(() => {
+          forEach.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", Arguments);
           }), thisArg);
           That(results, Is.EquivalentTo(new[] {
@@ -1917,14 +1918,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(3);
           EcmaValue results = EcmaArray.Of();
-          forEach.Call(sample, RuntimeFunction.Create(() => {
+          forEach.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", This);
           }));
           That(results, Is.EquivalentTo(new[] { Undefined, Undefined, Undefined }));
 
           EcmaValue thisArg = Object.Construct();
           results = EcmaArray.Of();
-          forEach.Call(sample, RuntimeFunction.Create(() => {
+          forEach.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", This);
           }), thisArg);
           That(results, Is.EquivalentTo(new[] { thisArg, thisArg, thisArg }));
@@ -1934,8 +1935,8 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return undefined", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(1);
-          Case((sample, RuntimeFunction.Create(() => 42)), Is.Undefined);
-          Case((sample, RuntimeFunction.Create(() => Null)), Is.Undefined);
+          Case((sample, FunctionLiteral(() => 42)), Is.Undefined);
+          Case((sample, FunctionLiteral(() => Null)), Is.Undefined);
         });
       });
 
@@ -2314,7 +2315,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
           EcmaValue arr = EcmaArray.Of(-2, Infinity, NaN, -Infinity, 0.6, 9007199254740992d);
           sample = TA.Construct(arr);
-          Case(sample, arr.Invoke("map", RuntimeFunction.Create((_, i) => sample[i].Invoke("toString"))).Invoke("join"));
+          Case(sample, arr.Invoke("map", FunctionLiteral((_, i) => sample[i].Invoke("toString"))).Invoke("join"));
         });
       });
 
@@ -2331,7 +2332,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           Case((sample, Object.Construct()), "1[object Object]0[object Object]2[object Object]3[object Object]42[object Object]127");
           Case((sample, true), "1true0true2true3true42true127");
           Case((sample, CreateObject(toString: () => "foo")), "1foo0foo2foo3foo42foo127");
-          Case((sample, CreateObject(new { toString = Undefined, valueOf = RuntimeFunction.Create(() => "bar") })), "1bar0bar2bar3bar42bar127");
+          Case((sample, CreateObject(new { toString = Undefined, valueOf = FunctionLiteral(() => "bar") })), "1bar0bar2bar3bar42bar127");
           Case((sample, false), "1false0false2false3false42false127");
           Case((sample, -1), "1-10-12-13-142-1127");
           Case((sample, -0d), "10002030420127");
@@ -2339,7 +2340,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue arr = EcmaArray.Of(-2, Infinity, NaN, -Infinity, 0.6, 9007199254740992d);
           sample = TA.Construct(arr);
           void CheckSeparater(EcmaValue sep) {
-            Case((sample, sep), arr.Invoke("map", RuntimeFunction.Create((_, i) => sample[i].Invoke("toString"))).Invoke("join", sep));
+            Case((sample, sep), arr.Invoke("map", FunctionLiteral((_, i) => sample[i].Invoke("toString"))).Invoke("join", sep));
           }
           CheckSeparater(",");
           CheckSeparater(Undefined);
@@ -2350,7 +2351,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           CheckSeparater(Object.Construct());
           CheckSeparater(true);
           CheckSeparater(CreateObject(toString: () => "foo"));
-          CheckSeparater(CreateObject(new { toString = Undefined, valueOf = RuntimeFunction.Create(() => "bar") }));
+          CheckSeparater(CreateObject(new { toString = Undefined, valueOf = FunctionLiteral(() => "bar") }));
           CheckSeparater(false);
           CheckSeparater(-1);
           CheckSeparater(-0d);
@@ -2647,7 +2648,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue results = EcmaArray.Of();
-          map.Call(sample, RuntimeFunction.Create(() => Void(results.Invoke("push", Arguments))));
+          map.Call(sample, FunctionLiteral(() => Void(results.Invoke("push", Arguments))));
           That(results, Is.EquivalentTo(new[] {
             new[] { 42, 0, sample },
             new[] { 43, 1, sample },
@@ -2656,7 +2657,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
           EcmaValue thisArg = EcmaArray.Of("test262", 0, "ecma262", 0);
           results = EcmaArray.Of();
-          map.Call(sample, RuntimeFunction.Create(() => Void(results.Invoke("push", Arguments))), thisArg);
+          map.Call(sample, FunctionLiteral(() => Void(results.Invoke("push", Arguments))), thisArg);
           That(results, Is.EquivalentTo(new[] {
             new[] { 42, 0, sample },
             new[] { 43, 1, sample },
@@ -2669,14 +2670,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(3);
           EcmaValue results = EcmaArray.Of();
-          map.Call(sample, RuntimeFunction.Create(() => {
+          map.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", This);
           }));
           That(results, Is.EquivalentTo(new[] { Undefined, Undefined, Undefined }));
 
           EcmaValue thisArg = Object.Construct();
           results = EcmaArray.Of();
-          map.Call(sample, RuntimeFunction.Create(() => {
+          map.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", This);
           }), thisArg);
           That(results, Is.EquivalentTo(new[] { thisArg, thisArg, thisArg }));
@@ -2703,7 +2704,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue results = EcmaArray.Of();
           sample["foo"] = 42;
           sample[new Symbol()] = 43;
-          map.Call(sample, RuntimeFunction.Create(() => {
+          map.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", Arguments);
             return 0;
           }));
@@ -2721,7 +2722,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           sample["foo"] = 42;
           sample[bar] = 1;
 
-          EcmaValue result = map.Call(sample, RuntimeFunction.Create(() => 0));
+          EcmaValue result = map.Call(sample, FunctionLiteral(() => 0));
           That(result.Invoke("hasOwnProperty", "foo"), Is.False);
           That(result.Invoke("hasOwnProperty", bar), Is.False);
         });
@@ -2746,7 +2747,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue newVal = 0;
-          map.Call(sample, RuntimeFunction.Create((val, i) => {
+          map.Call(sample, FunctionLiteral((val, i) => {
             if (i > 0) {
               That(sample[i - 1], Is.EqualTo(newVal - 1), "get the changed value during the loop");
               That(Reflect.Invoke("set", sample, 0, 7), Is.True, "re-set a value for sample[0]");
@@ -2770,10 +2771,10 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return a TypedArray instance with a different buffer", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample1 = TA.Construct(EcmaArray.Of(40, 41, 42));
-          That(map.Call(sample1, RuntimeFunction.Create(v => v))["buffer"], Is.Not.EqualTo(sample1["buffer"]));
+          That(map.Call(sample1, FunctionLiteral(v => v))["buffer"], Is.Not.EqualTo(sample1["buffer"]));
 
           EcmaValue sample2 = TA.Construct();
-          That(map.Call(sample2, RuntimeFunction.Create(v => v))["buffer"], Is.Not.EqualTo(sample2["buffer"]));
+          That(map.Call(sample2, FunctionLiteral(v => v))["buffer"], Is.Not.EqualTo(sample2["buffer"]));
         });
       });
 
@@ -2781,7 +2782,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue NaNs = ByteConversionValues.NaNs;
         TestWithTypedArrayConstructors(TA => {
           EcmaValue source = TA.Construct(NaNs);
-          EcmaValue target = map.Call(source, RuntimeFunction.Create((v, i) => NaNs[i]));
+          EcmaValue target = map.Call(source, FunctionLiteral((v, i) => NaNs[i]));
           EcmaValue sourceBytes = Global.Uint8Array.Construct(source["buffer"]);
           EcmaValue targetBytes = Global.Uint8Array.Construct(target["buffer"]);
           That(sourceBytes, Is.EquivalentTo(EcmaValueUtility.CreateListFromArrayLike(targetBytes)));
@@ -2791,14 +2792,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should apply the returned values from callbackfn to the new instance", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(1, 2, 4));
-          Case((sample, RuntimeFunction.Create(v => v * 3)), new[] { 3, 6, 12 });
+          Case((sample, FunctionLiteral(v => v * 3)), new[] { 3, 6, 12 });
         });
       });
 
       It("should convert to correct values", () => {
         TestTypedArrayConversion((TA, value, expected, initial) => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(initial));
-          EcmaValue result = map.Call(sample, RuntimeFunction.Create(() => value));
+          EcmaValue result = map.Call(sample, FunctionLiteral(() => value));
           That(result[0], Is.EqualTo(expected), "{0}: {1} converts to {2}", TA["name"], value, expected);
         });
       });
@@ -2808,7 +2809,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue sample = TA.Construct(EcmaArray.Of(40, 41, 42, 43));
           Object.Invoke("defineProperty", sample, "constructor", CreateObject(new { get = Intercept(Noop) }));
 
-          EcmaValue result = map.Call(sample, RuntimeFunction.Create(() => 0));
+          EcmaValue result = map.Call(sample, FunctionLiteral(() => 0));
           That(Logs.Count, Is.EqualTo(1), "called custom ctor get accessor once");
 
           That(Object.Invoke("getPrototypeOf", result), Is.EqualTo(Object.Invoke("getPrototypeOf", sample)), "use defaultCtor on an undefined return - getPrototypeOf check");
@@ -2879,7 +2880,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(40, 41, 42));
           sample["constructor"] = CreateObject((Symbol.Species, Intercept(count => TA.Construct(count))));
-          Case((sample, RuntimeFunction.Create(v => v + 7)), new[] { 47, 48, 49 });
+          Case((sample, FunctionLiteral(v => v + 7)), new[] { 47, 48, 49 });
           That(Logs.Count, Is.EqualTo(1));
         });
       });
@@ -2894,7 +2895,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
             ctorThis = This;
             return TA.Construct(count);
           })));
-          map.Call(sample, RuntimeFunction.Create(v => v == 42));
+          map.Call(sample, FunctionLiteral(v => v == 42));
           That(result, Is.EquivalentTo(new[] { 3 }));
           That(ctorThis, Is.InstanceOf(sample["constructor"][Symbol.Species]));
         });
@@ -2906,7 +2907,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue other = (TA == Global.Int8Array ? Global.Int16Array : Global.Int8Array).Construct(EcmaArray.Of(1, 0, 1));
           sample["constructor"] = CreateObject((Symbol.Species, Intercept(() => other)));
 
-          EcmaValue result = map.Call(sample, RuntimeFunction.Create(v => v + 7));
+          EcmaValue result = map.Call(sample, FunctionLiteral(v => v + 7));
           That(result, Is.EquivalentTo(new[] { 47, 0, 1 }));
           That(result, Is.EqualTo(other));
         });
@@ -2916,20 +2917,20 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue customCount = default;
           EcmaValue sample = TA.Construct(2);
-          sample["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create(() => TA.Construct(customCount))));
+          sample["constructor"] = CreateObject((Symbol.Species, FunctionLiteral(() => TA.Construct(customCount))));
 
           customCount = 2;
-          That(map.Call(sample, RuntimeFunction.Create(() => 0))["length"], Is.EqualTo(customCount));
+          That(map.Call(sample, FunctionLiteral(() => 0))["length"], Is.EqualTo(customCount));
           customCount = 5;
-          That(map.Call(sample, RuntimeFunction.Create(() => 0))["length"], Is.EqualTo(customCount));
+          That(map.Call(sample, FunctionLiteral(() => 0))["length"], Is.EqualTo(customCount));
         });
       });
 
       It("should throw a TypeError if new typedArray's length < count", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(2);
-          sample["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create(() => TA.Construct())));
-          Case((sample, RuntimeFunction.Create(() => 0)), Throws.TypeError);
+          sample["constructor"] = CreateObject((Symbol.Species, FunctionLiteral(() => TA.Construct())));
+          Case((sample, FunctionLiteral(() => 0)), Throws.TypeError);
         });
       });
 
@@ -3061,7 +3062,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue results = EcmaArray.Of();
           sample["foo"] = 42;
           sample[new Symbol()] = 43;
-          reduce.Call(sample, RuntimeFunction.Create((a, v) => {
+          reduce.Call(sample, FunctionLiteral((a, v) => {
             results.Invoke("push", v);
           }), 0);
           That(results, Is.EquivalentTo(new[] { 7, 8 }));
@@ -3087,7 +3088,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue newVal = 0;
-          reduce.Call(sample, RuntimeFunction.Create((acc, val, i) => {
+          reduce.Call(sample, FunctionLiteral((acc, val, i) => {
             if (i > 0) {
               That(sample[i - 1], Is.EqualTo(newVal - 1), "get the changed value during the loop");
               That(Reflect.Invoke("set", sample, 0, 7), Is.True, "re-set a value for sample[0]");
@@ -3103,7 +3104,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue results = EcmaArray.Of();
-          reduce.Call(sample, RuntimeFunction.Create(accumulator => {
+          reduce.Call(sample, FunctionLiteral(accumulator => {
             results.Invoke("push", Arguments);
             return accumulator - 1;
           }));
@@ -3118,7 +3119,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue results = EcmaArray.Of();
-          reduce.Call(sample, RuntimeFunction.Create(accumulator => {
+          reduce.Call(sample, FunctionLiteral(accumulator => {
             results.Invoke("push", Arguments);
             return accumulator + 1;
           }), 7);
@@ -3134,7 +3135,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(3);
           EcmaValue results = EcmaArray.Of();
-          reduce.Call(sample, RuntimeFunction.Create(() => {
+          reduce.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", This);
           }), 0);
           That(results, Is.EquivalentTo(new[] { Undefined, Undefined, Undefined }));
@@ -3171,33 +3172,33 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue obj = Object.Construct();
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
 
-          Case((sample, RuntimeFunction.Create(() => "test262")), "test262");
-          Case((sample, RuntimeFunction.Create(() => "")), "");
-          Case((sample, RuntimeFunction.Create(() => Undefined)), Undefined);
-          Case((sample, RuntimeFunction.Create(() => Null)), Null);
-          Case((sample, RuntimeFunction.Create(() => -0d)), -0d);
-          Case((sample, RuntimeFunction.Create(() => 42)), 42);
-          Case((sample, RuntimeFunction.Create(() => NaN)), NaN);
-          Case((sample, RuntimeFunction.Create(() => Infinity)), Infinity);
-          Case((sample, RuntimeFunction.Create(() => 0.6)), 0.6);
-          Case((sample, RuntimeFunction.Create(() => true)), true);
-          Case((sample, RuntimeFunction.Create(() => false)), false);
-          Case((sample, RuntimeFunction.Create(() => symbol)), symbol);
-          Case((sample, RuntimeFunction.Create(() => obj)), obj);
+          Case((sample, FunctionLiteral(() => "test262")), "test262");
+          Case((sample, FunctionLiteral(() => "")), "");
+          Case((sample, FunctionLiteral(() => Undefined)), Undefined);
+          Case((sample, FunctionLiteral(() => Null)), Null);
+          Case((sample, FunctionLiteral(() => -0d)), -0d);
+          Case((sample, FunctionLiteral(() => 42)), 42);
+          Case((sample, FunctionLiteral(() => NaN)), NaN);
+          Case((sample, FunctionLiteral(() => Infinity)), Infinity);
+          Case((sample, FunctionLiteral(() => 0.6)), 0.6);
+          Case((sample, FunctionLiteral(() => true)), true);
+          Case((sample, FunctionLiteral(() => false)), false);
+          Case((sample, FunctionLiteral(() => symbol)), symbol);
+          Case((sample, FunctionLiteral(() => obj)), obj);
 
-          Case((sample, RuntimeFunction.Create(() => "test262"), 0), "test262");
-          Case((sample, RuntimeFunction.Create(() => ""), 0), "");
-          Case((sample, RuntimeFunction.Create(() => Undefined), 0), Undefined);
-          Case((sample, RuntimeFunction.Create(() => Null), 0), Null);
-          Case((sample, RuntimeFunction.Create(() => -0d), 0), -0d);
-          Case((sample, RuntimeFunction.Create(() => 42), 0), 42);
-          Case((sample, RuntimeFunction.Create(() => NaN), 0), NaN);
-          Case((sample, RuntimeFunction.Create(() => Infinity), 0), Infinity);
-          Case((sample, RuntimeFunction.Create(() => 0.6), 0), 0.6);
-          Case((sample, RuntimeFunction.Create(() => true), 0), true);
-          Case((sample, RuntimeFunction.Create(() => false), 0), false);
-          Case((sample, RuntimeFunction.Create(() => symbol), 0), symbol);
-          Case((sample, RuntimeFunction.Create(() => obj), 0), obj);
+          Case((sample, FunctionLiteral(() => "test262"), 0), "test262");
+          Case((sample, FunctionLiteral(() => ""), 0), "");
+          Case((sample, FunctionLiteral(() => Undefined), 0), Undefined);
+          Case((sample, FunctionLiteral(() => Null), 0), Null);
+          Case((sample, FunctionLiteral(() => -0d), 0), -0d);
+          Case((sample, FunctionLiteral(() => 42), 0), 42);
+          Case((sample, FunctionLiteral(() => NaN), 0), NaN);
+          Case((sample, FunctionLiteral(() => Infinity), 0), Infinity);
+          Case((sample, FunctionLiteral(() => 0.6), 0), 0.6);
+          Case((sample, FunctionLiteral(() => true), 0), true);
+          Case((sample, FunctionLiteral(() => false), 0), false);
+          Case((sample, FunctionLiteral(() => symbol), 0), symbol);
+          Case((sample, FunctionLiteral(() => obj), 0), obj);
         });
       });
 
@@ -3300,7 +3301,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue results = EcmaArray.Of();
           sample["foo"] = 42;
           sample[new Symbol()] = 43;
-          reduceRight.Call(sample, RuntimeFunction.Create((a, v) => {
+          reduceRight.Call(sample, FunctionLiteral((a, v) => {
             results.Invoke("push", v);
           }), 0);
           That(results, Is.EquivalentTo(new[] { 8, 7 }));
@@ -3326,7 +3327,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue newVal = 0;
-          reduceRight.Call(sample, RuntimeFunction.Create((acc, val, i) => {
+          reduceRight.Call(sample, FunctionLiteral((acc, val, i) => {
             if (i < sample["length"] - 1) {
               That(sample[i + 1], Is.EqualTo(newVal - 1), "get the changed value during the loop");
               That(Reflect.Invoke("set", sample, 2, 7), Is.True, "re-set a value for sample[0]");
@@ -3342,7 +3343,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue results = EcmaArray.Of();
-          reduceRight.Call(sample, RuntimeFunction.Create(accumulator => {
+          reduceRight.Call(sample, FunctionLiteral(accumulator => {
             results.Invoke("push", Arguments);
             return accumulator + 1;
           }));
@@ -3357,7 +3358,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue results = EcmaArray.Of();
-          reduceRight.Call(sample, RuntimeFunction.Create(accumulator => {
+          reduceRight.Call(sample, FunctionLiteral(accumulator => {
             results.Invoke("push", Arguments);
             return accumulator + 1;
           }), 7);
@@ -3373,7 +3374,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(3);
           EcmaValue results = EcmaArray.Of();
-          reduceRight.Call(sample, RuntimeFunction.Create(() => {
+          reduceRight.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", This);
           }), 0);
           That(results, Is.EquivalentTo(new[] { Undefined, Undefined, Undefined }));
@@ -3410,33 +3411,33 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue obj = Object.Construct();
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
 
-          Case((sample, RuntimeFunction.Create(() => "test262")), "test262");
-          Case((sample, RuntimeFunction.Create(() => "")), "");
-          Case((sample, RuntimeFunction.Create(() => Undefined)), Undefined);
-          Case((sample, RuntimeFunction.Create(() => Null)), Null);
-          Case((sample, RuntimeFunction.Create(() => -0d)), -0d);
-          Case((sample, RuntimeFunction.Create(() => 42)), 42);
-          Case((sample, RuntimeFunction.Create(() => NaN)), NaN);
-          Case((sample, RuntimeFunction.Create(() => Infinity)), Infinity);
-          Case((sample, RuntimeFunction.Create(() => 0.6)), 0.6);
-          Case((sample, RuntimeFunction.Create(() => true)), true);
-          Case((sample, RuntimeFunction.Create(() => false)), false);
-          Case((sample, RuntimeFunction.Create(() => symbol)), symbol);
-          Case((sample, RuntimeFunction.Create(() => obj)), obj);
+          Case((sample, FunctionLiteral(() => "test262")), "test262");
+          Case((sample, FunctionLiteral(() => "")), "");
+          Case((sample, FunctionLiteral(() => Undefined)), Undefined);
+          Case((sample, FunctionLiteral(() => Null)), Null);
+          Case((sample, FunctionLiteral(() => -0d)), -0d);
+          Case((sample, FunctionLiteral(() => 42)), 42);
+          Case((sample, FunctionLiteral(() => NaN)), NaN);
+          Case((sample, FunctionLiteral(() => Infinity)), Infinity);
+          Case((sample, FunctionLiteral(() => 0.6)), 0.6);
+          Case((sample, FunctionLiteral(() => true)), true);
+          Case((sample, FunctionLiteral(() => false)), false);
+          Case((sample, FunctionLiteral(() => symbol)), symbol);
+          Case((sample, FunctionLiteral(() => obj)), obj);
 
-          Case((sample, RuntimeFunction.Create(() => "test262"), 0), "test262");
-          Case((sample, RuntimeFunction.Create(() => ""), 0), "");
-          Case((sample, RuntimeFunction.Create(() => Undefined), 0), Undefined);
-          Case((sample, RuntimeFunction.Create(() => Null), 0), Null);
-          Case((sample, RuntimeFunction.Create(() => -0d), 0), -0d);
-          Case((sample, RuntimeFunction.Create(() => 42), 0), 42);
-          Case((sample, RuntimeFunction.Create(() => NaN), 0), NaN);
-          Case((sample, RuntimeFunction.Create(() => Infinity), 0), Infinity);
-          Case((sample, RuntimeFunction.Create(() => 0.6), 0), 0.6);
-          Case((sample, RuntimeFunction.Create(() => true), 0), true);
-          Case((sample, RuntimeFunction.Create(() => false), 0), false);
-          Case((sample, RuntimeFunction.Create(() => symbol), 0), symbol);
-          Case((sample, RuntimeFunction.Create(() => obj), 0), obj);
+          Case((sample, FunctionLiteral(() => "test262"), 0), "test262");
+          Case((sample, FunctionLiteral(() => ""), 0), "");
+          Case((sample, FunctionLiteral(() => Undefined), 0), Undefined);
+          Case((sample, FunctionLiteral(() => Null), 0), Null);
+          Case((sample, FunctionLiteral(() => -0d), 0), -0d);
+          Case((sample, FunctionLiteral(() => 42), 0), 42);
+          Case((sample, FunctionLiteral(() => NaN), 0), NaN);
+          Case((sample, FunctionLiteral(() => Infinity), 0), Infinity);
+          Case((sample, FunctionLiteral(() => 0.6), 0), 0.6);
+          Case((sample, FunctionLiteral(() => true), 0), true);
+          Case((sample, FunctionLiteral(() => false), 0), false);
+          Case((sample, FunctionLiteral(() => symbol), 0), symbol);
+          Case((sample, FunctionLiteral(() => obj), 0), obj);
         });
       });
 
@@ -3904,7 +3905,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue sample = TA.Construct(5);
           EcmaValue obj = CreateObject(("length", 5), (1, 7), (2, 7), (3, 7), (4, 7));
           Object.Invoke("defineProperty", obj, 0, CreateObject(new {
-            get = RuntimeFunction.Create(() => {
+            get = FunctionLiteral(() => {
               obj[1] = 43;
               obj[2] = 44;
               obj[3] = 45;
@@ -3980,7 +3981,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(1, 2, 3));
           EcmaValue obj = CreateObject(("length", 3), (0, 42));
-          Object.Invoke("defineProperty", obj, 1, CreateObject(new { get = RuntimeFunction.Create(() => DetachBuffer(sample)) }));
+          Object.Invoke("defineProperty", obj, 1, CreateObject(new { get = FunctionLiteral(() => DetachBuffer(sample)) }));
           Object.Invoke("defineProperty", obj, 2, CreateObject(new { get = ThrowTest262Exception }));
           Case((sample, obj), Throws.TypeError);
         });
@@ -4206,7 +4207,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should throw a TypeError buffer is detached on Get constructor", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(1);
-          Object.Invoke("defineProperty", sample, "constructor", CreateObject(new { get = RuntimeFunction.Create(() => DetachBuffer(sample)) }));
+          Object.Invoke("defineProperty", sample, "constructor", CreateObject(new { get = FunctionLiteral(() => DetachBuffer(sample)) }));
           Case(sample, Throws.TypeError);
         });
       });
@@ -4214,7 +4215,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should throw a TypeError buffer is detached on Get custom constructor", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(1);
-          sample["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create((count) => {
+          sample["constructor"] = CreateObject((Symbol.Species, FunctionLiteral((count) => {
             DetachBuffer(sample);
             return TA.Construct(count);
           })));
@@ -4225,7 +4226,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should throw a TypeError buffer is detached on Get custom constructor using other targetType", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(1);
-          sample["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create((count) => {
+          sample["constructor"] = CreateObject((Symbol.Species, FunctionLiteral((count) => {
             EcmaValue other = TA == Global.Int8Array ? Global.Int16Array : Global.Int8Array;
             DetachBuffer(sample);
             return other.Construct(count);
@@ -4237,7 +4238,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should throw if custom species constructor returns an instance with a detached buffer", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(1);
-          sample["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create((count) => {
+          sample["constructor"] = CreateObject((Symbol.Species, FunctionLiteral((count) => {
             EcmaValue other = TA.Construct(count);
             DetachBuffer(other);
             return other;
@@ -4249,7 +4250,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("does not throw a TypeError if buffer is detached on custom constructor and `k >= final` using same targetType", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = default, result;
-          EcmaValue ctor = CreateObject((Symbol.Species, RuntimeFunction.Create((count) => {
+          EcmaValue ctor = CreateObject((Symbol.Species, FunctionLiteral((count) => {
             DetachBuffer(sample);
             return TA.Construct(count);
           })));
@@ -4272,7 +4273,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("does not throw a TypeError if buffer is detached on custom constructor and `k >= final` using other targetType", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = default, other = default, result;
-          EcmaValue ctor = CreateObject((Symbol.Species, RuntimeFunction.Create((count) => {
+          EcmaValue ctor = CreateObject((Symbol.Species, FunctionLiteral((count) => {
             other = TA == Global.Int8Array ? Global.Int16Array : Global.Int8Array;
             DetachBuffer(sample);
             return other.Construct(count);
@@ -4574,7 +4575,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue customCount = default;
           EcmaValue sample = TA.Construct(2);
-          sample["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create(() => TA.Construct(customCount))));
+          sample["constructor"] = CreateObject((Symbol.Species, FunctionLiteral(() => TA.Construct(customCount))));
 
           customCount = 2;
           That(slice.Call(sample)["length"], Is.EqualTo(customCount));
@@ -4586,7 +4587,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should throw a TypeError if new typedArray's length < count", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(2);
-          sample["constructor"] = CreateObject((Symbol.Species, RuntimeFunction.Create(() => TA.Construct())));
+          sample["constructor"] = CreateObject((Symbol.Species, FunctionLiteral(() => TA.Construct())));
           Case(sample, Throws.TypeError);
         });
       });
@@ -4731,7 +4732,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           EcmaValue results = EcmaArray.Of();
           sample["foo"] = 42;
           sample[new Symbol()] = 43;
-          some.Call(sample, RuntimeFunction.Create(() => {
+          some.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", Arguments);
           }));
           That(results, Is.EquivalentTo(new[] {
@@ -4760,7 +4761,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue newVal = 0;
-          some.Call(sample, RuntimeFunction.Create((val, i) => {
+          some.Call(sample, FunctionLiteral((val, i) => {
             if (i > 0) {
               That(sample[i - 1], Is.EqualTo(newVal - 1), "get the changed value during the loop");
               That(Reflect.Invoke("set", sample, 0, 7), Is.True, "re-set a value for sample[0]");
@@ -4776,7 +4777,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43, 44));
           EcmaValue results = EcmaArray.Of();
-          some.Call(sample, RuntimeFunction.Create(() => {
+          some.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", Arguments);
           }));
           That(results, Is.EquivalentTo(new[] {
@@ -4787,7 +4788,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
           EcmaValue thisArg = EcmaArray.Of("test262", 0, "ecma262", 0);
           results = EcmaArray.Of();
-          some.Call(sample, RuntimeFunction.Create(() => {
+          some.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", Arguments);
           }), thisArg);
           That(results, Is.EquivalentTo(new[] {
@@ -4802,14 +4803,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(3);
           EcmaValue results = EcmaArray.Of();
-          some.Call(sample, RuntimeFunction.Create(() => {
+          some.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", This);
           }));
           That(results, Is.EquivalentTo(new[] { Undefined, Undefined, Undefined }));
 
           EcmaValue thisArg = Object.Construct();
           results = EcmaArray.Of();
-          some.Call(sample, RuntimeFunction.Create(() => {
+          some.Call(sample, FunctionLiteral(() => {
             results.Invoke("push", This);
           }), thisArg);
           That(results, Is.EquivalentTo(new[] { thisArg, thisArg, thisArg }));
@@ -4944,7 +4945,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should pass the result of compareFn immediately through ToNumber", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue ta = TA.Construct(4);
-          EcmaValue comparefn = RuntimeFunction.Create((a, b) => {
+          EcmaValue comparefn = FunctionLiteral((a, b) => {
             DetachBuffer(ta);
             return CreateObject(toPrimitive: Intercept(() => Undefined));
           });
@@ -5012,7 +5013,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(EcmaArray.Of(2, 1));
           Case(sample, sample);
-          Case((sample, RuntimeFunction.Create(() => 0)), sample);
+          Case((sample, FunctionLiteral(() => 0)), sample);
         });
       });
     }
@@ -5463,7 +5464,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue separator = EcmaArray.Of("", "").Invoke("toLocaleString");
         EcmaValue expected = EcmaArray.Of("hacks1", "hacks2").Invoke("join", separator);
         EcmaValue arr = EcmaArray.Of(42, 0);
-        using (TempProperty(Number.Prototype, "toLocaleString", RuntimeFunction.Create(() => Return(Logs.Add(This), "hacks" + Logs.Count)))) {
+        using (TempProperty(Number.Prototype, "toLocaleString", FunctionLiteral(() => Return(Logs.Add(This), "hacks" + Logs.Count)))) {
           TestWithTypedArrayConstructors(TA => {
             EcmaValue sample = TA.Construct(arr);
             Case(sample, expected, "returns expected value");
@@ -5476,7 +5477,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue separator = EcmaArray.Of("", "").Invoke("toLocaleString");
         EcmaValue expected = EcmaArray.Of("hacks1", "hacks2").Invoke("join", separator);
         EcmaValue arr = EcmaArray.Of(42, 0);
-        using (TempProperty(Number.Prototype, "toLocaleString", RuntimeFunction.Create(() => CreateObject(toString: Intercept(() => "hacks" + Logs.Count), valueOf: ThrowTest262Exception)))) {
+        using (TempProperty(Number.Prototype, "toLocaleString", FunctionLiteral(() => CreateObject(toString: Intercept(() => "hacks" + Logs.Count), valueOf: ThrowTest262Exception)))) {
           TestWithTypedArrayConstructors(TA => {
             EcmaValue sample = TA.Construct(arr);
             Case(sample, expected, "returns expected value");
@@ -5489,7 +5490,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue separator = EcmaArray.Of("", "").Invoke("toLocaleString");
         EcmaValue expected = EcmaArray.Of("hacks1", "hacks2").Invoke("join", separator);
         EcmaValue arr = EcmaArray.Of(42, 0);
-        using (TempProperty(Number.Prototype, "toLocaleString", RuntimeFunction.Create(() => CreateObject(new { valueOf = Intercept(() => "hacks" + Logs.Count), toString = Undefined })))) {
+        using (TempProperty(Number.Prototype, "toLocaleString", FunctionLiteral(() => CreateObject(new { valueOf = Intercept(() => "hacks" + Logs.Count), toString = Undefined })))) {
           TestWithTypedArrayConstructors(TA => {
             EcmaValue sample = TA.Construct(arr);
             Case(sample, expected, "returns expected value");
@@ -5523,14 +5524,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
             That(Logs.Count, Is.EqualTo(1));
           });
         }
-        using (TempProperty(Number.Prototype, "toLocaleString", RuntimeFunction.Create(() => CreateObject(toString: Intercept(ThrowTest262Exception))))) {
+        using (TempProperty(Number.Prototype, "toLocaleString", FunctionLiteral(() => CreateObject(toString: Intercept(ThrowTest262Exception))))) {
           TestWithTypedArrayConstructors(TA => {
             EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43));
             Case(sample, Throws.Test262);
             That(Logs.Count, Is.EqualTo(1));
           });
         }
-        using (TempProperty(Number.Prototype, "toLocaleString", RuntimeFunction.Create(() => CreateObject(toString: () => Object.Construct(), valueOf: Intercept(ThrowTest262Exception))))) {
+        using (TempProperty(Number.Prototype, "toLocaleString", FunctionLiteral(() => CreateObject(toString: () => Object.Construct(), valueOf: Intercept(ThrowTest262Exception))))) {
           TestWithTypedArrayConstructors(TA => {
             EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43));
             Case(sample, Throws.Test262);
@@ -5548,14 +5549,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
             That(Logs.Count, Is.EqualTo(2));
           });
         }
-        using (TempProperty(Number.Prototype, "toLocaleString", RuntimeFunction.Create(() => CreateObject(toString: thrower)))) {
+        using (TempProperty(Number.Prototype, "toLocaleString", FunctionLiteral(() => CreateObject(toString: thrower)))) {
           TestWithTypedArrayConstructors(TA => {
             EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43));
             Case(sample, Throws.Test262);
             That(Logs.Count, Is.EqualTo(2));
           });
         }
-        using (TempProperty(Number.Prototype, "toLocaleString", RuntimeFunction.Create(() => CreateObject(toString: () => Object.Construct(), valueOf: thrower)))) {
+        using (TempProperty(Number.Prototype, "toLocaleString", FunctionLiteral(() => CreateObject(toString: () => Object.Construct(), valueOf: thrower)))) {
           TestWithTypedArrayConstructors(TA => {
             EcmaValue sample = TA.Construct(EcmaArray.Of(42, 43));
             Case(sample, Throws.Test262);

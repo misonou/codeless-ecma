@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -13,7 +14,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue _target = default, _args = default, _handler = default, _context = default;
         EcmaValue target = ThrowTest262Exception;
         EcmaValue handler = CreateObject(new {
-          apply = RuntimeFunction.Create((t, c, args) => {
+          apply = FunctionLiteral((t, c, args) => {
             _handler = This;
             _target = t;
             _context = c;
@@ -33,36 +34,36 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return the result from the trap method", () => {
         EcmaValue result = Object.Construct();
         EcmaValue p = Proxy.Construct(ThrowTest262Exception, CreateObject(new {
-          apply = RuntimeFunction.Create(_ => result)
+          apply = FunctionLiteral(_ => result)
         }));
         That(p.Invoke("call"), Is.EqualTo(result));
       });
 
       It("should throw a TypeError exception if handler is null", () => {
-        EcmaValue p = Proxy.Invoke("revocable", RuntimeFunction.Create(_ => _), Object.Construct());
+        EcmaValue p = Proxy.Invoke("revocable", FunctionLiteral(_ => _), Object.Construct());
         p.Invoke("revoke");
         That(() => p.Invoke("proxy"), Throws.TypeError);
       });
 
       It("should return abrupt completion", () => {
-        EcmaValue p = Proxy.Construct(RuntimeFunction.Create(_ => throw new System.Exception()), CreateObject(new { apply = ThrowTest262Exception }));
+        EcmaValue p = Proxy.Construct(FunctionLiteral(_ => Throw(Error.Construct())), CreateObject(new { apply = ThrowTest262Exception }));
         That(() => p.Call(Undefined), Throws.Test262);
       });
 
       It("should throw if trap is not callable", () => {
-        EcmaValue p = Proxy.Construct(RuntimeFunction.Create(_ => _), CreateObject(new { apply = Object.Construct() }));
+        EcmaValue p = Proxy.Construct(FunctionLiteral(_ => _), CreateObject(new { apply = Object.Construct() }));
         That(() => p.Call(Undefined), Throws.TypeError);
       });
 
       It("should throw if trap is not callable (honoring the Realm of the current execution context)", () => {
         EcmaValue OProxy = new RuntimeRealm().GetRuntimeObject(WellKnownObject.ProxyConstructor);
-        EcmaValue p = OProxy.Construct(RuntimeFunction.Create(_ => _), CreateObject(new { apply = Object.Construct() }));
+        EcmaValue p = OProxy.Construct(FunctionLiteral(_ => _), CreateObject(new { apply = Object.Construct() }));
         That(() => p.Call(Undefined), Throws.TypeError);
       });
 
       It("should propagate the call to the target object if the apply trap value is undefined", () => {
         EcmaValue context = default;
-        EcmaValue target = Proxy.Construct(RuntimeFunction.Create(_ => _), CreateObject(new {
+        EcmaValue target = Proxy.Construct(FunctionLiteral(_ => _), CreateObject(new {
           apply = Intercept((_target, _context, args) => {
             context = _context;
             return args[0] + args[1];
@@ -78,7 +79,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should propagate the call to the target object if the apply trap value is null", () => {
         EcmaValue context = default;
-        EcmaValue target = Proxy.Construct(RuntimeFunction.Create(_ => _), CreateObject(new {
+        EcmaValue target = Proxy.Construct(FunctionLiteral(_ => _), CreateObject(new {
           apply = Intercept((_target, _context, args) => {
             context = _context;
             return args[0] + args[1];
@@ -94,7 +95,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should propagate the call to the target object if trap is not set", () => {
         EcmaValue context = default;
-        EcmaValue target = Proxy.Construct(RuntimeFunction.Create(_ => _), CreateObject(new {
+        EcmaValue target = Proxy.Construct(FunctionLiteral(_ => _), CreateObject(new {
           apply = Intercept((_target, _context, args) => {
             context = _context;
             return args[0] + args[1];
@@ -113,9 +114,9 @@ namespace Codeless.Ecma.UnitTest.Tests {
     public void Construct() {
       It("should pass correct parameters to the trap method", () => {
         EcmaValue _P = default, _args = default, _handler = default, _target = default;
-        EcmaValue Target = RuntimeFunction.Create(_ => _);
+        EcmaValue Target = FunctionLiteral(_ => _);
         EcmaValue handler = CreateObject(new {
-          construct = RuntimeFunction.Create((target, args, newTarget) => {
+          construct = FunctionLiteral((target, args, newTarget) => {
             _handler = This;
             _target = target;
             _args = args;
@@ -134,11 +135,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should pass correct parameters to the trap method with new target", () => {
-        EcmaValue Target = RuntimeFunction.Create(_ => _);
-        EcmaValue NewTarget = RuntimeFunction.Create(_ => _);
+        EcmaValue Target = FunctionLiteral(_ => _);
+        EcmaValue NewTarget = FunctionLiteral(_ => _);
         EcmaValue handler = default;
         handler = CreateObject(new {
-          construct = RuntimeFunction.Create((target, args, newTarget) => {
+          construct = FunctionLiteral((target, args, newTarget) => {
             That(This, Is.EqualTo(handler));
             That(target, Is.EqualTo(Target));
             That(newTarget, Is.EqualTo(NewTarget));
@@ -152,9 +153,9 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return the result from the trap method", () => {
-        EcmaValue Target = RuntimeFunction.Create((a, b) => This.ToObject()["sum"] = a + b);
+        EcmaValue Target = FunctionLiteral((a, b) => This.ToObject()["sum"] = a + b);
         EcmaValue handler = CreateObject(new {
-          construct = RuntimeFunction.Create((t, c, args) => CreateObject(new { sum = 42 }))
+          construct = FunctionLiteral((t, c, args) => CreateObject(new { sum = 42 }))
         });
 
         EcmaValue P = Proxy.Construct(Target, handler);
@@ -162,49 +163,49 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should throw a TypeError exception if handler is null", () => {
-        EcmaValue p = Proxy.Invoke("revocable", RuntimeFunction.Create(_ => _), Object.Construct());
+        EcmaValue p = Proxy.Invoke("revocable", FunctionLiteral(_ => _), Object.Construct());
         p.Invoke("revoke");
         That(() => p["proxy"].Construct(), Throws.TypeError);
       });
 
       It("should return abrupt completion", () => {
-        EcmaValue p = Proxy.Construct(RuntimeFunction.Create(_ => throw new System.Exception()), CreateObject(new { construct = ThrowTest262Exception }));
+        EcmaValue p = Proxy.Construct(FunctionLiteral(_ => Throw(Error.Construct())), CreateObject(new { construct = ThrowTest262Exception }));
         That(() => p.Construct(), Throws.Test262);
       });
 
       It("should throw a TypeError if trap result is not an Object", () => {
-        EcmaValue Target = RuntimeFunction.Create(_ => _);
+        EcmaValue Target = FunctionLiteral(_ => _);
         EcmaValue P;
 
-        P = Proxy.Construct(Target, CreateObject(new { construct = RuntimeFunction.Create(() => true) }));
+        P = Proxy.Construct(Target, CreateObject(new { construct = FunctionLiteral(() => true) }));
         That(() => P.Construct(), Throws.TypeError);
 
-        P = Proxy.Construct(Target, CreateObject(new { construct = RuntimeFunction.Create(() => 0) }));
+        P = Proxy.Construct(Target, CreateObject(new { construct = FunctionLiteral(() => 0) }));
         That(() => P.Construct(), Throws.TypeError);
 
-        P = Proxy.Construct(Target, CreateObject(new { construct = RuntimeFunction.Create(() => "") }));
+        P = Proxy.Construct(Target, CreateObject(new { construct = FunctionLiteral(() => "") }));
         That(() => P.Construct(), Throws.TypeError);
 
-        P = Proxy.Construct(Target, CreateObject(new { construct = RuntimeFunction.Create(() => new Symbol()) }));
+        P = Proxy.Construct(Target, CreateObject(new { construct = FunctionLiteral(() => new Symbol()) }));
         That(() => P.Construct(), Throws.TypeError);
 
-        P = Proxy.Construct(Target, CreateObject(new { construct = RuntimeFunction.Create(() => Undefined) }));
+        P = Proxy.Construct(Target, CreateObject(new { construct = FunctionLiteral(() => Undefined) }));
         That(() => P.Construct(), Throws.TypeError);
       });
 
       It("should throw if trap is not callable", () => {
-        EcmaValue p = Proxy.Construct(RuntimeFunction.Create(_ => _), CreateObject(new { construct = Object.Construct() }));
+        EcmaValue p = Proxy.Construct(FunctionLiteral(_ => _), CreateObject(new { construct = Object.Construct() }));
         That(() => p.Construct(), Throws.TypeError);
       });
 
       It("should throw if trap is not callable (honoring the Realm of the current execution context)", () => {
         EcmaValue OProxy = new RuntimeRealm().GetRuntimeObject(WellKnownObject.ProxyConstructor);
-        EcmaValue p = OProxy.Construct(RuntimeFunction.Create(_ => _), CreateObject(new { construct = Object.Construct() }));
+        EcmaValue p = OProxy.Construct(FunctionLiteral(_ => _), CreateObject(new { construct = Object.Construct() }));
         That(() => p.Construct(), Throws.TypeError);
       });
 
       It("should propagate the construct to the target object if the apply trap value is undefined", () => {
-        EcmaValue NewTarget = RuntimeFunction.Create(_ => _);
+        EcmaValue NewTarget = FunctionLiteral(_ => _);
         EcmaValue Target = Intercept((a, b) => {
           That(New.Target, Is.EqualTo(NewTarget));
           return CreateObject(new { sum = a + b });
@@ -217,7 +218,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should propagate the construct to the target object if the apply trap value is null", () => {
-        EcmaValue NewTarget = RuntimeFunction.Create(_ => _);
+        EcmaValue NewTarget = FunctionLiteral(_ => _);
         EcmaValue Target = Intercept((a, b) => {
           That(New.Target, Is.EqualTo(NewTarget));
           return CreateObject(new { sum = a + b });
@@ -230,7 +231,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should propagate the construct to the target object if the apply trap value is not set", () => {
-        EcmaValue NewTarget = RuntimeFunction.Create(_ => _);
+        EcmaValue NewTarget = FunctionLiteral(_ => _);
         EcmaValue Target = Intercept((a, b) => {
           That(New.Target, Is.EqualTo(NewTarget));
           return CreateObject(new { sum = a + b });
@@ -245,7 +246,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should propagate the construct to the target object if the apply trap value is not set (honoring the Realm of the newTarget value)", () => {
         RuntimeRealm realm = new RuntimeRealm();
         EcmaValue C = realm.GetRuntimeObject(WellKnownObject.FunctionConstructor).Construct();
-        EcmaValue P = Proxy.Construct(RuntimeFunction.Create(() => Undefined), Object.Construct());
+        EcmaValue P = Proxy.Construct(FunctionLiteral(() => Undefined), Object.Construct());
         EcmaValue p = Reflect.Invoke("construct", P, EcmaArray.Of(), C);
         That(Object.Invoke("getPrototypeOf", Object.Invoke("getPrototypeOf", p)), Is.EqualTo(realm.GetRuntimeObject(WellKnownObject.ObjectPrototype)));
       });
@@ -263,7 +264,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           value = 1
         });
         EcmaValue handler = CreateObject(new {
-          defineProperty = RuntimeFunction.Create((t, prop, desc) => {
+          defineProperty = FunctionLiteral((t, prop, desc) => {
             _handler = This;
             _target = t;
             _prop = prop;
@@ -289,7 +290,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue OProxy = new RuntimeRealm().GetRuntimeObject(WellKnownObject.ProxyConstructor);
         EcmaValue desc = default;
         EcmaValue p = OProxy.Construct(Object.Construct(), CreateObject(new {
-          defineProperty = RuntimeFunction.Create((_, __, _desc) => {
+          defineProperty = FunctionLiteral((_, __, _desc) => {
             desc = _desc;
             return desc;
           })
@@ -314,7 +315,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("will not throw an exception if a property has a corresponding target object property", () => {
         EcmaValue target = Object.Construct();
         EcmaValue p = Proxy.Construct(target, CreateObject(new {
-          defineProperty = RuntimeFunction.Create((t, prop, desc) => {
+          defineProperty = FunctionLiteral((t, prop, desc) => {
             return Object.Invoke("defineProperty", t, prop, desc);
           })
         }));
@@ -345,33 +346,33 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should throw a TypeError exception if Desc is not configurable and target property descriptor is configurable and trap result is true", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { defineProperty = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { defineProperty = FunctionLiteral(() => true) }));
         Object.Invoke("defineProperty", target, "foo", CreateObject(new { value = 1, configurable = true }));
         That(() => Object.Invoke("defineProperty", p, "foo", CreateObject(new { value = 1, configurable = false })), Throws.TypeError);
       });
 
       It("should Throw a TypeError exception if Desc is not configurable and target property descriptor is undefined, and trap result is true", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { defineProperty = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { defineProperty = FunctionLiteral(() => true) }));
         That(() => Object.Invoke("defineProperty", p, "foo", CreateObject(new { configurable = false })), Throws.TypeError);
       });
 
       It("should throw a TypeError exception if Desc is not configurable and target is not extensible, and trap result is true", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { defineProperty = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { defineProperty = FunctionLiteral(() => true) }));
         Object.Invoke("preventExtensions", target);
         That(() => Object.Invoke("defineProperty", p, "foo", Object.Construct()), Throws.TypeError);
       });
 
       It("should throw a TypeError exception if Desc and target property descriptor are not compatible and trap result is true", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { defineProperty = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { defineProperty = FunctionLiteral(() => true) }));
         Object.Invoke("defineProperty", target, "foo", CreateObject(new { value = 1, configurable = false }));
         That(() => Object.Invoke("defineProperty", p, "foo", CreateObject(new { value = 1, configurable = true })), Throws.TypeError);
 
         target = Object.Construct();
         p = Proxy.Construct(target, CreateObject(new {
-          defineProperty = RuntimeFunction.Create(() => true)
+          defineProperty = FunctionLiteral(() => true)
         }));
         Object.Invoke("defineProperty", target, "foo", CreateObject(new { value = 1 }));
         That(() => Object.Invoke("defineProperty", p, "foo", CreateObject(new { value = 2 })), Throws.TypeError);
@@ -411,7 +412,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should check on false trap result", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { defineProperty = RuntimeFunction.Create(() => 0) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { defineProperty = FunctionLiteral(() => 0) }));
         That(Reflect.Invoke("defineProperty", p, "attr", Object.Construct()), Is.EqualTo(false));
         That(Object.Invoke("getOwnPropertyDescriptor", target, "attr"), Is.Undefined);
       });
@@ -421,7 +422,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
     public void DeleteProperty() {
       It("should return a boolean value", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { deleteProperty = RuntimeFunction.Create(() => 0) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { deleteProperty = FunctionLiteral(() => 0) }));
 
         Object.Invoke("defineProperties", target, CreateObject(new {
           isConfigurable = CreateObject(new {
@@ -437,7 +438,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         That(Reflect.Invoke("deleteProperty", p, "isConfigurable"), Is.EqualTo(false));
         That(Reflect.Invoke("deleteProperty", p, "notConfigurable"), Is.EqualTo(false));
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { deleteProperty = RuntimeFunction.Create(() => 1) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { deleteProperty = FunctionLiteral(() => 1) }));
         That(Reflect.Invoke("deleteProperty", p, "attr"), Is.EqualTo(true));
       });
 
@@ -445,7 +446,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue _handler = default, _target = default, _prop = default;
         EcmaValue target = CreateObject(new { attr = 1 });
         EcmaValue handler = CreateObject(new {
-          deleteProperty = RuntimeFunction.Create((t, prop) => {
+          deleteProperty = FunctionLiteral((t, prop) => {
             _handler = This;
             _target = t;
             _prop = prop;
@@ -473,7 +474,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should throw a TypeError exception if a property cannot be reported as deleted", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { deleteProperty = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { deleteProperty = FunctionLiteral(() => true) }));
         Object.Invoke("defineProperty", target, "attr", CreateObject(new {
           configurable = false,
           value = 1
@@ -482,7 +483,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return true if targetDesc is undefined", () => {
-        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { deleteProperty = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { deleteProperty = FunctionLiteral(() => true) }));
         That(p.ToObject().Delete("attr"), Is.EqualTo(true));
       });
 
@@ -545,7 +546,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue _handler = default, _target = default, _prop = default, _receiver = default;
         EcmaValue target = CreateObject(new { attr = 1 });
         EcmaValue handler = CreateObject(new {
-          get = RuntimeFunction.Create((t, prop, receiver) => {
+          get = FunctionLiteral((t, prop, receiver) => {
             _handler = This;
             _target = t;
             _prop = prop;
@@ -563,7 +564,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should throw if proxy return has not the same value for a non-writable, non-configurable property", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { get = RuntimeFunction.Create(() => 2) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { get = FunctionLiteral(() => 2) }));
         Object.Invoke("defineProperty", target, "attr", CreateObject(new {
           configurable = false,
           writable = false,
@@ -585,9 +586,9 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return trap result", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { get = RuntimeFunction.Create(() => 2) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { get = FunctionLiteral(() => 2) }));
         Object.Invoke("defineProperty", target, "attr", CreateObject(new {
-          get = RuntimeFunction.Create(() => 1)
+          get = FunctionLiteral(() => 1)
         }));
         That(p["attr"], Is.EqualTo(2));
 
@@ -618,7 +619,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("must report the same value for a non-configurable accessor property with an undefined get if trap result is not undefined", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { get = RuntimeFunction.Create(() => 2) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { get = FunctionLiteral(() => 2) }));
         Object.Invoke("defineProperty", target, "attr", CreateObject(new {
           configurable = false,
           get = Undefined
@@ -628,7 +629,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("must report the same value for a non-writable, non-configurable property", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { get = RuntimeFunction.Create(() => 1) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { get = FunctionLiteral(() => 1) }));
         Object.Invoke("defineProperty", target, "attr", CreateObject(new {
           configurable = false,
           writable = false,
@@ -678,7 +679,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue _handler = default, _target = default, _prop = default;
         EcmaValue target = CreateObject(new { attr = 1 });
         EcmaValue handler = CreateObject(new {
-          getOwnPropertyDescriptor = RuntimeFunction.Create((t, prop) => {
+          getOwnPropertyDescriptor = FunctionLiteral((t, prop) => {
             _handler = This;
             _target = t;
             _prop = prop;
@@ -700,7 +701,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should throws a TypeError exception if trap result is undefined and target is not extensible", () => {
         EcmaValue target = CreateObject(new { foo = 1 });
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = RuntimeFunction.Create(() => Undefined) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = FunctionLiteral(() => Undefined) }));
         Object.Invoke("preventExtensions", target);
         That(() => Object.Invoke("getOwnPropertyDescriptor", p, "foo"), Throws.TypeError);
       });
@@ -712,21 +713,21 @@ namespace Codeless.Ecma.UnitTest.Tests {
           writable = false,
           value = 1
         }));
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = RuntimeFunction.Create(() => Undefined) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = FunctionLiteral(() => Undefined) }));
         That(() => Object.Invoke("getOwnPropertyDescriptor", p, "foo"), Throws.TypeError);
       });
 
       It("should return undefined if trap result is undefined and target property descriptor is undefined", () => {
         EcmaValue target = Object.Construct();
         EcmaValue trapped = default;
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = RuntimeFunction.Create(() => Void(trapped = true)) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = FunctionLiteral(() => Void(trapped = true)) }));
         That(Object.Invoke("getOwnPropertyDescriptor", p, "foo"), Is.Undefined);
         That(trapped, Is.EqualTo(true));
       });
 
       It("should return undefined if trap result is undefined and target is extensible and the target property descriptor is configurable", () => {
         EcmaValue target = CreateObject(new { attr = 1 });
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = RuntimeFunction.Create(() => Undefined) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = FunctionLiteral(() => Undefined) }));
         That(Object.Invoke("getOwnPropertyDescriptor", p, "attr"), Is.Undefined);
       });
 
@@ -737,7 +738,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           @string = "",
           boolean = true
         });
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = RuntimeFunction.Create((t, prop) => t[prop]) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = FunctionLiteral((t, prop) => t[prop]) }));
         That(() => Object.Invoke("getOwnPropertyDescriptor", p, "number"), Throws.TypeError);
         That(() => Object.Invoke("getOwnPropertyDescriptor", p, "symbol"), Throws.TypeError);
         That(() => Object.Invoke("getOwnPropertyDescriptor", p, "string"), Throws.TypeError);
@@ -746,32 +747,32 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should throw a TypeError exception when trap result is neither Object nor undefined (honoring the Realm of the current execution context)", () => {
         EcmaValue OProxy = new RuntimeRealm().GetRuntimeObject(WellKnownObject.ProxyConstructor);
-        EcmaValue p = OProxy.Construct(Object.Construct(), CreateObject(new { getOwnPropertyDescriptor = RuntimeFunction.Create(() => Null) }));
+        EcmaValue p = OProxy.Construct(Object.Construct(), CreateObject(new { getOwnPropertyDescriptor = FunctionLiteral(() => Null) }));
         That(() => Object.Invoke("getOwnPropertyDescriptor", p, "foo"), Throws.TypeError);
       });
 
       It("should throw a TypeError exception if trap result and target property descriptors are not compatible", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = RuntimeFunction.Create(() => Object.Invoke("getOwnPropertyDescriptor", CreateObject(new { bar = 1 }), "bar")) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = FunctionLiteral(() => Object.Invoke("getOwnPropertyDescriptor", CreateObject(new { bar = 1 }), "bar")) }));
         Object.Invoke("preventExtensions", target);
         That(() => Object.Invoke("getOwnPropertyDescriptor", p, "bar"), Throws.TypeError);
       });
 
       It("should throw a TypeError exception if trap result is not configurable but target property descriptor is configurable", () => {
         EcmaValue target = CreateObject(new { bar = 1 });
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = RuntimeFunction.Create(() => CreateObject(new { configurable = false, enumerable = true, value = 1 })) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = FunctionLiteral(() => CreateObject(new { configurable = false, enumerable = true, value = 1 })) }));
         That(() => Object.Invoke("getOwnPropertyDescriptor", p, "bar"), Throws.TypeError);
       });
 
       It("should throw a TypeError exception if trap result is not configurable but target property descriptor is undefined", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = RuntimeFunction.Create(() => CreateObject(new { configurable = false, enumerable = true, value = 1 })) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = FunctionLiteral(() => CreateObject(new { configurable = false, enumerable = true, value = 1 })) }));
         That(() => Object.Invoke("getOwnPropertyDescriptor", p, "bar"), Throws.TypeError);
       });
 
       It("should return descriptor from trap result if it has the same value as the target property descriptor", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = RuntimeFunction.Create((t, prop) => Object.Invoke("getOwnPropertyDescriptor", t, prop)) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { getOwnPropertyDescriptor = FunctionLiteral((t, prop) => Object.Invoke("getOwnPropertyDescriptor", t, prop)) }));
 
         Object.Invoke("defineProperty", target, "bar", CreateObject(new {
           configurable = true,
@@ -829,7 +830,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue _handler = default, _target = default;
         EcmaValue target = CreateObject(new { attr = 1 });
         EcmaValue handler = CreateObject(new {
-          getPrototypeOf = RuntimeFunction.Create((t) => {
+          getPrototypeOf = FunctionLiteral((t) => {
             _handler = This;
             _target = t;
             return Object.Construct();
@@ -844,26 +845,26 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return trap result if it's an Object and target is extensible", () => {
         EcmaValue proto = CreateObject(new { foo = 1 });
-        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = RuntimeFunction.Create(() => proto) }));
+        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = FunctionLiteral(() => proto) }));
         That(Object.Invoke("getPrototypeOf", p), Is.EqualTo(proto));
       });
 
       It("should work with instanceof operator", () => {
-        EcmaValue CustomClass = RuntimeFunction.Create(_ => _);
-        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = RuntimeFunction.Create(() => CustomClass["prototype"]) }));
+        EcmaValue CustomClass = FunctionLiteral(_ => _);
+        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = FunctionLiteral(() => CustomClass["prototype"]) }));
         That(p.InstanceOf(CustomClass));
       });
 
       It("should throw a TypeError if the target is not extensible and the trap result is not the same as the target.[[GetPrototypeOf]] result", () => {
         EcmaValue target = CreateObject(new { foo = 1 });
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { getPrototypeOf = RuntimeFunction.Create(() => Object.Construct()) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { getPrototypeOf = FunctionLiteral(() => Object.Construct()) }));
         Object.Invoke("preventExtensions", target);
         That(() => Object.Invoke("getPrototypeOf", p), Throws.TypeError);
       });
 
       It("should return trap result is target is not extensible, but trap result has the same value as target.[[GetPrototypeOf]] result", () => {
         EcmaValue target = Object.Invoke("create", Array.Prototype);
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { getPrototypeOf = RuntimeFunction.Create(() => Array.Prototype) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { getPrototypeOf = FunctionLiteral(() => Array.Prototype) }));
         Object.Invoke("preventExtensions", target);
         That(Object.Invoke("getPrototypeOf", p), Is.EqualTo(Array.Prototype));
       });
@@ -897,19 +898,19 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should throw a TypeError exception if trap result is neither Object nor null", () => {
-        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = RuntimeFunction.Create(() => false) }));
+        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = FunctionLiteral(() => false) }));
         That(() => Object.Invoke("getPrototypeOf", p), Throws.TypeError);
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = RuntimeFunction.Create(() => 0) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = FunctionLiteral(() => 0) }));
         That(() => Object.Invoke("getPrototypeOf", p), Throws.TypeError);
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = RuntimeFunction.Create(() => "") }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = FunctionLiteral(() => "") }));
         That(() => Object.Invoke("getPrototypeOf", p), Throws.TypeError);
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = RuntimeFunction.Create(() => new Symbol()) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = FunctionLiteral(() => new Symbol()) }));
         That(() => Object.Invoke("getPrototypeOf", p), Throws.TypeError);
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = RuntimeFunction.Create(() => Undefined) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = FunctionLiteral(() => Undefined) }));
         That(() => Object.Invoke("getPrototypeOf", p), Throws.TypeError);
       });
     }
@@ -920,7 +921,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue _handler = default, _target = default, _prop = default;
         EcmaValue target = CreateObject(new { attr = 1 });
         EcmaValue handler = CreateObject(new {
-          has = RuntimeFunction.Create((t, prop) => {
+          has = FunctionLiteral((t, prop) => {
             _handler = This;
             _target = t;
             _prop = prop;
@@ -943,7 +944,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("must not report a property as non-existent, if it exists as an own property of the target object and the target object is not extensible", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { has = RuntimeFunction.Create(() => 0) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { has = FunctionLiteral(() => 0) }));
         Object.Invoke("defineProperty", target, "attr", CreateObject(new {
           configurable = true,
           value = 1
@@ -954,7 +955,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("must not reported a property as non-existent, if it exists as a non-configurable own property of the target object", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { has = RuntimeFunction.Create(() => 0) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { has = FunctionLiteral(() => 0) }));
         Object.Invoke("defineProperty", target, "attr", CreateObject(new {
           configurable = false,
           value = 1
@@ -964,13 +965,13 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return boolean trap result", () => {
         EcmaValue target = CreateObject(new { attr = 1 });
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { has = RuntimeFunction.Create(() => false) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { has = FunctionLiteral(() => false) }));
         That(((EcmaValue)"attr").In(p), Is.EqualTo(false));
 
-        p = Proxy.Construct(target, CreateObject(new { has = RuntimeFunction.Create(() => 1) }));
+        p = Proxy.Construct(target, CreateObject(new { has = FunctionLiteral(() => 1) }));
         That(((EcmaValue)"attr").In(p), Is.EqualTo(true));
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { has = RuntimeFunction.Create(() => 1) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { has = FunctionLiteral(() => 1) }));
         That(((EcmaValue)"attr").In(p), Is.EqualTo(true));
       });
 
@@ -1010,7 +1011,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue _handler = default, _target = default;
         EcmaValue target = Object.Construct();
         EcmaValue handler = CreateObject(new {
-          isExtensible = RuntimeFunction.Create((t) => {
+          isExtensible = FunctionLiteral((t) => {
             _handler = This;
             _target = t;
             return Object.Invoke("isExtensible", t);
@@ -1036,7 +1037,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return boolean result", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { isExtensible = RuntimeFunction.Create(t => Object.Invoke("isExtensible", t) ? 1 : 0) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { isExtensible = FunctionLiteral(t => Object.Invoke("isExtensible", t) ? 1 : 0) }));
         That(Object.Invoke("isExtensible", p), Is.EqualTo(true));
 
         Object.Invoke("preventExtensions", target);
@@ -1044,7 +1045,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should throw a TypeError exception if boolean trap result is not the same as target.[[IsExtensible]]() result", () => {
-        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { isExtensible = RuntimeFunction.Create(() => false) }));
+        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { isExtensible = FunctionLiteral(() => false) }));
         That(() => Object.Invoke("isExtensible", p), Throws.TypeError);
       });
 
@@ -1075,7 +1076,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue _handler = default, _target = default;
         EcmaValue target = CreateObject(new { foo = 1, bar = 2 });
         EcmaValue handler = CreateObject(new {
-          ownKeys = RuntimeFunction.Create((t) => {
+          ownKeys = FunctionLiteral((t) => {
             _handler = This;
             _target = t;
             return Object.Invoke("getOwnPropertyNames", t);
@@ -1099,7 +1100,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         target[a] = 1;
         target[b] = 2;
         handler = CreateObject(new {
-          ownKeys = RuntimeFunction.Create((t) => {
+          ownKeys = FunctionLiteral((t) => {
             _handler = This;
             _target = t;
             return Object.Invoke("getOwnPropertySymbols", t);
@@ -1114,7 +1115,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return the non-falsy trap result if target doesn't contain any non-configurable keys and is extensible", () => {
         EcmaValue target = CreateObject(new { attr = 42 });
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of("foo", "bar")) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of("foo", "bar")) }));
         That(Object.Invoke("getOwnPropertyNames", p), Is.EquivalentTo(new[] { "foo", "bar" }));
       });
 
@@ -1125,23 +1126,23 @@ namespace Codeless.Ecma.UnitTest.Tests {
           enumerable = true,
           value = true
         }));
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of("foo", "bar")) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of("foo", "bar")) }));
         That(Object.Invoke("getOwnPropertyNames", p), Is.EquivalentTo(new[] { "foo", "bar" }));
       });
 
       It("should throw a TypeError exception if the result list does not contain all the keys of the own properties of the target object and target is not extensible", () => {
         EcmaValue target = CreateObject(new { foo = 1, bar = 2 });
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of("foo")) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of("foo")) }));
         Object.Invoke("preventExtensions", target);
         That(() => Object.Invoke("keys", p), Throws.TypeError);
 
         target = CreateObject(new { foo = 1 });
-        p = Proxy.Construct(target, CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of("foo", "bar")) }));
+        p = Proxy.Construct(target, CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of("foo", "bar")) }));
         Object.Invoke("preventExtensions", target);
         That(() => Object.Invoke("keys", p), Throws.TypeError);
 
         target = CreateObject(new { foo = 1, bar = 2 });
-        p = Proxy.Construct(target, CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of("foo", "bar")) }));
+        p = Proxy.Construct(target, CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of("foo", "bar")) }));
         Object.Invoke("preventExtensions", target);
         That(() => Object.Invoke("keys", p), Throws.Nothing);
       });
@@ -1153,41 +1154,41 @@ namespace Codeless.Ecma.UnitTest.Tests {
           enumerable = true,
           value = true
         }));
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of("foo")) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of("foo")) }));
         That(() => Object.Invoke("keys", p), Throws.TypeError);
       });
 
       It("should throw a TypeError exception if return is not a list object", () => {
-        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = RuntimeFunction.Create(() => Undefined) }));
+        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = FunctionLiteral(() => Undefined) }));
         That(() => Object.Invoke("keys", p), Throws.TypeError);
       });
 
       It("should throw a TypeError exception if the returned list have entries whose type does not match", () => {
-        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of(EcmaArray.Of())) }));
+        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of(EcmaArray.Of())) }));
         That(() => Object.Invoke("keys", p), Throws.TypeError);
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of(true)) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of(true)) }));
         That(() => Object.Invoke("keys", p), Throws.TypeError);
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of(Null)) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of(Null)) }));
         That(() => Object.Invoke("keys", p), Throws.TypeError);
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of(1)) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of(1)) }));
         That(() => Object.Invoke("keys", p), Throws.TypeError);
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of(Object.Construct())) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of(Object.Construct())) }));
         That(() => Object.Invoke("keys", p), Throws.TypeError);
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of(Undefined)) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of(Undefined)) }));
         That(() => Object.Invoke("keys", p), Throws.TypeError);
       });
 
       It("should throw a TypeError exception if the returned list contain any duplicate entries", () => {
-        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of("a", "a")) }));
+        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of("a", "a")) }));
         That(() => Object.Invoke("keys", p), Throws.TypeError);
 
         EcmaValue s = new Symbol();
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = RuntimeFunction.Create(() => EcmaArray.Of(s, s)) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { ownKeys = FunctionLiteral(() => EcmaArray.Of(s, s)) }));
         That(() => Object.Invoke("keys", p), Throws.TypeError);
       });
 
@@ -1226,7 +1227,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue _handler = default, _target = default;
         EcmaValue target = CreateObject(new { attr = 1 });
         EcmaValue handler = CreateObject(new {
-          preventExtensions = RuntimeFunction.Create((t) => {
+          preventExtensions = FunctionLiteral((t) => {
             _handler = This;
             _target = t;
             return Object.Invoke("preventExtensions", t);
@@ -1241,7 +1242,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return false if boolean trap result is false", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { preventExtensions = RuntimeFunction.Create(() => 0) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { preventExtensions = FunctionLiteral(() => 0) }));
         That(Reflect.Invoke("preventExtensions", p), Is.EqualTo(false));
 
         Object.Invoke("preventExtensions", target);
@@ -1250,13 +1251,13 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should throw a TypeError exception if boolean trap result is true and target is extensible", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { preventExtensions = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { preventExtensions = FunctionLiteral(() => true) }));
         That(() => Object.Invoke("preventExtensions", p), Throws.TypeError);
       });
 
       It("should return boolean trap result if its true and target is not extensible", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { preventExtensions = RuntimeFunction.Create(() => 1) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { preventExtensions = FunctionLiteral(() => 1) }));
         Object.Invoke("preventExtensions", target);
         That(Reflect.Invoke("preventExtensions", p), Is.EqualTo(true));
       });
@@ -1292,19 +1293,19 @@ namespace Codeless.Ecma.UnitTest.Tests {
     [Test]
     public void Set() {
       It("should return boolean result", () => {
-        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { set = RuntimeFunction.Create(() => false) }));
+        EcmaValue p = Proxy.Construct(Object.Construct(), CreateObject(new { set = FunctionLiteral(() => false) }));
         That(Reflect.Invoke("set", p, "attr", "foo"), Is.EqualTo(false));
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { set = RuntimeFunction.Create(() => Null) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { set = FunctionLiteral(() => Null) }));
         That(Reflect.Invoke("set", p, "attr", "foo"), Is.EqualTo(false));
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { set = RuntimeFunction.Create(() => 0) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { set = FunctionLiteral(() => 0) }));
         That(Reflect.Invoke("set", p, "attr", "foo"), Is.EqualTo(false));
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { set = RuntimeFunction.Create(() => "") }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { set = FunctionLiteral(() => "") }));
         That(Reflect.Invoke("set", p, "attr", "foo"), Is.EqualTo(false));
 
-        p = Proxy.Construct(Object.Construct(), CreateObject(new { set = RuntimeFunction.Create(() => Undefined) }));
+        p = Proxy.Construct(Object.Construct(), CreateObject(new { set = FunctionLiteral(() => Undefined) }));
         That(Reflect.Invoke("set", p, "attr", "foo"), Is.EqualTo(false));
       });
 
@@ -1312,7 +1313,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue _handler = default, _target = default, _prop = default, _value = default, _receiver = default;
         EcmaValue target = Object.Construct();
         EcmaValue handler = CreateObject(new {
-          set = RuntimeFunction.Create((t, prop, value, receiver) => {
+          set = FunctionLiteral((t, prop, value, receiver) => {
             _handler = This;
             _target = t;
             _prop = prop;
@@ -1348,7 +1349,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           configurable = true,
           set = Undefined
         }));
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { set = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { set = FunctionLiteral(() => true) }));
         That(Reflect.Invoke("set", p, "attr", "bar"), Is.EqualTo(true));
       });
 
@@ -1356,9 +1357,9 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue target = Object.Construct();
         Object.Invoke("defineProperty", target, "attr", CreateObject(new {
           configurable = false,
-          set = RuntimeFunction.Create(_ => _)
+          set = FunctionLiteral(_ => _)
         }));
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { set = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { set = FunctionLiteral(() => true) }));
         That(Reflect.Invoke("set", p, "attr", 1), Is.EqualTo(true));
       });
 
@@ -1369,7 +1370,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           writable = true,
           value = "foo"
         }));
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { set = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { set = FunctionLiteral(() => true) }));
         That(Reflect.Invoke("set", p, "attr", 1), Is.EqualTo(true));
       });
 
@@ -1380,7 +1381,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           writable = false,
           value = "foo"
         }));
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { set = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { set = FunctionLiteral(() => true) }));
         That(Reflect.Invoke("set", p, "attr", "foo"), Is.EqualTo(true));
       });
 
@@ -1390,7 +1391,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           configurable = false,
           set = Undefined
         }));
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { set = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { set = FunctionLiteral(() => true) }));
         That(() => Reflect.Invoke("set", p, "attr", "bar"), Throws.TypeError);
       });
 
@@ -1401,7 +1402,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           writable = false,
           value = "foo"
         }));
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { set = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { set = FunctionLiteral(() => true) }));
         That(() => p["attr"] = "bar", Throws.TypeError);
       });
 
@@ -1450,7 +1451,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue target = Object.Construct();
         EcmaValue proto = CreateObject(new { foo = 1 });
         EcmaValue handler = CreateObject(new {
-          setPrototypeOf = RuntimeFunction.Create((t, value) => {
+          setPrototypeOf = FunctionLiteral((t, value) => {
             _handler = This;
             _target = t;
             _value = value;
@@ -1486,14 +1487,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should throw a TypeError exception if boolean trap result is true, target is not extensible, and the given parameter is not the same object as the target prototype", () => {
         EcmaValue target = Object.Construct();
-        EcmaValue proxy = Proxy.Construct(target, CreateObject(new { setPrototypeOf = RuntimeFunction.Create(() => true) }));
+        EcmaValue proxy = Proxy.Construct(target, CreateObject(new { setPrototypeOf = FunctionLiteral(() => true) }));
         Object.Invoke("preventExtensions", target);
         That(() => Reflect.Invoke("setPrototypeOf", proxy, Object.Construct()), Throws.TypeError, "target prototype is different");
 
         EcmaValue proto = Object.Construct();
         target = Object.Invoke("setPrototypeOf", Object.Construct(), proto);
         proxy = Proxy.Construct(target, CreateObject(new {
-          setPrototypeOf = RuntimeFunction.Create(() => {
+          setPrototypeOf = FunctionLiteral(() => {
             Object.Invoke("setPrototypeOf", target, Object.Construct());
             Object.Invoke("preventExtensions", target);
             return true;
@@ -1507,12 +1508,12 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue target = Object.Invoke("setPrototypeOf", Object.Construct(), proto);
         Object.Invoke("preventExtensions", target);
 
-        EcmaValue proxy = Proxy.Construct(target, CreateObject(new { setPrototypeOf = RuntimeFunction.Create(() => true) }));
+        EcmaValue proxy = Proxy.Construct(target, CreateObject(new { setPrototypeOf = FunctionLiteral(() => true) }));
         That(Reflect.Invoke("setPrototypeOf", proxy, proto), Is.EqualTo(true), "prototype arg is the same in target");
 
         EcmaValue outro = Object.Construct();
         proxy = Proxy.Construct(outro, CreateObject(new {
-          setPrototypeOf = RuntimeFunction.Create((t, p) => {
+          setPrototypeOf = FunctionLiteral((t, p) => {
             Object.Invoke("setPrototypeOf", t, p);
             Object.Invoke("preventExtensions", t);
             return true;
@@ -1535,14 +1536,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return abrupt completion from IsExtensible(target)", () => {
         EcmaValue target = Proxy.Construct(Object.Construct(), CreateObject(new { isExtensible = ThrowTest262Exception }));
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { setPrototypeOf = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { setPrototypeOf = FunctionLiteral(() => true) }));
         Object.Invoke("preventExtensions", target);
         That(() => Object.Invoke("setPrototypeOf", p, Object.Construct()), Throws.Test262);
       });
 
       It("should return abrupt completion from target.[[GetPrototypeOf]]()", () => {
         EcmaValue target = Proxy.Construct(Object.Construct(), CreateObject(new { getPrototypeOf = ThrowTest262Exception }));
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { setPrototypeOf = RuntimeFunction.Create(() => true) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { setPrototypeOf = FunctionLiteral(() => true) }));
         Object.Invoke("preventExtensions", target);
         That(() => Object.Invoke("setPrototypeOf", p, Object.Construct()), Throws.Test262);
       });
@@ -1561,11 +1562,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return false if trap method return false, without checking target.[[IsExtensible]]", () => {
         EcmaValue called = 0;
         EcmaValue target = Proxy.Construct(Object.Construct(), CreateObject(new {
-          isExtensible = RuntimeFunction.Create(() => {
+          isExtensible = FunctionLiteral(() => {
             called += 1;
           })
         }));
-        EcmaValue p = Proxy.Construct(target, CreateObject(new { setPrototypeOf = RuntimeFunction.Create((t, v) => v["attr"]) }));
+        EcmaValue p = Proxy.Construct(target, CreateObject(new { setPrototypeOf = FunctionLiteral((t, v) => v["attr"]) }));
 
         EcmaValue result;
         result = Reflect.Invoke("setPrototypeOf", p, CreateObject(new { attr = false }));
@@ -1600,14 +1601,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return true if trap method return true and target is extensible", () => {
         EcmaValue called = 0;
         EcmaValue target = Proxy.Construct(Object.Construct(), CreateObject(new {
-          isExtensible = RuntimeFunction.Create(() => {
+          isExtensible = FunctionLiteral(() => {
             called += 1;
             return true;
           }),
           getPrototypeOf = ThrowTest262Exception
         }));
         EcmaValue p = Proxy.Construct(target, CreateObject(new {
-          setPrototypeOf = RuntimeFunction.Create((t, v) => v["attr"])
+          setPrototypeOf = FunctionLiteral((t, v) => v["attr"])
         }));
 
         EcmaValue result;
@@ -1645,7 +1646,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return target.[[SetPrototypeOf]] (V) if trap is undefined or null", () => {
         EcmaValue proxy, value, called = 0;
         EcmaValue target = Proxy.Construct(Object.Construct(), CreateObject(new {
-          setPrototypeOf = RuntimeFunction.Create((t, v) => {
+          setPrototypeOf = FunctionLiteral((t, v) => {
             called += 1;
             value = v;
             return true;

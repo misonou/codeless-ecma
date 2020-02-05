@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -27,15 +28,15 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue arrayBuffer = Reflect.Invoke("construct", SharedArrayBuffer, EcmaArray.Of(8), Object);
         That(Object.Invoke("getPrototypeOf", arrayBuffer), Is.EqualTo(Object.Prototype));
 
-        EcmaValue newTarget = RuntimeFunction.Create(Noop).Bind(Null);
-        Object.Invoke("defineProperty", newTarget, "prototype", CreateObject(new { get = RuntimeFunction.Create(() => Array.Prototype) }));
+        EcmaValue newTarget = FunctionLiteral(Noop).Invoke("bind", Null);
+        Object.Invoke("defineProperty", newTarget, "prototype", CreateObject(new { get = FunctionLiteral(() => Array.Prototype) }));
         arrayBuffer = Reflect.Invoke("construct", SharedArrayBuffer, EcmaArray.Of(16), newTarget);
         That(Object.Invoke("getPrototypeOf", arrayBuffer), Is.EqualTo(Array.Prototype));
       });
 
       It("should use %SharedArrayBufferPrototype% if NewTarget.prototype is not an object", () => {
         EcmaValue arrayBuffer;
-        EcmaValue newTarget = RuntimeFunction.Create(Noop);
+        EcmaValue newTarget = FunctionLiteral(Noop);
         newTarget["prototype"] = Undefined;
         arrayBuffer = Reflect.Invoke("construct", SharedArrayBuffer, EcmaArray.Of(1), newTarget);
         That(Object.Invoke("getPrototypeOf", arrayBuffer), Is.EqualTo(SharedArrayBuffer.Prototype), "newTarget.prototype is undefined");
@@ -113,7 +114,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should create the new ArrayBuffer instance prior to allocating the Data Block", () => {
-        EcmaValue newTarget = RuntimeFunction.Create(Noop).Bind(Null);
+        EcmaValue newTarget = FunctionLiteral(Noop).Invoke("bind", Null);
         Object.Invoke("defineProperty", newTarget, "prototype", CreateObject(new { get = ThrowTest262Exception }));
         That(() => Reflect.Invoke("construct", SharedArrayBuffer, EcmaArray.Of(9007199254740992), newTarget), Throws.Test262);
       });

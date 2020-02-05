@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -52,7 +53,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         set.Invoke("add", 3);
 
         List<EcmaValue> list = new List<EcmaValue>();
-        set.Invoke("forEach", RuntimeFunction.Create(v => list.Add(v)));
+        set.Invoke("forEach", FunctionLiteral(v => list.Add(v)));
         That(list, Is.EquivalentTo(new[] { 1, 2, 3 }));
       });
 
@@ -223,20 +224,20 @@ namespace Codeless.Ecma.UnitTest.Tests {
       IsUnconstructableFunctionWLength(forEach, "forEach", 1);
 
       It("should throw a TypeError when this is not an object", () => {
-        Case((Undefined, RuntimeFunction.Create(_ => _)), Throws.TypeError);
-        Case((Null, RuntimeFunction.Create(_ => _)), Throws.TypeError);
-        Case((false, RuntimeFunction.Create(_ => _)), Throws.TypeError);
-        Case((0, RuntimeFunction.Create(_ => _)), Throws.TypeError);
-        Case(("", RuntimeFunction.Create(_ => _)), Throws.TypeError);
-        Case((new Symbol(), RuntimeFunction.Create(_ => _)), Throws.TypeError);
+        Case((Undefined, FunctionLiteral(_ => _)), Throws.TypeError);
+        Case((Null, FunctionLiteral(_ => _)), Throws.TypeError);
+        Case((false, FunctionLiteral(_ => _)), Throws.TypeError);
+        Case((0, FunctionLiteral(_ => _)), Throws.TypeError);
+        Case(("", FunctionLiteral(_ => _)), Throws.TypeError);
+        Case((new Symbol(), FunctionLiteral(_ => _)), Throws.TypeError);
       });
 
       It("should throw a TypeError when this object has no [[SetData]] internal slot", () => {
-        Case((EcmaArray.Of(), RuntimeFunction.Create(_ => _)), Throws.TypeError);
-        Case((Map.Construct(), RuntimeFunction.Create(_ => _)), Throws.TypeError);
-        Case((Object.Construct(), RuntimeFunction.Create(_ => _)), Throws.TypeError);
-        Case((Set.Prototype, RuntimeFunction.Create(_ => _)), Throws.TypeError);
-        Case((WeakSet.Construct(), RuntimeFunction.Create(_ => _)), Throws.TypeError);
+        Case((EcmaArray.Of(), FunctionLiteral(_ => _)), Throws.TypeError);
+        Case((Map.Construct(), FunctionLiteral(_ => _)), Throws.TypeError);
+        Case((Object.Construct(), FunctionLiteral(_ => _)), Throws.TypeError);
+        Case((Set.Prototype, FunctionLiteral(_ => _)), Throws.TypeError);
+        Case((WeakSet.Construct(), FunctionLiteral(_ => _)), Throws.TypeError);
       });
 
       It("should throw a TypeError when callback is not callable", () => {
@@ -256,7 +257,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         set.Invoke("add", 3);
 
         List<EcmaValue[]> list = new List<EcmaValue[]>();
-        set.Invoke("forEach", RuntimeFunction.Create((v, e, s) => list.Add(new[] { v, e, s })));
+        set.Invoke("forEach", FunctionLiteral((v, e, s) => list.Add(new[] { v, e, s })));
         That(list, Is.EquivalentTo(new[] {
           new[] { 1, 1, set },
           new[] { 2, 2, set },
@@ -267,7 +268,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should iterate in entry order", () => {
         EcmaValue set = Set.Construct(EcmaArray.Of(1, 2, 3));
         List<EcmaValue[]> list = new List<EcmaValue[]>();
-        set.Invoke("forEach", RuntimeFunction.Create((v, e, s) => list.Add(new[] { v, e, s })));
+        set.Invoke("forEach", FunctionLiteral((v, e, s) => list.Add(new[] { v, e, s })));
         That(list, Is.EquivalentTo(new[] {
           new[] { 1, 1, set },
           new[] { 2, 2, set },
@@ -278,7 +279,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should iterate values added after foreach begins", () => {
         EcmaValue set = Set.Construct(EcmaArray.Of(1));
         List<EcmaValue[]> list = new List<EcmaValue[]>();
-        set.Invoke("forEach", RuntimeFunction.Create((v, e, s) => {
+        set.Invoke("forEach", FunctionLiteral((v, e, s) => {
           if (v == 1) {
             s.Invoke("add", 2);
           }
@@ -297,7 +298,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should iterate values deleted then re-added", () => {
         EcmaValue set = Set.Construct(EcmaArray.Of(1, 2, 3));
         List<EcmaValue[]> list = new List<EcmaValue[]>();
-        set.Invoke("forEach", RuntimeFunction.Create((v, e, s) => {
+        set.Invoke("forEach", FunctionLiteral((v, e, s) => {
           if (v == 1) {
             s.Invoke("delete", 2);
           }
@@ -317,7 +318,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue set = Set.Construct(EcmaArray.Of(1, 2, 3));
         List<EcmaValue[]> list = new List<EcmaValue[]>();
         set.Invoke("delete", 2);
-        set.Invoke("forEach", RuntimeFunction.Create((v, e, s) => list.Add(new[] { v, e, s })));
+        set.Invoke("forEach", FunctionLiteral((v, e, s) => list.Add(new[] { v, e, s })));
         That(list, Is.EquivalentTo(new[] {
           new[] { 1, 1, set },
           new[] { 3, 3, set }
@@ -327,7 +328,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should iterate values revisits after delete re-add", () => {
         EcmaValue set = Set.Construct(EcmaArray.Of(1, 2, 3));
         List<EcmaValue[]> list = new List<EcmaValue[]>();
-        set.Invoke("forEach", RuntimeFunction.Create((v, e, s) => {
+        set.Invoke("forEach", FunctionLiteral((v, e, s) => {
           if (v == 2) {
             s.Invoke("delete", 1);
           }
@@ -346,14 +347,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return undefined", () => {
         EcmaValue set = Set.Construct(EcmaArray.Of(1));
-        Case((set, RuntimeFunction.Create(v => v)), Undefined);
+        Case((set, FunctionLiteral(v => v)), Undefined);
       });
 
       It("should invoke callback with thisArg", () => {
         EcmaValue set = Set.Construct(EcmaArray.Of(1));
         EcmaValue thisArg = Object.Construct();
         EcmaValue thisValue = Undefined;
-        set.Invoke("forEach", RuntimeFunction.Create((v, e, s) => {
+        set.Invoke("forEach", FunctionLiteral((v, e, s) => {
           thisValue = This;
         }), thisArg);
         That(thisValue, Is.EqualTo(thisArg));
@@ -362,7 +363,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should invoke callback with undefined if thisArg is not provided", () => {
         EcmaValue set = Set.Construct(EcmaArray.Of(1));
         EcmaValue thisValue = Object.Construct();
-        set.Invoke("forEach", RuntimeFunction.Create((v, e, s) => {
+        set.Invoke("forEach", FunctionLiteral((v, e, s) => {
           thisValue = This;
         }));
         That(thisValue, Is.EqualTo(Undefined));

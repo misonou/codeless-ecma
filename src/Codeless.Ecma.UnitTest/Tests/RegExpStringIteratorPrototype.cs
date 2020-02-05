@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -53,7 +54,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should re-throw errors thrown coercing RegExp's lastIndex to a length", () => {
         EcmaValue iterator = RegExp.Construct(".", "g").Invoke(Symbol.MatchAll, "");
-        using (TempProperty(RegExp.Prototype, "exec", RuntimeFunction.Create(() =>
+        using (TempProperty(RegExp.Prototype, "exec", FunctionLiteral(() =>
           Return(This.ToObject()["lastIndex"] = CreateObject(valueOf: ThrowTest262Exception), EcmaArray.Of(""))))) {
           Case(iterator, Throws.Test262);
         }
@@ -75,14 +76,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return abrupt from accessing the first match", () => {
         EcmaValue iterator = RegExp.Construct(".").Invoke(Symbol.MatchAll, "");
-        using (TempProperty(RegExp.Prototype, "exec", RuntimeFunction.Create(() => CreateObject((0, get: ThrowTest262Exception, set: null))))) {
+        using (TempProperty(RegExp.Prototype, "exec", FunctionLiteral(() => CreateObject((0, get: ThrowTest262Exception, set: null))))) {
           Case(iterator, Throws.Test262);
         }
       });
 
       It("should return abrupt from coercing first match to a string", () => {
         EcmaValue iterator = RegExp.Construct(".").Invoke(Symbol.MatchAll, "");
-        using (TempProperty(RegExp.Prototype, "exec", RuntimeFunction.Create(() => EcmaArray.Of(CreateObject(toString: ThrowTest262Exception))))) {
+        using (TempProperty(RegExp.Prototype, "exec", FunctionLiteral(() => EcmaArray.Of(CreateObject(toString: ThrowTest262Exception))))) {
           Case(iterator, Throws.Test262);
         }
       });
@@ -91,7 +92,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue iterator = RegExp.Construct(".", "g").Invoke(Symbol.MatchAll, "");
         EcmaValue execResult = CreateObject((0, get: () => CreateObject(toString: () => ""), set: null));
         EcmaValue internalRegExp = default;
-        using (TempProperty(RegExp.Prototype, "exec", RuntimeFunction.Create(() => Return(internalRegExp = This, execResult)))) {
+        using (TempProperty(RegExp.Prototype, "exec", FunctionLiteral(() => Return(internalRegExp = This, execResult)))) {
           EcmaValue result = iterator.Invoke("next");
           That(internalRegExp["lastIndex"], Is.EqualTo(1));
           That(result["value"], Is.EqualTo(execResult));
@@ -114,7 +115,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue callNextWithExecReturnValue(EcmaValue returnValue) {
           callArgs = Undefined;
           callCount = 0;
-          using (TempProperty(RegExp.Prototype, "exec", RuntimeFunction.Create(() => Return(callArgs = Arguments, callCount += 1, returnValue)))) {
+          using (TempProperty(RegExp.Prototype, "exec", FunctionLiteral(() => Return(callArgs = Arguments, callCount += 1, returnValue)))) {
             return iter.Invoke("next");
           }
         }

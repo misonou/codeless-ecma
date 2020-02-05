@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System.Collections;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 using static Codeless.Ecma.UnitTest.Tests.RegExpSS;
@@ -132,7 +133,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         CheckEquivalence(RegExp.Construct("AL|se"), CreateObject(toString: () => false));
         CheckEquivalence(RegExp.Construct("undefined"), Undefined);
         CheckEquivalence(RegExp.Construct("ll|l"), Null);
-        CheckEquivalence(RegExp.Construct("[a-z]n"), RuntimeFunction.Create(() => Undefined));
+        CheckEquivalence(RegExp.Construct("[a-z]n"), FunctionLiteral(() => Undefined));
         CheckEquivalence(RegExp.Construct("a[a-z]{2,4}"), Object.Construct("abcdefghi"));
         CheckEquivalence(RegExp.Construct("(aa|aabaac|ba|b|c)*"), CreateObject(toString: () => new EcmaObject(), valueOf: () => "aabaac"));
       });
@@ -309,36 +310,36 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       // Arguments of functional replaceValue
       EcmaValue args = default;
-      replace.Call(RegExp.Construct("b(.).(.)"), "abcdef", RuntimeFunction.Create(() => args = Arguments));
+      replace.Call(RegExp.Construct("b(.).(.)"), "abcdef", FunctionLiteral(() => args = Arguments));
       That(args, Is.EquivalentTo(new object[] { "bcde", "c", "e", 1, "abcdef" }));
 
       // String coercion of the value returned by functional replaceValue
-      Case((RegExp.Construct("x"), "[x]", RuntimeFunction.Create(() => CreateObject(toString: () => "toString value"))), "[toString value]");
+      Case((RegExp.Construct("x"), "[x]", FunctionLiteral(() => CreateObject(toString: () => "toString value"))), "[toString value]");
 
       // Behavior when error is thrown by functional replaceValue.
       Case((RegExp.Construct("x"), "[x]", ThrowTest262Exception), Throws.Test262);
-      Case((RegExp.Construct("x"), "[x]", RuntimeFunction.Create(() => CreateObject(toString: ThrowTest262Exception))), Throws.Test262);
+      Case((RegExp.Construct("x"), "[x]", FunctionLiteral(() => CreateObject(toString: ThrowTest262Exception))), Throws.Test262);
 
       // unicode: lastIndex is advanced according to width of astral symbols
       Case((RegExp.Construct("^|\\udf06", "ug"), "\ud834\udf06", "XXX"), "XXX\ud834\udf06");
 
       // custom exec result
       re = RegExp.Construct(".");
-      re["exec"] = RuntimeFunction.Create(() => CreateObject(("0", CreateObject(toString: () => "toString value"))));
+      re["exec"] = FunctionLiteral(() => CreateObject(("0", CreateObject(toString: () => "toString value"))));
       Case((re, "", "foo[$&]bar"), "foo[toString value]bar");
-      re["exec"] = RuntimeFunction.Create(() => CreateObject(("0", CreateObject(toString: ThrowTest262Exception))));
+      re["exec"] = FunctionLiteral(() => CreateObject(("0", CreateObject(toString: ThrowTest262Exception))));
       Case((re, "a", "b"), Throws.Test262);
-      re["exec"] = RuntimeFunction.Create(() => CreateObject(("3", CreateObject(toString: () => "toString value")), ("length", 4)));
+      re["exec"] = FunctionLiteral(() => CreateObject(("3", CreateObject(toString: () => "toString value")), ("length", 4)));
       Case((re, "", "foo[$3]bar"), "foo[toString value]bar");
-      re["exec"] = RuntimeFunction.Create(() => CreateObject(("3", CreateObject(toString: ThrowTest262Exception)), ("length", 4)));
+      re["exec"] = FunctionLiteral(() => CreateObject(("3", CreateObject(toString: ThrowTest262Exception)), ("length", 4)));
       Case((re, "", "foo[$3]bar"), Throws.Test262);
-      re["exec"] = RuntimeFunction.Create(() => CreateObject(("0", ""), ("1", "foo"), ("2", "bar"), ("3", "baz"), ("length", CreateObject(valueOf: () => 3.9))));
+      re["exec"] = FunctionLiteral(() => CreateObject(("0", ""), ("1", "foo"), ("2", "bar"), ("3", "baz"), ("length", CreateObject(valueOf: () => 3.9))));
       Case((re, "", "$1$2$3"), "foobar$3");
-      re["exec"] = RuntimeFunction.Create(() => CreateObject(("length", CreateObject(toString: ThrowTest262Exception))));
+      re["exec"] = FunctionLiteral(() => CreateObject(("length", CreateObject(toString: ThrowTest262Exception))));
       Case((re, "a", "b"), Throws.Test262);
-      re["exec"] = RuntimeFunction.Create(() => CreateObject(("index", CreateObject(valueOf: () => 2.9))));
+      re["exec"] = FunctionLiteral(() => CreateObject(("index", CreateObject(valueOf: () => 2.9))));
       Case((re, "abcd", ""), "ab");
-      re["exec"] = RuntimeFunction.Create(() => CreateObject(("index", CreateObject(toString: ThrowTest262Exception))));
+      re["exec"] = FunctionLiteral(() => CreateObject(("index", CreateObject(toString: ThrowTest262Exception))));
       Case((re, "a", "b"), Throws.Test262);
 
       // global: Behavior when error is thrown while initializing `lastIndex` property for "global" instances
@@ -354,7 +355,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       // global: Behavior when position is incremented during result accumulation
       int callCount = 0;
       re = RegExp.Construct(".", "g");
-      re["exec"] = RuntimeFunction.Create(() => {
+      re["exec"] = FunctionLiteral(() => {
         callCount++;
         switch (callCount) {
           case 1:
@@ -370,7 +371,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       // global: Behavior when position is decremented during result accumulation
       callCount = 0;
       re = RegExp.Construct(".", "g");
-      re["exec"] = RuntimeFunction.Create(() => {
+      re["exec"] = FunctionLiteral(() => {
         callCount++;
         switch (callCount) {
           case 1:
@@ -611,11 +612,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
         re = RegExp.Construct(RegExp.Construct("\\ud834\\udf06", "u")["source"], "u");
         That(re.Invoke("test", "\ud834\udf06"), Is.EqualTo(true));
-        That(re.Invoke("test", char.ConvertFromUtf32(119558)), Is.EqualTo(true));
+        That(re.Invoke("test", System.Char.ConvertFromUtf32(119558)), Is.EqualTo(true));
 
         re = RegExp.Construct(RegExp.Construct("\\u{1d306}", "u")["source"], "u");
         That(re.Invoke("test", "\ud834\udf06"), Is.EqualTo(true));
-        That(re.Invoke("test", char.ConvertFromUtf32(119558)), Is.EqualTo(true));
+        That(re.Invoke("test", System.Char.ConvertFromUtf32(119558)), Is.EqualTo(true));
 
         re = RegExp.Construct(RegExp.Construct("ab{2,4}c$")["source"]);
         That(re.Invoke("test", "abbc"), Is.EqualTo(true), "input: abbc");

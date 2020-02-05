@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -86,7 +87,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue buffer = ArrayBuffer.Construct(8);
         EcmaValue called = false;
         EcmaValue byteOffset = CreateObject(valueOf: () => Return(called = true, 0));
-        EcmaValue newTarget = RuntimeFunction.Create(Noop).Bind(Null);
+        EcmaValue newTarget = FunctionLiteral(Noop).Invoke("bind", Null);
         Object.Invoke("defineProperty", newTarget, "prototype", CreateObject(new {
           get = Intercept(() => {
             DetachBuffer(buffer);
@@ -99,7 +100,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return abrupt from newTarget's custom constructor prototype", () => {
-        EcmaValue newTarget = RuntimeFunction.Create(Noop).Bind(Null);
+        EcmaValue newTarget = FunctionLiteral(Noop).Invoke("bind", Null);
         Object.Invoke("defineProperty", newTarget, "prototype", CreateObject(new { get = ThrowTest262Exception }));
 
         EcmaValue buffer = ArrayBuffer.Construct(8);
@@ -110,7 +111,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should use DataView.Prototype if newTarget's prototype is not an Object", () => {
-        EcmaValue newTarget = RuntimeFunction.Create(Noop);
+        EcmaValue newTarget = FunctionLiteral(Noop);
         newTarget["prototype"] = Null;
 
         EcmaValue buffer = ArrayBuffer.Construct(8);
@@ -125,7 +126,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should use newTarget's custom constructor prototype if Object", () => {
-        EcmaValue newTarget = RuntimeFunction.Create(Noop);
+        EcmaValue newTarget = FunctionLiteral(Noop);
         EcmaValue proto = Object.Construct();
         newTarget["prototype"] = proto;
 

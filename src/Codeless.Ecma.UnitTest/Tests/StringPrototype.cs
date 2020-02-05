@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -509,7 +510,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue thisValue = default;
         EcmaValue args = default;
         int callCount = 0;
-        separator[WellKnownSymbol.Match] = RuntimeFunction.Create(() => {
+        separator[WellKnownSymbol.Match] = FunctionLiteral(() => {
           callCount += 1;
           args = Arguments;
           thisValue = This;
@@ -553,7 +554,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue thisValue = default;
         EcmaValue args = default;
         int callCount = 0;
-        separator[WellKnownSymbol.MatchAll] = RuntimeFunction.Create(() => {
+        separator[WellKnownSymbol.MatchAll] = FunctionLiteral(() => {
           callCount += 1;
           args = Arguments;
           thisValue = This;
@@ -664,7 +665,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should perform observable operations in the correct order", () => {
         Logs.Clear();
-        System.Func<string, EcmaValue, EcmaValue, EcmaValue> createPrimitiveObserver = (name, toString, valueOf) => CreateObject(
+        EcmaValue createPrimitiveObserver(string name, EcmaValue toString, EcmaValue valueOf) => CreateObject(
             toString: Intercept(() => toString, "toString:" + name),
             valueOf: Intercept(() => valueOf, "valueOf:" + name));
         Case((createPrimitiveObserver("receiver", new EcmaObject(), "abc"),
@@ -767,7 +768,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue thisValue = default;
         EcmaValue args = default;
         int callCount = 0;
-        separator[WellKnownSymbol.Replace] = RuntimeFunction.Create(() => {
+        separator[WellKnownSymbol.Replace] = FunctionLiteral(() => {
           callCount += 1;
           args = Arguments;
           thisValue = This;
@@ -796,10 +797,10 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should invoke replacement function and replacement is done with the returned string", () => {
-        Case(("abc12 def34", RegExp.Construct("([a-z]+)([0-9]+)"), RuntimeFunction.Create((v, a, b) => b + a)), "12abc def34");
-        Case(("abc12 def34", RegExp.Construct("([a-z]+)([0-9]+)", "g"), RuntimeFunction.Create((v, a, b) => b + a)), "12abc 34def");
-        Case(("aBc12 def34", RegExp.Construct("([a-z]+)([0-9]+)", "i"), RuntimeFunction.Create((v, a, b) => b + a)), "12aBc def34");
-        Case(("aBc12 dEf34", RegExp.Construct("([a-z]+)([0-9]+)", "ig"), RuntimeFunction.Create((v, a, b) => b + a)), "12aBc 34dEf");
+        Case(("abc12 def34", RegExp.Construct("([a-z]+)([0-9]+)"), FunctionLiteral((v, a, b) => b + a)), "12abc def34");
+        Case(("abc12 def34", RegExp.Construct("([a-z]+)([0-9]+)", "g"), FunctionLiteral((v, a, b) => b + a)), "12abc 34def");
+        Case(("aBc12 def34", RegExp.Construct("([a-z]+)([0-9]+)", "i"), FunctionLiteral((v, a, b) => b + a)), "12aBc def34");
+        Case(("aBc12 dEf34", RegExp.Construct("([a-z]+)([0-9]+)", "ig"), FunctionLiteral((v, a, b) => b + a)), "12aBc 34dEf");
       });
     }
 
@@ -816,7 +817,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue thisValue = default;
         EcmaValue args = default;
         int callCount = 0;
-        separator[WellKnownSymbol.Search] = RuntimeFunction.Create(() => {
+        separator[WellKnownSymbol.Search] = FunctionLiteral(() => {
           callCount += 1;
           args = Arguments;
           thisValue = This;
@@ -904,7 +905,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue thisValue = default;
         EcmaValue args = default;
         int callCount = 0;
-        separator[WellKnownSymbol.Split] = RuntimeFunction.Create(() => {
+        separator[WellKnownSymbol.Split] = FunctionLiteral(() => {
           callCount += 1;
           args = Arguments;
           thisValue = This;

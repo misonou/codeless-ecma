@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -91,7 +92,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should pass the number of arguments to the constructor it calls if the first argument is not iterable", () => {
         EcmaValue args = default;
-        EcmaValue ConstructorFn = RuntimeFunction.Create(() => Void(args = Arguments));
+        EcmaValue ConstructorFn = FunctionLiteral(() => Void(args = Arguments));
         EcmaValue result = from.Call(ConstructorFn, CreateObject(new { length = 42 }));
         That(args, Is.EquivalentTo(new[] { 42 }));
         That(result.InstanceOf(ConstructorFn));
@@ -99,7 +100,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should pass no arguments to the constructor it calls if the first argument is iterable", () => {
         EcmaValue args = default;
-        EcmaValue ConstructorFn = RuntimeFunction.Create(() => Void(args = Arguments));
+        EcmaValue ConstructorFn = FunctionLiteral(() => Void(args = Arguments));
         EcmaValue result = from.Call(ConstructorFn, EcmaArray.Of());
         That(args, Is.EquivalentTo(EcmaValue.EmptyArray));
         That(result.InstanceOf(ConstructorFn));
@@ -114,17 +115,17 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return abrupt from setting length or elements", () => {
-        EcmaValue ConstructorFn = RuntimeFunction.Create(() => Undefined);
+        EcmaValue ConstructorFn = FunctionLiteral(() => Undefined);
         DefineProperty(ConstructorFn["prototype"], "length", set: _ => ThrowTest262Exception());
         Case((ConstructorFn, EcmaArray.Of(1, 2, 4, 8)), Throws.Test262);
 
-        ConstructorFn = RuntimeFunction.Create(() => Object.Invoke("defineProperty", This, "0", CreateObject(new { configurable = false })));
+        ConstructorFn = FunctionLiteral(() => Object.Invoke("defineProperty", This, "0", CreateObject(new { configurable = false })));
         Case((ConstructorFn, EcmaArray.Of(1, 2, 4, 8)), Throws.TypeError);
       });
 
       It("should call mapFn with this value is undefined if thisArg is not given in strict mode", () => {
         EcmaArray calls = new EcmaArray();
-        EcmaValue mapFn = RuntimeFunction.Create(value => Return(calls.Push(CreateObject(new { args = Arguments, thisArg = This })), value * 2));
+        EcmaValue mapFn = FunctionLiteral(value => Return(calls.Push(CreateObject(new { args = Arguments, thisArg = This })), value * 2));
         Case((_, CreateObject(("length", 3), ("0", 41), ("1", 42), ("2", 43)), mapFn), new[] { 82, 84, 86 });
         That(calls[0]["args"], Is.EquivalentTo(new[] { 41, 0 }), "calls[0].args");
         That(calls[1]["args"], Is.EquivalentTo(new[] { 42, 1 }), "calls[1].args");
@@ -137,7 +138,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should call mapFn with given this value", () => {
         EcmaValue thisArg = new EcmaObject();
         EcmaArray calls = new EcmaArray();
-        EcmaValue mapFn = RuntimeFunction.Create(value => Return(calls.Push(CreateObject(new { args = Arguments, thisArg = This })), value * 2));
+        EcmaValue mapFn = FunctionLiteral(value => Return(calls.Push(CreateObject(new { args = Arguments, thisArg = This })), value * 2));
         Case((_, CreateObject(("length", 3), ("0", 41), ("1", 42), ("2", 43)), mapFn, thisArg), new[] { 82, 84, 86 });
         That(calls[0]["args"], Is.EquivalentTo(new[] { 41, 0 }), "calls[0].args");
         That(calls[1]["args"], Is.EquivalentTo(new[] { 42, 1 }), "calls[1].args");
@@ -149,7 +150,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should not see elements added to array-like object during mapFn hit", () => {
         EcmaValue obj = CreateObject(("length", 7), ("0", 2), ("1", 4), ("2", 8), ("3", 16), ("4", 32), ("5", 64), ("6", 128));
-        EcmaValue mapFn = RuntimeFunction.Create((v, i) => {
+        EcmaValue mapFn = FunctionLiteral((v, i) => {
           obj[i + 7] = 4 << (i.ToInt32() + 7);
           obj["length"] = 14;
           return v;
@@ -159,24 +160,24 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should not see elements deleted from iterable during mapFn hit", () => {
         EcmaArray arr = EcmaArray.Of(0, 1, -2, 4, -8, 16);
-        Case((_, arr, RuntimeFunction.Create(v => Return(arr.Length--, v))), new[] { 0, 1, -2 });
+        Case((_, arr, FunctionLiteral(v => Return(arr.Length--, v))), new[] { 0, 1, -2 });
       });
 
       It("should see updated elements during mapFn hit", () => {
         EcmaArray arr = EcmaArray.Of(127, 1, -2, 4, -8, 16);
-        Case((_, arr, RuntimeFunction.Create((v, i) => Return(arr[EcmaMath.Min(5, i + 1)] = 127, v))), new[] { 127, 127, 127, 127, 127, 127 });
+        Case((_, arr, FunctionLiteral((v, i) => Return(arr[EcmaMath.Min(5, i + 1)] = 127, v))), new[] { 127, 127, 127, 127, 127, 127 });
       });
 
       It("should return abrupt from accessing Symbol.iterator or calling the next method", () => {
         Case((_, CreateObject((Symbol.Iterator, get: ThrowTest262Exception, set: null))), Throws.Test262);
         Case((_, CreateObject((Symbol.Iterator, ThrowTest262Exception))), Throws.Test262);
 
-        EcmaValue obj = CreateObject((Symbol.Iterator, RuntimeFunction.Create(() =>
+        EcmaValue obj = CreateObject((Symbol.Iterator, FunctionLiteral(() =>
           CreateObject(("next", ThrowTest262Exception)))));
         Case((_, obj), Throws.Test262);
 
-        EcmaValue obj2 = CreateObject((Symbol.Iterator, RuntimeFunction.Create(() =>
-          CreateObject(("next", RuntimeFunction.Create(() =>
+        EcmaValue obj2 = CreateObject((Symbol.Iterator, FunctionLiteral(() =>
+          CreateObject(("next", FunctionLiteral(() =>
             CreateObject(("value", get: ThrowTest262Exception, set: null))))))));
         Case((_, obj2), Throws.Test262);
       });
@@ -185,12 +186,12 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaArray args = new EcmaArray();
         EcmaValue firstResult = CreateObject(new { done = false, value = new EcmaObject() });
         EcmaValue secondResult = CreateObject(new { done = false, value = new EcmaObject() });
-        EcmaValue mapFn = RuntimeFunction.Create(v => Return(args.Push(Arguments), v));
+        EcmaValue mapFn = FunctionLiteral(v => Return(args.Push(Arguments), v));
         EcmaValue nextResult = firstResult;
         EcmaValue nextNextResult = secondResult;
 
-        EcmaValue result = from.Call(_, CreateObject((Symbol.Iterator, RuntimeFunction.Create(() => {
-          return CreateObject(("next", RuntimeFunction.Create(() => {
+        EcmaValue result = from.Call(_, CreateObject((Symbol.Iterator, FunctionLiteral(() => {
+          return CreateObject(("next", FunctionLiteral(() => {
             EcmaValue r = nextResult;
             nextResult = nextNextResult;
             nextNextResult = CreateObject(new { done = true });
@@ -204,8 +205,8 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should close the iterator if mapFn return abrupt", () => {
         Logs.Clear();
-        Case((_, CreateObject((Symbol.Iterator, RuntimeFunction.Create(() => {
-          return CreateObject(("next", RuntimeFunction.Create(() => CreateObject(new { done = false }))),
+        Case((_, CreateObject((Symbol.Iterator, FunctionLiteral(() => {
+          return CreateObject(("next", FunctionLiteral(() => CreateObject(new { done = false }))),
                               ("return", Intercept(() => Undefined)));
         }))), ThrowTest262Exception), Throws.Test262);
         That(Logs, Has.Exactly(1).Items);
@@ -230,9 +231,9 @@ namespace Codeless.Ecma.UnitTest.Tests {
       Case((_, Number.Construct(42)), false);
       Case((_, String.Construct("abc")), false);
       Case((_, CreateObject((0, "1"), ("length", 1))), false);
-      Case((_, RuntimeFunction.Create(() => Undefined)), false);
+      Case((_, FunctionLiteral(() => Undefined)), false);
 
-      EcmaValue ConstructorFn = RuntimeFunction.Create(() => Undefined);
+      EcmaValue ConstructorFn = FunctionLiteral(() => Undefined);
       ConstructorFn["prototype"] = EcmaArray.Of();
       Case((_, ConstructorFn.Construct()), false);
       ConstructorFn["prototype"] = Array.Prototype;
@@ -284,7 +285,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return instance from a custom constructor", () => {
-        EcmaValue C = RuntimeFunction.Create(() => Undefined);
+        EcmaValue C = FunctionLiteral(() => Undefined);
         EcmaValue result = of.Call(C, "Mike", "Rick", "Leo");
         That(result, Is.EquivalentTo(new[] { "Mike", "Rick", "Leo" }));
         That(result.InstanceOf(C));
@@ -300,18 +301,18 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return abrupt from data property creation", () => {
-        EcmaValue C1 = RuntimeFunction.Create(() => Object.Invoke("preventExtensions", This));
+        EcmaValue C1 = FunctionLiteral(() => Object.Invoke("preventExtensions", This));
         Case((C1, "Bob"), Throws.TypeError);
 
-        EcmaValue C2 = RuntimeFunction.Create(() => Object.Invoke("defineProperty", This, 0, CreateObject(new { configurable = false, writable = true, enumerable = true })));
+        EcmaValue C2 = FunctionLiteral(() => Object.Invoke("defineProperty", This, 0, CreateObject(new { configurable = false, writable = true, enumerable = true })));
         Case((C2, "Bob"), Throws.TypeError);
 
-        EcmaValue C3 = RuntimeFunction.Create(() => Proxy.Construct(new EcmaObject(), CreateObject(new { defineProperty = ThrowTest262Exception })));
+        EcmaValue C3 = FunctionLiteral(() => Proxy.Construct(new EcmaObject(), CreateObject(new { defineProperty = ThrowTest262Exception })));
         Case((C3, "Bob"), Throws.Test262);
       });
 
       It("should return abrupt from setting the length property", () => {
-        EcmaValue C = RuntimeFunction.Create(() => Object.Invoke("defineProperty", This, "length", CreateObject(new { set = ThrowTest262Exception })));
+        EcmaValue C = FunctionLiteral(() => Object.Invoke("defineProperty", This, "length", CreateObject(new { set = ThrowTest262Exception })));
         Case((C, "Bob"), Throws.Test262);
       });
     }

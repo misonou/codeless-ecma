@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System.Collections;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -106,18 +107,18 @@ namespace Codeless.Ecma.UnitTest.Tests {
       Case((_, new EcmaObject(), Null), Throws.TypeError);
 
       // Object.create creates new Object
-      Case((_, RuntimeFunction.Create(() => Undefined).Construct()), Is.TypeOf("object"));
+      Case((_, FunctionLiteral(() => Undefined).Construct()), Is.TypeOf("object"));
       That(create.Call(_, new EcmaObject()).InstanceOf(Object));
 
       It("should set the prototype to the passed-in object", () => {
-        EcmaValue proto = RuntimeFunction.Create(() => Undefined).Construct();
+        EcmaValue proto = FunctionLiteral(() => Undefined).Construct();
         EcmaValue result = create.Call(_, proto);
         That(Object.Invoke("getPrototypeOf", result), Is.EqualTo(proto));
         That(proto.Invoke("isPrototypeOf", result), Is.EqualTo(true));
       });
 
       It("should add new properties", () => {
-        EcmaValue proto = RuntimeFunction.Create(() => Undefined).Construct();
+        EcmaValue proto = FunctionLiteral(() => Undefined).Construct();
         EcmaValue result = create.Call(_, proto, CreateObject(
           ("x", CreateObject(("value", true), ("writable", false))),
           ("y", CreateObject(("value", "str"), ("writable", false)))
@@ -161,9 +162,9 @@ namespace Codeless.Ecma.UnitTest.Tests {
         "It does not see an element removed by a getter that is hit during iteration");
 
       It("does not see inherited properties", () => {
-        RuntimeFunction F = RuntimeFunction.Create(() => Undefined);
-        F.Prototype["a"] = "A";
-        F.Prototype["b"] = "B";
+        EcmaValue F = FunctionLiteral(() => Undefined);
+        F["prototype"].ToObject()["a"] = "A";
+        F["prototype"].ToObject()["b"] = "B";
         EcmaValue f = F.Construct();
         f["b"] = "b";
         f["c"] = "c";
@@ -242,7 +243,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         DefineProperty(proto, "prop1", value: 10, configurable: true);
         DefineProperty(proto, "prop2", get: () => 10, configurable: true);
 
-        EcmaValue ConstructFn = RuntimeFunction.Create(() => Undefined);
+        EcmaValue ConstructFn = FunctionLiteral(() => Undefined);
         ConstructFn["prototype"] = proto;
 
         EcmaValue child = ConstructFn.Construct();
@@ -358,14 +359,14 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should cause observable events in the correct order", () => {
-        EcmaValue makeEntry = RuntimeFunction.Create(label => CreateObject(
+        EcmaValue makeEntry = FunctionLiteral(label => CreateObject(
           ("0", get: Intercept(() => CreateObject(toString: Intercept(() => label + " key", (string)label + "[0].toString")), (string)label + "[0]"), set: null),
           ("1", get: Intercept(() => label + " value", (string)label + "[1]"), set: null)
         ));
         EcmaValue iterable = new EcmaObject();
         iterable[Symbol.Iterator] = Intercept(() => {
           var count = 0;
-          return CreateObject(("next", RuntimeFunction.Create(() => {
+          return CreateObject(("next", FunctionLiteral(() => {
             Logs.Add("next " + count);
             switch (count) {
               case 0:
@@ -405,7 +406,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       Case((_, RegExp.Construct(".")), RegExp.Prototype);
       Case((_, Object.Prototype), Null);
 
-      EcmaValue Base = RuntimeFunction.Create(() => Undefined);
+      EcmaValue Base = FunctionLiteral(() => Undefined);
       Case((_, Base.Construct()), Base["prototype"]);
     }
 
@@ -571,7 +572,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         proto = new EcmaObject();
         Object.Invoke("preventExtensions", proto);
 
-        ConstructorFn = RuntimeFunction.Create(() => Undefined);
+        ConstructorFn = FunctionLiteral(() => Undefined);
         ConstructorFn["prototype"] = proto;
 
         child = ConstructorFn.Construct();
@@ -580,7 +581,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         // extensible proto, extensible-prevented child
         proto = new EcmaObject();
 
-        ConstructorFn = RuntimeFunction.Create(() => Undefined);
+        ConstructorFn = FunctionLiteral(() => Undefined);
         ConstructorFn["prototype"] = proto;
 
         child = ConstructorFn.Construct();
@@ -664,7 +665,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         DefineProperty(proto, "foo", get: () => 20, set: null, configurable: false);
         Object.Invoke("preventExtensions", proto);
 
-        ConstructorFn = RuntimeFunction.Create(() => Undefined);
+        ConstructorFn = FunctionLiteral(() => Undefined);
         ConstructorFn["prototype"] = proto;
 
         child = ConstructorFn.Construct();
@@ -677,7 +678,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         DefineProperty(proto, "foo", get: () => 20, set: null, configurable: true);
         Object.Invoke("preventExtensions", proto);
 
-        ConstructorFn = RuntimeFunction.Create(() => Undefined);
+        ConstructorFn = FunctionLiteral(() => Undefined);
         ConstructorFn["prototype"] = proto;
 
         child = ConstructorFn.Construct();
@@ -757,7 +758,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         DefineProperty(proto, "foo", value: 20, writable: false, configurable: false);
         Object.Invoke("preventExtensions", proto);
 
-        ConstructorFn = RuntimeFunction.Create(() => Undefined);
+        ConstructorFn = FunctionLiteral(() => Undefined);
         ConstructorFn["prototype"] = proto;
 
         child = ConstructorFn.Construct();
@@ -770,7 +771,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         DefineProperty(proto, "foo", value: 20, writable: true, configurable: true);
         Object.Invoke("preventExtensions", proto);
 
-        ConstructorFn = RuntimeFunction.Create(() => Undefined);
+        ConstructorFn = FunctionLiteral(() => Undefined);
         ConstructorFn["prototype"] = proto;
 
         child = ConstructorFn.Construct();
@@ -814,7 +815,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         obj = EcmaArray.Of(1, 2);
         Case((_, obj), new[] { "0", "1" });
 
-        RuntimeFunction.Create(() => obj = Arguments).Call(_, "a", "b", "c", "d");
+        FunctionLiteral(() => obj = Arguments).Call(_, "a", "b", "c", "d");
         Case((_, obj), new[] { "0", "1", "2", "3" });
       });
 
@@ -822,7 +823,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue proto = new EcmaObject();
         DefineProperty(proto, "prop", value: 10, enumerable: true, configurable: true);
 
-        EcmaValue ConstructFn = RuntimeFunction.Create(() => Undefined);
+        EcmaValue ConstructFn = FunctionLiteral(() => Undefined);
         ConstructFn["prototype"] = proto;
 
         EcmaValue child = ConstructFn.Construct();
@@ -910,7 +911,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Assume.That(Object.Invoke("isExtensible", proto), Is.EqualTo(true));
         preventExtensions.Call(_, proto);
 
-        EcmaValue ConstructFn = RuntimeFunction.Create(() => Undefined);
+        EcmaValue ConstructFn = FunctionLiteral(() => Undefined);
         ConstructFn["prototype"] = proto;
 
         EcmaValue child = ConstructFn.Construct();
@@ -954,7 +955,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         DefineProperty(proto, "prop1", value: 10, configurable: true);
         DefineProperty(proto, "prop2", get: () => 10, configurable: true);
 
-        EcmaValue ConstructFn = RuntimeFunction.Create(() => Undefined);
+        EcmaValue ConstructFn = FunctionLiteral(() => Undefined);
         ConstructFn["prototype"] = proto;
 
         EcmaValue child = ConstructFn.Construct();
@@ -970,7 +971,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         EcmaValue proto = new EcmaObject();
         DefineProperty(proto, "father", get: () => 10, configurable: true);
 
-        EcmaValue ConstructFn = RuntimeFunction.Create(() => Undefined);
+        EcmaValue ConstructFn = FunctionLiteral(() => Undefined);
         ConstructFn["prototype"] = proto;
 
         EcmaValue child = ConstructFn.Construct();
@@ -1120,9 +1121,9 @@ namespace Codeless.Ecma.UnitTest.Tests {
         "It does not see an element removed by a getter that is hit during iteration");
 
       It("does not see inherited properties", () => {
-        RuntimeFunction F = RuntimeFunction.Create(() => Undefined);
-        F.Prototype["a"] = "A";
-        F.Prototype["b"] = "B";
+        EcmaValue F = FunctionLiteral(() => Undefined);
+        F["prototype"].ToObject()["a"] = "A";
+        F["prototype"].ToObject()["b"] = "B";
         EcmaValue f = F.Construct();
         f["b"] = "b";
         f["c"] = "c";

@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -61,18 +62,18 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should throw if iterable next failure", () => {
-        EcmaValue iterable = CreateObject((Symbol.Iterator, RuntimeFunction.Create(() => CreateObject(new { next = ThrowTest262Exception }))));
+        EcmaValue iterable = CreateObject((Symbol.Iterator, FunctionLiteral(() => CreateObject(new { next = ThrowTest262Exception }))));
         That(() => WeakSet.Construct(iterable), Throws.Test262);
 
-        iterable = CreateObject((Symbol.Iterator, RuntimeFunction.Create(() => CreateObject(new { next = RuntimeFunction.Create(() => CreateObject(("value", get: ThrowTest262Exception, set: null), ("done", get: () => false, set: null))) }))));
+        iterable = CreateObject((Symbol.Iterator, FunctionLiteral(() => CreateObject(new { next = FunctionLiteral(() => CreateObject(("value", get: ThrowTest262Exception, set: null), ("done", get: () => false, set: null))) }))));
         That(() => WeakSet.Construct(iterable), Throws.Test262);
       });
 
       It("should close iterator after add failure", () => {
         EcmaValue iterable = CreateObject(
-          (Symbol.Iterator, RuntimeFunction.Create(() => CreateObject(new {
-            next = RuntimeFunction.Create(() => CreateObject(new { value = Null, done = false })),
-            @return = RuntimeFunction.Create(Intercept(_ => _))
+          (Symbol.Iterator, FunctionLiteral(() => CreateObject(new {
+            next = FunctionLiteral(() => CreateObject(new { value = Null, done = false })),
+            @return = FunctionLiteral(Intercept(_ => _))
           })))
         );
         Logs.Clear();

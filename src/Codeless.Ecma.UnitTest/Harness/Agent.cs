@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 
 namespace Codeless.Ecma.UnitTest.Harness {
   public class Agent : IDisposable {
@@ -37,7 +38,7 @@ namespace Codeless.Ecma.UnitTest.Harness {
       List<EcmaValue> messages = new List<EcmaValue>();
       EcmaValue worker = StartWorker(script, messages);
       worker["index"] = workers.Count;
-      worker["getMessage"] = RuntimeFunction.Create(() => {
+      worker["getMessage"] = FunctionLiteral(() => {
         if (messages.Count == 0) {
           return default;
         }
@@ -121,12 +122,12 @@ namespace Codeless.Ecma.UnitTest.Harness {
     private EcmaValue StartWorker(WorkerStart script, List<EcmaValue> captures = null) {
       Worker workerObj = new Worker();
       RuntimeObject worker = RuntimeRealm.Current.GetRuntimeObject(workerObj);
-      RuntimeFunction postMessage = GetPostMessageCallback(worker, captures);
+      EcmaValue postMessage = GetPostMessageCallback(worker, captures);
 
       RuntimeExecution execution = RuntimeExecution.CreateWorkerThread(hostRealm => {
         WorkerAgent agent = new WorkerAgent(postMessage);
         This.ToObject()["postMessage"] = postMessage;
-        This.ToObject()["onmessage"] = RuntimeFunction.Create(msg => {
+        This.ToObject()["onmessage"] = FunctionLiteral(msg => {
           switch (msg["kind"].ToStringOrThrow()) {
             case "start":
               agent.Init(msg["i32a"], msg["index"]);
@@ -143,9 +144,9 @@ namespace Codeless.Ecma.UnitTest.Harness {
       return worker;
     }
 
-    private static RuntimeFunction GetPostMessageCallback(RuntimeObject receiver, List<EcmaValue> captures = null) {
+    private static EcmaValue GetPostMessageCallback(RuntimeObject receiver, List<EcmaValue> captures = null) {
       RuntimeRealm realm = receiver.Realm;
-      return RuntimeFunction.Create(msg => {
+      return FunctionLiteral(msg => {
         if (captures != null) {
           captures.Add(msg);
         }

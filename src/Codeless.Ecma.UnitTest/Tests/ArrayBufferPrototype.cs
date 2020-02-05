@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -201,7 +202,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("does not throw TypeError if new ArrayBuffer is too large", () => {
         EcmaValue speciesConstructor = Object.Construct();
-        speciesConstructor[Symbol.Species] = RuntimeFunction.Create((length) => {
+        speciesConstructor[Symbol.Species] = FunctionLiteral((length) => {
           return ArrayBuffer.Construct(10);
         });
         EcmaValue arrayBuffer = ArrayBuffer.Construct(8);
@@ -211,7 +212,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should throw a TypeError if new ArrayBuffer is too small", () => {
         EcmaValue speciesConstructor = Object.Construct();
-        speciesConstructor[Symbol.Species] = RuntimeFunction.Create((length) => {
+        speciesConstructor[Symbol.Species] = FunctionLiteral((length) => {
           return ArrayBuffer.Construct(4);
         });
         EcmaValue arrayBuffer = ArrayBuffer.Construct(8);
@@ -221,7 +222,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should throw a TypeError if new object is not an ArrayBuffer instance", () => {
         EcmaValue speciesConstructor = Object.Construct();
-        speciesConstructor[Symbol.Species] = RuntimeFunction.Create((length) => {
+        speciesConstructor[Symbol.Species] = FunctionLiteral((length) => {
           return Object.Construct();
         });
         EcmaValue arrayBuffer = ArrayBuffer.Construct(8);
@@ -232,7 +233,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should throw a TypeError if species constructor returns `this` value", () => {
         EcmaValue arrayBuffer = ArrayBuffer.Construct(8);
         EcmaValue speciesConstructor = Object.Construct();
-        speciesConstructor[Symbol.Species] = RuntimeFunction.Create((length) => {
+        speciesConstructor[Symbol.Species] = FunctionLiteral((length) => {
           return arrayBuffer;
         });
         arrayBuffer["constructor"] = speciesConstructor;
@@ -242,7 +243,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should create new ArrayBuffer instance from SpeciesConstructor", () => {
         EcmaValue resultBuffer = default;
         EcmaValue speciesConstructor = Object.Construct();
-        speciesConstructor[Symbol.Species] = RuntimeFunction.Create((length) => {
+        speciesConstructor[Symbol.Species] = FunctionLiteral((length) => {
           return resultBuffer = ArrayBuffer.Construct(length);
         });
         EcmaValue arrayBuffer = ArrayBuffer.Construct(8);

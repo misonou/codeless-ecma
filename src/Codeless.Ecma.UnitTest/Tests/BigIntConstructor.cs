@@ -241,13 +241,13 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((_, CreateObject(toPrimitive: () => 1, valueOf: ThrowTest262Exception, toString: ThrowTest262Exception), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: @@toPrimitive takes precedence");
         Case((_, CreateObject(valueOf: () => 1, toString: ThrowTest262Exception), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: valueOf takes precedence over toString");
         Case((_, CreateObject(toString: () => 1), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: toString with no valueOf");
-        Case((_, CreateObject((Symbol.ToPrimitive, Undefined), ("valueOf", RuntimeFunction.Create(() => 1))), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip @@toPrimitive when it's undefined");
-        Case((_, CreateObject((Symbol.ToPrimitive, Null), ("valueOf", RuntimeFunction.Create(() => 1))), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip @@toPrimitive when it's null");
-        Case((_, CreateObject(new { valueOf = Null, toString = RuntimeFunction.Create(() => 1) }), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip valueOf when it's not callable");
-        Case((_, CreateObject(new { valueOf = 1, toString = RuntimeFunction.Create(() => 1) }), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip valueOf when it's not callable");
-        Case((_, CreateObject(new { valueOf = Object.Construct(), toString = RuntimeFunction.Create(() => 1) }), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip valueOf when it's not callable");
-        Case((_, CreateObject(new { valueOf = RuntimeFunction.Create(() => Object.Construct()), toString = RuntimeFunction.Create(() => 1) }), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip valueOf when it returns an object");
-        Case((_, CreateObject(new { valueOf = RuntimeFunction.Create(() => Object.Call(default, 12345)), toString = RuntimeFunction.Create(() => 1) }), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip valueOf when it returns an object");
+        Case((_, CreateObject((Symbol.ToPrimitive, Undefined), ("valueOf", FunctionLiteral(() => 1))), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip @@toPrimitive when it's undefined");
+        Case((_, CreateObject((Symbol.ToPrimitive, Null), ("valueOf", FunctionLiteral(() => 1))), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip @@toPrimitive when it's null");
+        Case((_, CreateObject(new { valueOf = Null, toString = FunctionLiteral(() => 1) }), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip valueOf when it's not callable");
+        Case((_, CreateObject(new { valueOf = 1, toString = FunctionLiteral(() => 1) }), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip valueOf when it's not callable");
+        Case((_, CreateObject(new { valueOf = Object.Construct(), toString = FunctionLiteral(() => 1) }), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip valueOf when it's not callable");
+        Case((_, CreateObject(new { valueOf = FunctionLiteral(() => Object.Construct()), toString = FunctionLiteral(() => 1) }), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip valueOf when it returns an object");
+        Case((_, CreateObject(new { valueOf = FunctionLiteral(() => Object.Call(default, 12345)), toString = FunctionLiteral(() => 1) }), BigIntLiteral(1)), BigIntLiteral(-1), "ToPrimitive: skip valueOf when it returns an object");
       });
 
       It("should throw a RangeError if bits is not an integer index", () => {
@@ -270,8 +270,8 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((_, CreateObject(valueOf: Null, toString: Null), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
         Case((_, CreateObject(valueOf: 1, toString: 1), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
         Case((_, CreateObject(valueOf: Object.Construct(), toString: Object.Construct()), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
-        Case((_, CreateObject(valueOf: RuntimeFunction.Create(() => Object.Call(default, 1)), toString: RuntimeFunction.Create(() => Object.Call(default, 1))), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
-        Case((_, CreateObject(valueOf: RuntimeFunction.Create(() => Object.Construct()), toString: RuntimeFunction.Create(() => Object.Construct())), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
+        Case((_, CreateObject(valueOf: FunctionLiteral(() => Object.Call(default, 1)), toString: FunctionLiteral(() => Object.Call(default, 1))), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
+        Case((_, CreateObject(valueOf: FunctionLiteral(() => Object.Construct()), toString: FunctionLiteral(() => Object.Construct())), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
 
         Case((_, Object.Call(default, BigIntLiteral(0)), BigIntLiteral(0)), Throws.TypeError);
         Case((_, CreateObject(toPrimitive: () => BigIntLiteral(0)), BigIntLiteral(0)), Throws.TypeError);
@@ -330,11 +330,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((_, 2, CreateObject(toPrimitive: () => "1", valueOf: ThrowTest262Exception, toString: ThrowTest262Exception)), BigIntLiteral(1), "ToPrimitive: @@toPrimitive takes precedence");
         Case((_, 2, CreateObject(valueOf: () => "1", toString: ThrowTest262Exception)), BigIntLiteral(1), "ToPrimitive: valueOf takes precedence over toString");
         Case((_, 2, CreateObject(toString: () => "1")), BigIntLiteral(1), "ToPrimitive: toString with no valueOf");
-        Case((_, 2, CreateObject(toPrimitive: Undefined, valueOf: RuntimeFunction.Create(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip @@toPrimitive when it's undefined");
-        Case((_, 2, CreateObject(toPrimitive: Null, valueOf: RuntimeFunction.Create(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip @@toPrimitive when it's null");
-        Case((_, 2, CreateObject(valueOf: Null, toString: RuntimeFunction.Create(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
-        Case((_, 2, CreateObject(valueOf: 1, toString: RuntimeFunction.Create(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
-        Case((_, 2, CreateObject(valueOf: Object.Construct(), toString: RuntimeFunction.Create(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
+        Case((_, 2, CreateObject(toPrimitive: Undefined, valueOf: FunctionLiteral(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip @@toPrimitive when it's undefined");
+        Case((_, 2, CreateObject(toPrimitive: Null, valueOf: FunctionLiteral(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip @@toPrimitive when it's null");
+        Case((_, 2, CreateObject(valueOf: Null, toString: FunctionLiteral(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
+        Case((_, 2, CreateObject(valueOf: 1, toString: FunctionLiteral(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
+        Case((_, 2, CreateObject(valueOf: Object.Construct(), toString: FunctionLiteral(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
         Case((_, 2, CreateObject(valueOf: () => Object.Construct(), toString: () => "1")), BigIntLiteral(1), "ToPrimitive: skip valueOf when it returns an object");
         Case((_, 2, CreateObject(valueOf: () => Object.Call(default, 12345), toString: () => "1")), BigIntLiteral(1), "ToPrimitive: skip valueOf when it returns an object");
       });
@@ -496,13 +496,13 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((_, CreateObject(toPrimitive: () => 1, valueOf: ThrowTest262Exception, toString: ThrowTest262Exception), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: @@toPrimitive takes precedence");
         Case((_, CreateObject(valueOf: () => 1, toString: ThrowTest262Exception), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: valueOf takes precedence over toString");
         Case((_, CreateObject(toString: () => 1), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: toString with no valueOf");
-        Case((_, CreateObject(toPrimitive: Undefined, valueOf: RuntimeFunction.Create(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip @@toPrimitive when it's undefined");
-        Case((_, CreateObject(toPrimitive: Null, valueOf: RuntimeFunction.Create(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip @@toPrimitive when it's null");
-        Case((_, CreateObject(valueOf: Null, toString: RuntimeFunction.Create(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
-        Case((_, CreateObject(valueOf: 1, toString: RuntimeFunction.Create(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
-        Case((_, CreateObject(valueOf: Object.Construct(), toString: RuntimeFunction.Create(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
-        Case((_, CreateObject(valueOf: RuntimeFunction.Create(() => Object.Construct()), toString: RuntimeFunction.Create(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip valueOf when it returns an object");
-        Case((_, CreateObject(valueOf: RuntimeFunction.Create(() => Object.Call(default, 12345)), toString: RuntimeFunction.Create(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip valueOf when it returns an object");
+        Case((_, CreateObject(toPrimitive: Undefined, valueOf: FunctionLiteral(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip @@toPrimitive when it's undefined");
+        Case((_, CreateObject(toPrimitive: Null, valueOf: FunctionLiteral(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip @@toPrimitive when it's null");
+        Case((_, CreateObject(valueOf: Null, toString: FunctionLiteral(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
+        Case((_, CreateObject(valueOf: 1, toString: FunctionLiteral(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
+        Case((_, CreateObject(valueOf: Object.Construct(), toString: FunctionLiteral(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
+        Case((_, CreateObject(valueOf: FunctionLiteral(() => Object.Construct()), toString: FunctionLiteral(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip valueOf when it returns an object");
+        Case((_, CreateObject(valueOf: FunctionLiteral(() => Object.Call(default, 12345)), toString: FunctionLiteral(() => 1)), BigIntLiteral(1)), BigIntLiteral(1), "ToPrimitive: skip valueOf when it returns an object");
       });
 
       It("should throw a RangeError if bits is not an integer index", () => {
@@ -525,8 +525,8 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((_, CreateObject(valueOf: Null, toString: Null), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
         Case((_, CreateObject(valueOf: 1, toString: 1), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
         Case((_, CreateObject(valueOf: Object.Construct(), toString: Object.Construct()), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
-        Case((_, CreateObject(valueOf: RuntimeFunction.Create(() => Object.Call(default, 1)), toString: RuntimeFunction.Create(() => Object.Call(default, 1))), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
-        Case((_, CreateObject(valueOf: RuntimeFunction.Create(() => Object.Construct()), toString: RuntimeFunction.Create(() => Object.Construct())), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
+        Case((_, CreateObject(valueOf: FunctionLiteral(() => Object.Call(default, 1)), toString: FunctionLiteral(() => Object.Call(default, 1))), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
+        Case((_, CreateObject(valueOf: FunctionLiteral(() => Object.Construct()), toString: FunctionLiteral(() => Object.Construct())), BigIntLiteral(0)), Throws.TypeError, "ToPrimitive: throw when skipping both valueOf and toString");
 
         Case((_, Object.Call(default, BigIntLiteral(0)), BigIntLiteral(0)), Throws.TypeError);
         Case((_, CreateObject(toPrimitive: () => BigIntLiteral(0)), BigIntLiteral(0)), Throws.TypeError);
@@ -585,11 +585,11 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Case((_, 2, CreateObject(toPrimitive: () => "1", valueOf: ThrowTest262Exception, toString: ThrowTest262Exception)), BigIntLiteral(1), "ToPrimitive: @@toPrimitive takes precedence");
         Case((_, 2, CreateObject(valueOf: () => "1", toString: ThrowTest262Exception)), BigIntLiteral(1), "ToPrimitive: valueOf takes precedence over toString");
         Case((_, 2, CreateObject(toString: () => "1")), BigIntLiteral(1), "ToPrimitive: toString with no valueOf");
-        Case((_, 2, CreateObject(toPrimitive: Undefined, valueOf: RuntimeFunction.Create(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip @@toPrimitive when it's undefined");
-        Case((_, 2, CreateObject(toPrimitive: Null, valueOf: RuntimeFunction.Create(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip @@toPrimitive when it's null");
-        Case((_, 2, CreateObject(valueOf: Null, toString: RuntimeFunction.Create(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
-        Case((_, 2, CreateObject(valueOf: 1, toString: RuntimeFunction.Create(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
-        Case((_, 2, CreateObject(valueOf: Object.Construct(), toString: RuntimeFunction.Create(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
+        Case((_, 2, CreateObject(toPrimitive: Undefined, valueOf: FunctionLiteral(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip @@toPrimitive when it's undefined");
+        Case((_, 2, CreateObject(toPrimitive: Null, valueOf: FunctionLiteral(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip @@toPrimitive when it's null");
+        Case((_, 2, CreateObject(valueOf: Null, toString: FunctionLiteral(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
+        Case((_, 2, CreateObject(valueOf: 1, toString: FunctionLiteral(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
+        Case((_, 2, CreateObject(valueOf: Object.Construct(), toString: FunctionLiteral(() => "1"))), BigIntLiteral(1), "ToPrimitive: skip valueOf when it's not callable");
         Case((_, 2, CreateObject(valueOf: () => Object.Construct(), toString: () => "1")), BigIntLiteral(1), "ToPrimitive: skip valueOf when it returns an object");
         Case((_, 2, CreateObject(valueOf: () => Object.Call(default, 12345), toString: () => "1")), BigIntLiteral(1), "ToPrimitive: skip valueOf when it returns an object");
       });

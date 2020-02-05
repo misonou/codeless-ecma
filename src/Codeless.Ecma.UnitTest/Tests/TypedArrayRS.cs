@@ -3,6 +3,7 @@ using Codeless.Ecma.UnitTest.Harness;
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -195,7 +196,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return false if key is a numeric index and Descriptor is an AccessorDescriptor", () => {
         TestWithTypedArrayConstructors(TA => {
           EcmaValue sample = TA.Construct(2);
-          EcmaValue fnGet = RuntimeFunction.Create(() => 42);
+          EcmaValue fnGet = FunctionLiteral(() => 42);
           EcmaValue fnSet = Noop;
 
           That(Reflect.Invoke("defineProperty", sample, "0", CreateObject(new { get = fnGet, enumerable = true })), Is.False, "get accessor");
@@ -449,7 +450,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
               sample[key] = "bar";
               That(sample[key], Is.EqualTo("bar"), "return value from own key [" + key.ToString() + "]");
 
-              Object.Invoke("defineProperty", sample, key, CreateObject(new { get = RuntimeFunction.Create(() => "baz") }));
+              Object.Invoke("defineProperty", sample, key, CreateObject(new { get = FunctionLiteral(() => "baz") }));
               That(sample[key], Is.EqualTo("baz"), "return value from get accessor  [" + key.ToString() + "]");
             }
           }
@@ -465,7 +466,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
             sample["foo"] = "bar";
             That(sample["foo"], Is.EqualTo("bar"), "return value");
 
-            Object.Invoke("defineProperty", sample, "bar", CreateObject(new { get = RuntimeFunction.Create(() => "baz") }));
+            Object.Invoke("defineProperty", sample, "bar", CreateObject(new { get = FunctionLiteral(() => "baz") }));
             That(sample["bar"], Is.EqualTo("baz"), "return value from get accessor");
             That(sample["baz"], Is.EqualTo("test262"), "return value from inherited key");
           });
@@ -483,7 +484,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
             sample[s1] = "foo";
             That(sample[s1], Is.EqualTo("foo"), "return value");
 
-            Object.Invoke("defineProperty", sample, s1, CreateObject(new { get = RuntimeFunction.Create(() => "bar") }));
+            Object.Invoke("defineProperty", sample, s1, CreateObject(new { get = FunctionLiteral(() => "bar") }));
             That(sample[s1], Is.EqualTo("bar"), "return value from get accessor");
             That(sample[parentKey], Is.EqualTo("test262"), "return value from inherited key");
           });

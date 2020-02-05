@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using static Codeless.Ecma.Global;
 using static Codeless.Ecma.Keywords;
+using static Codeless.Ecma.Literal;
 using static Codeless.Ecma.UnitTest.Assert;
 using static Codeless.Ecma.UnitTest.StaticHelper;
 
@@ -42,7 +43,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return target result", () => {
         EcmaValue o = Object.Construct();
-        EcmaValue fn = RuntimeFunction.Create(() => o);
+        EcmaValue fn = FunctionLiteral(() => o);
         Case((_, fn, 1, EcmaArray.Of()), o);
       });
 
@@ -66,16 +67,16 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should throws a TypeError if `newTarget` is not a constructor", () => {
-        Case((_, RuntimeFunction.Create(_ => _), EcmaArray.Of(), 1), Throws.TypeError);
-        Case((_, RuntimeFunction.Create(_ => _), EcmaArray.Of(), Null), Throws.TypeError);
-        Case((_, RuntimeFunction.Create(_ => _), EcmaArray.Of(), Object.Construct()), Throws.TypeError);
-        Case((_, RuntimeFunction.Create(_ => _), EcmaArray.Of(), Date["now"]), Throws.TypeError);
+        Case((_, FunctionLiteral(_ => _), EcmaArray.Of(), 1), Throws.TypeError);
+        Case((_, FunctionLiteral(_ => _), EcmaArray.Of(), Null), Throws.TypeError);
+        Case((_, FunctionLiteral(_ => _), EcmaArray.Of(), Object.Construct()), Throws.TypeError);
+        Case((_, FunctionLiteral(_ => _), EcmaArray.Of(), Date["now"]), Throws.TypeError);
       });
 
       It("should return target result using newTarget argument", () => {
         EcmaValue o = Object.Construct();
         EcmaValue internPrototype = default;
-        EcmaValue fn = RuntimeFunction.Create(() => {
+        EcmaValue fn = FunctionLiteral(() => {
           This.ToObject()["o"] = o;
           internPrototype = Object.Invoke("getPrototypeOf", This);
         });
@@ -87,7 +88,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return target result", () => {
         EcmaValue o = Object.Construct();
-        EcmaValue fn = RuntimeFunction.Create(() => {
+        EcmaValue fn = FunctionLiteral(() => {
           This.ToObject()["o"] = o;
         });
         EcmaValue result = Reflect.Invoke("construct", fn, EcmaArray.Of());
@@ -104,7 +105,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should construct with given argumentsList", () => {
         EcmaValue o = Object.Construct();
-        EcmaValue fn = RuntimeFunction.Create(() => {
+        EcmaValue fn = FunctionLiteral(() => {
           This.ToObject()["args"] = Arguments;
         });
         EcmaValue result = Reflect.Invoke("construct", fn, EcmaArray.Of(42, "Mike", "Leo"));
@@ -127,8 +128,8 @@ namespace Codeless.Ecma.UnitTest.Tests {
         That(o["p1"], Is.EqualTo(42));
         That(o, Has.OwnProperty("p1", EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Enumerable));
 
-        EcmaValue f1 = RuntimeFunction.Create(_ => _);
-        EcmaValue f2 = RuntimeFunction.Create(_ => _);
+        EcmaValue f1 = FunctionLiteral(_ => _);
+        EcmaValue f2 = FunctionLiteral(_ => _);
         Reflect.Invoke("defineProperty", o, "p2", CreateObject(new {
           get = f1,
           set = f2
@@ -150,8 +151,8 @@ namespace Codeless.Ecma.UnitTest.Tests {
         That(o, Has.OwnProperty(EcmaPropertyKey.FromValue(s1), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Enumerable));
 
         EcmaValue s2 = new Symbol();
-        EcmaValue f1 = RuntimeFunction.Create(_ => _);
-        EcmaValue f2 = RuntimeFunction.Create(_ => _);
+        EcmaValue f1 = FunctionLiteral(_ => _);
+        EcmaValue f2 = FunctionLiteral(_ => _);
         Reflect.Invoke("defineProperty", o, s2, CreateObject(new {
           get = f1,
           set = f2
@@ -280,7 +281,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return value from a receiver", () => {
         EcmaValue o1 = Object.Construct();
         EcmaValue receiver = CreateObject(("y", 42));
-        Object.Invoke("defineProperty", o1, "x", CreateObject(new { get = RuntimeFunction.Create(() => This["y"]) }));
+        Object.Invoke("defineProperty", o1, "x", CreateObject(new { get = FunctionLiteral(() => This["y"]) }));
         Case((_, o1, "x", receiver), 42);
         Case((_, Object.Invoke("create", o1), "x", receiver), 42);
       });
@@ -293,7 +294,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Object.Invoke("defineProperty", o, "p2", CreateObject(new { get = Undefined }));
         Case((_, o, "p2"), Undefined, "Return undefined if getter is undefined");
 
-        Object.Invoke("defineProperty", o, "p3", CreateObject(new { get = RuntimeFunction.Create(() => "foo") }));
+        Object.Invoke("defineProperty", o, "p3", CreateObject(new { get = FunctionLiteral(() => "foo") }));
         Case((_, o, "p3"), "foo", "Return Call(getter, Receiver)");
 
         EcmaValue o2 = Object.Invoke("create", CreateObject(("p", 42)));
@@ -334,7 +335,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return a property descriptor object as an accessor descriptor", () => {
         EcmaValue o1 = Object.Construct();
-        EcmaValue fn = RuntimeFunction.Create(_ => _);
+        EcmaValue fn = FunctionLiteral(_ => _);
         Object.Invoke("defineProperty", o1, "p", CreateObject(new { get = fn, configurable = true }));
 
         EcmaValue result = Reflect.Invoke("getOwnPropertyDescriptor", o1, "p");
@@ -518,7 +519,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
         EcmaValue o = Object.Construct();
         Object.Invoke("defineProperty", o, "p1", CreateObject(new { value = 42, enumerable = false }));
-        Object.Invoke("defineProperty", o, "p2", CreateObject(new { get = RuntimeFunction.Create(_ => _), enumerable = false }));
+        Object.Invoke("defineProperty", o, "p2", CreateObject(new { get = FunctionLiteral(_ => _), enumerable = false }));
         Case((_, o), new[] { "p1", "p2" });
       });
 
@@ -572,10 +573,10 @@ namespace Codeless.Ecma.UnitTest.Tests {
       });
 
       It("should return boolean from Proxy object", () => {
-        EcmaValue p1 = Proxy.Construct(Object.Construct(), CreateObject(("preventExtensions", RuntimeFunction.Create(() => false))));
+        EcmaValue p1 = Proxy.Construct(Object.Construct(), CreateObject(("preventExtensions", FunctionLiteral(() => false))));
         Case((_, p1), false);
 
-        EcmaValue p2 = Proxy.Construct(Object.Construct(), CreateObject(("preventExtensions", RuntimeFunction.Create((t) => Return(Object.Invoke("preventExtensions", t), true)))));
+        EcmaValue p2 = Proxy.Construct(Object.Construct(), CreateObject(("preventExtensions", FunctionLiteral((t) => Return(Object.Invoke("preventExtensions", t), true)))));
         Case((_, p2), true);
       });
 
@@ -646,7 +647,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return false if target property turns to a data descriptor and receiver property is an accessor descriptor", () => {
         EcmaValue receiver = Object.Construct();
-        EcmaValue fn = RuntimeFunction.Create(_ => _);
+        EcmaValue fn = FunctionLiteral(_ => _);
         Object.Invoke("defineProperty", receiver, "p", CreateObject(new { set = fn }));
 
         EcmaValue o1 = Object.Construct();
