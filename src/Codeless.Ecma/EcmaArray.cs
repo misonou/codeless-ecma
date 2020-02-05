@@ -1,4 +1,4 @@
-﻿using Codeless.Ecma.Native;
+﻿using Codeless.Ecma.InteropServices;
 using Codeless.Ecma.Runtime;
 using Codeless.Ecma.Runtime.Intrinsics;
 using System;

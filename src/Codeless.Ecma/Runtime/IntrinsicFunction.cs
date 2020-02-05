@@ -11,7 +11,7 @@ namespace Codeless.Ecma.Runtime {
     private readonly EcmaPropertyKey propertyKey;
 
     public IntrinsicFunction(string name, MethodInfo method, WellKnownObject parentObject, EcmaPropertyKey propertyKey)
-      : base(name, method) {
+      : base(name, method, true) {
       this.parentObject = parentObject;
       this.propertyKey = propertyKey;
     }

@@ -1,5 +1,4 @@
-﻿using Codeless.Ecma.Native;
-using Codeless.Ecma.Runtime;
+﻿using Codeless.Ecma.Runtime;
 using Codeless.Ecma.Runtime.Intrinsics;
 using System;
 using System.Collections.Generic;

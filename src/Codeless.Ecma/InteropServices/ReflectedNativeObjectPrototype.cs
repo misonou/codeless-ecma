@@ -6,7 +6,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 
-namespace Codeless.Ecma.Native {
+namespace Codeless.Ecma.InteropServices {
   internal class ReflectedNativeObjectPrototype : RuntimeObject {
     private static readonly Hashtable hashtable = new Hashtable();
 
@@ -58,7 +58,7 @@ namespace Codeless.Ecma.Native {
       public override bool IsConstructor => true;
 
       public Constructor(string name) {
-        InitProperty(name, 0);
+        InitProperty(name, 0, true);
       }
     }
   }

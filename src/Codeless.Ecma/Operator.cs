@@ -1,4 +1,5 @@
-﻿using Codeless.Ecma.Runtime;
+﻿using Codeless.Ecma.InteropServices;
+using Codeless.Ecma.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -84,5 +85,19 @@ namespace Codeless.Ecma {
       }
       return other.HasProperty(EcmaPropertyKey.FromValue(thisValue));
     }
+
+    public static ISpreadLiteral Spread(this EcmaValue from) {
+      return new SpreadLiteral(from);
+    }
+
+    #region Helper classes
+    private class SpreadLiteral : ISpreadLiteral {
+      public SpreadLiteral(EcmaValue spreadable) {
+        this.Value = spreadable;
+      }
+
+      public EcmaValue Value { get; }
+    }
+    #endregion
   }
 }

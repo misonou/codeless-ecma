@@ -1,8 +1,11 @@
-﻿using Codeless.Ecma.Runtime;
+﻿using Codeless.Ecma.InteropServices;
+using Codeless.Ecma.Runtime;
 
 namespace Codeless.Ecma {
   public static class Keywords {
     public static readonly EcmaValue Null = EcmaValue.Null;
+
+    public static readonly IStaticModifier Static = ClassLiteralBuilder.Static;
 
     public static EcmaValue This {
       get {
@@ -14,7 +17,7 @@ namespace Codeless.Ecma {
       }
     }
 
-    public static ArgumentList Arguments {
+    public static ArgumentsObject Arguments {
       get {
         RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
         return invocation != null ? invocation.Arguments : default;
@@ -62,6 +65,10 @@ namespace Codeless.Ecma {
           return InternalString.TypeOf.BigInt;
       }
       return value.IsCallable ? InternalString.TypeOf.Function : InternalString.TypeOf.Object;
+    }
+
+    public static IExtendsModifier Extends(EcmaValue from) {
+      return ClassLiteralBuilder.Extends(from);
     }
   }
 }

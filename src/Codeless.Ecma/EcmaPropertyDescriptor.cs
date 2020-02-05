@@ -103,7 +103,7 @@ namespace Codeless.Ecma {
       get {
         if ((attributes & EcmaPropertyAttributes.LazyInitialize) != 0) {
           getter = getter.Call(EcmaValue.Undefined);
-          attributes = attributes | EcmaPropertyAttributes.HasValue & ~EcmaPropertyAttributes.LazyInitialize;
+          attributes = (attributes | EcmaPropertyAttributes.HasValue) & ~EcmaPropertyAttributes.LazyInitialize;
         }
         return this.IsDataDescriptor ? getter : default;
       }

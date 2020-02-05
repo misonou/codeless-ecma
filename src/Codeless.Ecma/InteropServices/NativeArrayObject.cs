@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Codeless.Ecma.Native {
+namespace Codeless.Ecma.InteropServices {
   internal class NativeArrayObject : NativeObject<IList> {
     private static readonly Hashtable ht = new Hashtable();
     private readonly bool isReadOnly;

@@ -1,5 +1,6 @@
 using Codeless.Ecma.Diagnostics;
 using Codeless.Ecma.Diagnostics.VisualStudio;
+using Codeless.Ecma.InteropServices;
 using Codeless.Ecma.Primitives;
 using Codeless.Ecma.Runtime;
 using Codeless.Ecma.Runtime.Intrinsics;
@@ -328,7 +329,8 @@ namespace Codeless.Ecma {
 
     [DebuggerStepThrough]
     public object GetUnderlyingObject() {
-      return binder.FromHandle(handle);
+      object obj = binder.FromHandle(handle);
+      return obj is INativeObjectWrapper wrapper ? wrapper.Target : obj;
     }
 
     [DebuggerStepThrough]
@@ -742,6 +744,11 @@ namespace Codeless.Ecma {
         return EcmaNumberType.Invalid;
       }
       return typeX > typeY ? typeX : typeY;
+    }
+
+    [DebuggerStepThrough]
+    internal object GetUnderlyingObjectInternal() {
+      return binder.FromHandle(handle);
     }
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]

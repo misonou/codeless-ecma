@@ -556,9 +556,9 @@ namespace Codeless.Ecma.UnitTest.Tests {
       It("should return false if Object is extensible", () => {
         Case((_, new EcmaObject()), true);
 
-        // all built-in objects are not sealed
+        // all built-in objects are not sealed except %ThrowTypeError%
         foreach (WellKnownObject o in System.Enum.GetValues(typeof(WellKnownObject))) {
-          if (o != WellKnownObject.MaxValue) {
+          if (o != WellKnownObject.MaxValue && o != WellKnownObject.ThrowTypeError) {
             Case((_, (RuntimeObject)o), true);
           }
         }
@@ -648,9 +648,9 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Object.Invoke("preventExtensions", obj);
         Case((_, obj), false);
 
-        // all built-in objects are not sealed
+        // all built-in objects are not sealed except %ThrowTypeError%
         foreach (WellKnownObject o in System.Enum.GetValues(typeof(WellKnownObject))) {
-          if (o != WellKnownObject.MaxValue) {
+          if (o != WellKnownObject.MaxValue && o != WellKnownObject.ThrowTypeError) {
             Case((_, (RuntimeObject)o), false);
           }
         }
@@ -741,9 +741,9 @@ namespace Codeless.Ecma.UnitTest.Tests {
         Object.Invoke("preventExtensions", obj);
         Case((_, obj), false);
 
-        // all built-in objects are not sealed
+        // all built-in objects are not sealed except %ThrowTypeError%
         foreach (WellKnownObject o in System.Enum.GetValues(typeof(WellKnownObject))) {
-          if (o != WellKnownObject.MaxValue) {
+          if (o != WellKnownObject.MaxValue && o != WellKnownObject.ThrowTypeError) {
             Case((_, (RuntimeObject)o), false);
           }
         }

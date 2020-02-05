@@ -7,39 +7,11 @@ using System.Text;
 namespace Codeless.Ecma.Runtime.Intrinsics {
   [IntrinsicObject(WellKnownObject.FunctionPrototype)]
   internal static class FunctionPrototype {
-    [IntrinsicMember(EcmaPropertyAttributes.Configurable, Getter = true)]
-    public static EcmaValue Caller([This] EcmaValue thisValue) {
-      RuntimeFunction fn = thisValue.GetUnderlyingObject<RuntimeFunction>();
-      if (fn.ContainsUseStrict) {
-        throw new EcmaTypeErrorException(InternalString.Error.StrictMode);
-      }
-      RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
-      bool returnCaller = false;
-      for (; invocation != null; invocation = invocation.Parent) {
-        if (returnCaller) {
-          return invocation.FunctionObject;
-        }
-        if (invocation.FunctionObject == fn) {
-          returnCaller = true;
-        }
-      }
-      return EcmaValue.Null;
-    }
-
-    [IntrinsicMember(EcmaPropertyAttributes.Configurable, Getter = true)]
-    public static EcmaValue Arguments([This] EcmaValue thisValue) {
-      RuntimeFunction fn = thisValue.GetUnderlyingObject<RuntimeFunction>();
-      if (fn.ContainsUseStrict) {
-        throw new EcmaTypeErrorException(InternalString.Error.StrictMode);
-      }
-      RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
-      for (; invocation != null; invocation = invocation.Parent) {
-        if (invocation.FunctionObject == fn) {
-          return invocation.Arguments;
-        }
-      }
-      return EcmaValue.Null;
-    }
+    [IntrinsicMember("caller", EcmaPropertyAttributes.Configurable, Getter = true)]
+    [IntrinsicMember("caller", EcmaPropertyAttributes.Configurable, Setter = true)]
+    [IntrinsicMember("arguments", EcmaPropertyAttributes.Configurable, Getter = true)]
+    [IntrinsicMember("arguments", EcmaPropertyAttributes.Configurable, Setter = true)]
+    public static WellKnownObject ThrowTypeError = WellKnownObject.ThrowTypeError;
 
     [IntrinsicMember]
     public static EcmaValue Apply([This] EcmaValue thisValue, EcmaValue thisArg, EcmaValue args) {

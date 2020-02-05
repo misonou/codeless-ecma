@@ -1,4 +1,4 @@
-﻿using Codeless.Ecma.Native;
+﻿using Codeless.Ecma.InteropServices;
 using Codeless.Ecma.Primitives;
 using Codeless.Ecma.Runtime;
 using System;
@@ -23,7 +23,7 @@ namespace Codeless.Ecma {
       if (thisValue.Type != EcmaValueType.Object) {
         throw new EcmaTypeErrorException(InternalString.Error.NotObject);
       }
-      object obj = thisValue.GetUnderlyingObject();
+      object obj = thisValue.GetUnderlyingObjectInternal();
       if (obj is T value) {
         return value;
       }
@@ -38,13 +38,14 @@ namespace Codeless.Ecma {
         return thisValue;
       }
       if (thisValue.Type == EcmaValueType.Object) {
-        if (thisValue.GetUnderlyingObject() is PrimitiveObject obj && obj.PrimitiveValue.Type == type) {
+        if (thisValue.GetUnderlyingObjectInternal() is PrimitiveObject obj && obj.PrimitiveValue.Type == type) {
           return obj.PrimitiveValue;
         }
       }
       throw new EcmaTypeErrorException(InternalString.Error.IncompatibleObject);
     }
 
+    [Obsolete]
     public static int ToInteger(this EcmaValue thisValue, int min, int max) {
       EcmaValue value = thisValue.ToInteger();
       return value > max ? max : value < min ? min : (int)value;
@@ -59,6 +60,25 @@ namespace Codeless.Ecma {
         arr[i] = value[i];
       }
       return arr;
+    }
+
+    public static EcmaValue[] CreateListFromArrayLikeOrEmpty(EcmaValue value) {
+      return value.Type == EcmaValueType.Object ? CreateListFromArrayLike(value) : EcmaValue.EmptyArray;
+    }
+
+    public static EcmaValue CloneValue(EcmaValue value, EcmaValue[] transfer, RuntimeRealm targetRealm) {
+      Guard.ArgumentNotNull(targetRealm, "targetRealm");
+      bool isPrimitive = value.Type != EcmaValueType.Object;
+      RuntimeObject[] transferList = transfer != null ? transfer.Select(v => v.ToObject()).ToArray() : new RuntimeObject[0];
+      RuntimeObject obj;
+      if (isPrimitive) {
+        obj = new EcmaObject();
+        obj[""] = value;
+      } else {
+        obj = value.ToObject();
+      }
+      obj = obj.Clone(targetRealm, transferList);
+      return isPrimitive ? obj[""] : obj;
     }
 
     public static bool TryIndexByPropertyKey(string str, EcmaPropertyKey propertyKey, out EcmaValue value) {

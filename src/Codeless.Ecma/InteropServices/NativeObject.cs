@@ -1,7 +1,7 @@
 ﻿using Codeless.Ecma.Runtime;
 using System.Collections;
 
-namespace Codeless.Ecma.Native {
+namespace Codeless.Ecma.InteropServices {
   internal class NativeObject {
     public static RuntimeObject Create(object target) {
       switch (target) {

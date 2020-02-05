@@ -1,31 +1,31 @@
+using Codeless.Ecma.Runtime;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Codeless.Ecma.Runtime {
-  public class ArgumentList : RuntimeObject, IList<EcmaValue> {
-    private static readonly RuntimeFunction throwStrictMode = RuntimeFunction.Create(ThrowStrictMode);
+namespace Codeless.Ecma {
+  public class ArgumentsObject : RuntimeObject, IList<EcmaValue> {
+    private enum TaintLevel { None, AttributeTainted, BindingTainted }
+
     private readonly RuntimeFunctionInvocation invocation;
     private readonly EcmaValue[] arguments;
+    private TaintLevel[] taintedLevel;
 
-    public ArgumentList(RuntimeFunctionInvocation invocation, EcmaValue[] arguments)
+    internal ArgumentsObject(RuntimeFunctionInvocation invocation, EcmaValue[] arguments)
       : base(WellKnownObject.ObjectPrototype) {
       Guard.ArgumentNotNull(invocation, "invocation");
       Guard.ArgumentNotNull(arguments, "arguments");
       this.invocation = invocation;
       this.arguments = arguments;
       if (invocation.FunctionObject.ContainsUseStrict) {
-        DefineOwnPropertyNoChecked(WellKnownProperty.Callee, new EcmaPropertyDescriptor(throwStrictMode, throwStrictMode, EcmaPropertyAttributes.None));
+        EcmaValue throwTypeError = this.Realm.GetRuntimeObject(WellKnownObject.ThrowTypeError);
+        DefineOwnPropertyNoChecked(WellKnownProperty.Callee, new EcmaPropertyDescriptor(throwTypeError, throwTypeError, EcmaPropertyAttributes.None));
       } else {
-        DefineOwnPropertyNoChecked(WellKnownProperty.Callee, new EcmaPropertyDescriptor(invocation.Parent?.FunctionObject, EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
+        DefineOwnPropertyNoChecked(WellKnownProperty.Callee, new EcmaPropertyDescriptor(invocation.FunctionObject, EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
       }
+      DefineOwnPropertyNoChecked(WellKnownProperty.Length, new EcmaPropertyDescriptor(arguments.Length, EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
       DefineOwnPropertyNoChecked(WellKnownSymbol.Iterator, new EcmaPropertyDescriptor(RuntimeRealm.Current.GetRuntimeObject(WellKnownObject.ArrayPrototype).Get(WellKnownSymbol.Iterator), EcmaPropertyAttributes.Writable | EcmaPropertyAttributes.Configurable));
-    }
-
-    public override EcmaValue this[int index] {
-      get { return arguments[index]; }
-      set { arguments[index] = value; }
     }
 
     public int Count {
@@ -33,7 +33,7 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public RuntimeFunction Callee {
-      get { return invocation.Parent?.FunctionObject; }
+      get { return invocation.FunctionObject; }
     }
 
     protected override string ToStringTag {
@@ -42,44 +42,63 @@ namespace Codeless.Ecma.Runtime {
 
     public override IEnumerable<EcmaPropertyKey> GetOwnPropertyKeys() {
       IEnumerable<EcmaPropertyKey> ownKeys = base.GetOwnPropertyKeys();
-      IEnumerable<EcmaPropertyKey> indexes = Enumerable.Range(0, arguments.Length).Select(v => new EcmaPropertyKey(v));
-      if (ownKeys.Any()) {
-        return indexes.Concat(new[] { new EcmaPropertyKey("length") });
+      if (taintedLevel != null) {
+        return ownKeys;
       }
+      IEnumerable<EcmaPropertyKey> indexes = Enumerable.Range(0, arguments.Length).Select(v => new EcmaPropertyKey(v));
       return indexes.Concat(ownKeys);
     }
 
     public override EcmaPropertyDescriptor GetOwnProperty(EcmaPropertyKey propertyKey) {
-      if (EcmaValueUtility.TryIndexByPropertyKey(arguments, propertyKey, out EcmaValue ch)) {
-        return new EcmaPropertyDescriptor(ch, EcmaPropertyAttributes.Enumerable);
+      EcmaPropertyDescriptor current = base.GetOwnProperty(propertyKey);
+      if (EcmaValueUtility.TryIndexByPropertyKey(arguments, propertyKey, out EcmaValue value)) {
+        if (taintedLevel == null) {
+          return new EcmaPropertyDescriptor(value, EcmaPropertyAttributes.DefaultDataProperty);
+        }
+        if (taintedLevel[propertyKey.ToArrayIndex()] == TaintLevel.AttributeTainted) {
+          current.Value = value;
+        }
       }
-      if (propertyKey == WellKnownProperty.Length) {
-        return new EcmaPropertyDescriptor(arguments.Length, EcmaPropertyAttributes.None);
-      }
-      return base.GetOwnProperty(propertyKey);
+      return current;
     }
 
     public override bool HasProperty(EcmaPropertyKey propertyKey) {
-      if (propertyKey.IsArrayIndex && propertyKey.ToArrayIndex() < arguments.Length) {
-        return true;
-      }
-      if (propertyKey == WellKnownProperty.Length) {
-        return true;
-      }
-      return base.HasProperty(propertyKey);
+      return (taintedLevel == null && IsBoundedVariable(propertyKey)) || base.HasProperty(propertyKey);
     }
 
     public override bool DefineOwnProperty(EcmaPropertyKey propertyKey, EcmaPropertyDescriptor descriptor) {
-      if (this.IsExtensible) {
-        if (base.GetOwnPropertyKeys().Any()) {
-          DefineOwnPropertyNoChecked(WellKnownProperty.Length, GetOwnProperty(WellKnownProperty.Length));
+      if (IsBoundedVariable(propertyKey)) {
+        int index = (int)propertyKey.ToArrayIndex();
+        EnsureTainted();
+        if (taintedLevel[index] != TaintLevel.BindingTainted) {
+          if (descriptor.HasValue) {
+            arguments[index] = descriptor.Value;
+          }
+          taintedLevel[index] = !descriptor.IsAccessorDescriptor && (!descriptor.HasWritable || descriptor.Writable) ? TaintLevel.AttributeTainted : TaintLevel.BindingTainted;
         }
       }
       return base.DefineOwnProperty(propertyKey, descriptor);
     }
 
-    private static EcmaValue ThrowStrictMode() {
-      throw new EcmaTypeErrorException(InternalString.Error.StrictMode);
+    public override bool Delete(EcmaPropertyKey propertyKey) {
+      if (IsBoundedVariable(propertyKey)) {
+        EnsureTainted();
+        taintedLevel[propertyKey.ToArrayIndex()] = TaintLevel.BindingTainted;
+      }
+      return base.Delete(propertyKey);
+    }
+
+    private void EnsureTainted() {
+      if (taintedLevel == null) {
+        for (int i = 0, len = arguments.Length; i < len; i++) {
+          DefineOwnPropertyNoChecked(i, new EcmaPropertyDescriptor(arguments[i], EcmaPropertyAttributes.DefaultDataProperty));
+        }
+        taintedLevel = new TaintLevel[arguments.Length];
+      }
+    }
+
+    private bool IsBoundedVariable(EcmaPropertyKey propertyKey) {
+      return propertyKey.IsArrayIndex && propertyKey.ToArrayIndex() < arguments.Length;
     }
 
     #region Interfaces

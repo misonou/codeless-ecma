@@ -103,6 +103,7 @@ namespace Codeless.Ecma {
     BigInt64ArrayPrototype,
     BigUint64Array,
     BigUint64ArrayPrototype,
+    ThrowTypeError,
     MaxValue
   }
 }

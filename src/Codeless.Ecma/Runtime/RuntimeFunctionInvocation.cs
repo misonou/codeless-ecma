@@ -16,7 +16,7 @@ namespace Codeless.Ecma.Runtime {
 
     private readonly EcmaValue[] arguments;
     private RuntimeFunctionInvocation previous;
-    private ArgumentList argumentObject;
+    private ArgumentsObject argumentObject;
     private int childCount;
     private bool disposed;
 
@@ -46,10 +46,10 @@ namespace Codeless.Ecma.Runtime {
     public IGeneratorContext Generator { get; internal set; }
     public bool SuspendOnDispose { get; internal set; }
 
-    public ArgumentList Arguments {
+    public ArgumentsObject Arguments {
       get {
         if (argumentObject == null) {
-          argumentObject = new ArgumentList(this, arguments);
+          argumentObject = new ArgumentsObject(this, arguments);
         }
         return argumentObject;
       }

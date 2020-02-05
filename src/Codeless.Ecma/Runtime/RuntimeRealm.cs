@@ -1,4 +1,4 @@
-using Codeless.Ecma.Native;
+using Codeless.Ecma.InteropServices;
 using Codeless.Ecma.Runtime.Intrinsics;
 using System;
 using System.Collections;
@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -51,8 +52,11 @@ namespace Codeless.Ecma.Runtime {
       if (inited) {
         this.ID = Interlocked.Increment(ref accum);
         this.ExecutionContext = RuntimeExecution.Current;
+        Initialized(this, EventArgs.Empty);
       }
     }
+
+    public static event EventHandler Initialized = delegate { };
 
     public event EventHandler BeforeDisposed = delegate { };
 
@@ -274,6 +278,9 @@ namespace Codeless.Ecma.Runtime {
     }
 
     private static void DefineIntrinsicObjectFromType(SharedObjectContainer container, Type type, IntrinsicObjectAttribute typeAttr, Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>[] properties) {
+      // force type initializer to be executed before setting up intrinsic object
+      RuntimeHelpers.RunClassConstructor(type.TypeHandle);
+
       int objectIndex = (int)typeAttr.ObjectType;
       Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht = properties[objectIndex];
       Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> globals = properties[(int)WellKnownObject.Global];
@@ -313,42 +320,45 @@ namespace Codeless.Ecma.Runtime {
             }
             sharedValue = descriptor.Value;
           }
-          if (member.MemberType == MemberTypes.Method && sharedValue == default) {
-            IntrinsicMemberAttribute propAttr = (IntrinsicMemberAttribute)propAttrs[0];
-            EcmaPropertyKey name = GetNameFromMember(propAttr, member);
-            string runtimeName = (propAttr.Getter ? "get " : propAttr.Setter ? "set " : "") + (name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name);
-            sharedValue = container.Add(CreateIntrinsicFunction(runtimeName, member, typeAttr.ObjectType, name, null)).ToValue();
+          if (sharedValue == default) {
+            switch (member.MemberType) {
+              case MemberTypes.Method:
+                IntrinsicMemberAttribute propAttr = (IntrinsicMemberAttribute)propAttrs[0];
+                EcmaPropertyKey name = GetNameFromMember(propAttr, member);
+                string runtimeName = (propAttr.Getter ? "get " : propAttr.Setter ? "set " : "") + (name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name);
+                sharedValue = container.Add(CreateIntrinsicFunction(runtimeName, member, typeAttr.ObjectType, name, null)).ToValue();
+                break;
+              case MemberTypes.Field:
+                object fieldValue = ((FieldInfo)member).GetValue(null);
+                sharedValue = fieldValue is WellKnownObject t1 ? new SharedObjectHandle((long)t1).ToValue() : new EcmaValue(fieldValue);
+                break;
+              case MemberTypes.Property:
+                object propertyValue = ((PropertyInfo)member).GetValue(null, null);
+                sharedValue = propertyValue is WellKnownObject t2 ? new SharedObjectHandle((long)t2).ToValue() : new EcmaValue(propertyValue);
+                break;
+            }
           }
           foreach (IntrinsicMemberAttribute propAttr in propAttrs) {
             EcmaPropertyKey name = GetNameFromMember(propAttr, member);
-            switch (member.MemberType) {
-              case MemberTypes.Method:
-                if (propAttr.Getter) {
-                  DefineIntrinsicAccessorProperty(ht, name, sharedValue, propAttr.Attributes, true);
-                } else if (propAttr.Setter) {
-                  DefineIntrinsicAccessorProperty(ht, name, sharedValue, propAttr.Attributes, false);
-                } else if (((MethodInfo)member).IsStatic) {
-                  DefineIntrinsicMethodProperty(ht, name, sharedValue, propAttr.Attributes);
-                  if (propAttr.Global) {
-                    DefineIntrinsicMethodProperty(globals, name, sharedValue, propAttr.Attributes);
-                  }
-                }
-                break;
-              case MemberTypes.Property:
-                DefineIntrinsicDataProperty(ht, name, ((PropertyInfo)member).GetValue(null, null), propAttr.Attributes);
-                break;
-              case MemberTypes.Field:
-                DefineIntrinsicDataProperty(ht, name, ((FieldInfo)member).GetValue(null), propAttr.Attributes);
-                break;
+            if (propAttr.Getter) {
+              DefineIntrinsicAccessorProperty(ht, name, sharedValue, propAttr.Attributes, true);
+            } else if (propAttr.Setter) {
+              DefineIntrinsicAccessorProperty(ht, name, sharedValue, propAttr.Attributes, false);
+            } else if (member.MemberType != MemberTypes.Method) {
+              DefineIntrinsicDataProperty(ht, name, sharedValue, propAttr.Attributes);
+            } else {
+              DefineIntrinsicMethodProperty(ht, name, sharedValue, propAttr.Attributes);
+              if (propAttr.Global) {
+                DefineIntrinsicMethodProperty(globals, name, sharedValue, propAttr.Attributes);
+              }
             }
           }
         }
       }
     }
 
-    private static void DefineIntrinsicDataProperty(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, object value, EcmaPropertyAttributes? attributes) {
-      attributes = attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty) & (EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable);
-      ht[name] = value is WellKnownObject type ? CreateWellknownObjectSharedDescriptor(type, attributes.Value) : new EcmaPropertyDescriptor(new EcmaValue(value), attributes.Value);
+    private static void DefineIntrinsicDataProperty(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, EcmaValue value, EcmaPropertyAttributes? attributes) {
+      ht[name] = new EcmaPropertyDescriptor(value, attributes.GetValueOrDefault(EcmaPropertyAttributes.DefaultDataProperty) & (EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.Writable));
     }
 
     private static void DefineIntrinsicAccessorProperty(Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> ht, EcmaPropertyKey name, EcmaValue sharedValue, EcmaPropertyAttributes? attributes, bool isGetter) {

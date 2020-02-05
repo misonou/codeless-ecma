@@ -1,4 +1,4 @@
-﻿using Codeless.Ecma.Native;
+﻿using Codeless.Ecma.InteropServices;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -42,6 +42,7 @@ namespace Codeless.Ecma.Runtime {
     private readonly List<WaitHandle> handles = new List<WaitHandle>();
     private readonly AutoResetEvent resetEvent = new AutoResetEvent(false);
     private readonly Stopwatch stopwatch = Stopwatch.StartNew();
+    private ManualResetEvent parentWaitHandle;
     private RuntimeRealm defaultRealm;
     private int nextId;
 
@@ -82,20 +83,29 @@ namespace Codeless.Ecma.Runtime {
       ManualResetEvent waitHandle = new ManualResetEvent(false);
       RuntimeRealm parentRealm = RuntimeRealm.Current;
       RuntimeExecution execution = null;
-      new Thread(() => {
+      Thread thread = new Thread(() => {
         execution = EnsureInstance();
+        execution.parentWaitHandle = waitHandle;
         execution.AutoExit = autoExit;
         try {
           action(parentRealm);
-          waitHandle.Set();
+          execution.AwakeParentThread();
           ContinueUntilEnd();
         } catch (Exception ex) {
           SendUnhandledException(ex);
-          waitHandle.Set();
+          execution.AwakeParentThread();
         }
-      }).Start();
+      });
+      thread.IsBackground = true;
+      thread.Start();
       waitHandle.WaitOne();
       return execution;
+    }
+
+    public static bool Suspend(WaitHandle handle, int milliseconds) {
+      RuntimeExecution current = EnsureInstance();
+      current.AwakeParentThread();
+      return handle.WaitOne(milliseconds);
     }
 
     public static double GetPerformaceTimestamp(double precision) {
@@ -174,7 +184,7 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public void WakeImmediately() {
-      if (this.Thread.ThreadState == System.Threading.ThreadState.WaitSleepJoin) {
+      if ((this.Thread.ThreadState & System.Threading.ThreadState.WaitSleepJoin) != 0) {
         resetEvent.Set();
       }
     }
@@ -260,12 +270,21 @@ namespace Codeless.Ecma.Runtime {
       current.UnhandledException?.Invoke(null, new RuntimeUnhandledExceptionEventArgs(ex, EcmaValueUtility.GetValueFromException(ex)));
     }
 
+    private void AwakeParentThread() {
+      ManualResetEvent waitHandle = parentWaitHandle;
+      if (waitHandle != null) {
+        parentWaitHandle = null;
+        waitHandle.Set();
+      }
+    }
+
     private static void SuspendThread(TimeSpan? timeSpan) {
       AutoResetEvent resetEvent = current.resetEvent;
       List<WaitHandle> handles;
       lock (current) {
         handles = new List<WaitHandle>(current.handles);
       }
+      current.AwakeParentThread();
       resetEvent.Reset();
       handles.Add(resetEvent);
       int index = timeSpan.HasValue ? WaitHandle.WaitAny(handles.ToArray(), timeSpan.Value) : WaitHandle.WaitAny(handles.ToArray());

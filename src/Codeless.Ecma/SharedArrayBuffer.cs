@@ -100,7 +100,7 @@ namespace Codeless.Ecma {
       private int counter = 1;
 
       public bool WaitOne(int milliseconds) {
-        return handle.WaitOne(milliseconds) || Interlocked.Decrement(ref counter) != 0;
+        return RuntimeExecution.Suspend(handle, milliseconds) || Interlocked.Decrement(ref counter) != 0;
       }
 
       public bool Set() {

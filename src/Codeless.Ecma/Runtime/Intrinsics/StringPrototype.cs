@@ -79,7 +79,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       Guard.RequireObjectCoercible(value);
       string str = value.ToStringOrThrow();
       string searchString = needle.ToStringOrThrow();
-      return str.IndexOf(searchString, position.ToInteger(0, str.Length));
+      return str.IndexOf(searchString, ArrayHelper.GetBoundIndexClamped(position, str.Length, 0));
     }
 
     [IntrinsicMember(FunctionLength = 1)]
@@ -91,7 +91,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (pos.IsNaN || !pos.IsFinite) {
         return searchString == "" ? str.Length : str.LastIndexOf(searchString);
       }
-      int index = pos.ToInteger(0, str.Length);
+      int index = ArrayHelper.GetBoundIndexClamped(pos, str.Length, 0);
       return searchString == "" ? index : str.LastIndexOf(searchString, index);
     }
 
@@ -207,7 +207,8 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         throw new EcmaTypeErrorException("First argument to String.prototype.endsWith must not be a regular expression");
       }
       string needle = searchString.ToStringOrThrow();
-      int pos = endPosition == default ? str.Length : endPosition.ToInteger(0, str.Length);
+      int strLen = str.Length;
+      int pos = ArrayHelper.GetBoundIndexClamped(endPosition, strLen, strLen);
       if (needle.Length == 0) {
         return true;
       }
@@ -225,7 +226,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
         throw new EcmaTypeErrorException("First argument to String.prototype.startsWith must not be a regular expression");
       }
       string needle = searchString.ToStringOrThrow();
-      int pos = startPosition == default ? 0 : startPosition.ToInteger(0, str.Length);
+      int pos = ArrayHelper.GetBoundIndexClamped(startPosition, str.Length, 0);
       if (needle.Length == 0) {
         return true;
       }
@@ -242,8 +243,9 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       if (searchString.IsRegExp) {
         throw new EcmaTypeErrorException("First argument to String.prototype.includes must not be a regular expression");
       }
-      if (position.Type != EcmaValueType.Undefined) {
-        str = str.Substring(position.ToInteger(0, str.Length));
+      int start = ArrayHelper.GetBoundIndexClamped(position, str.Length, 0);
+      if (start != 0) {
+        str = str.Substring(start);
       }
       return str.Contains(searchString.ToStringOrThrow());
     }
@@ -295,11 +297,9 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Substr([This] EcmaValue value, EcmaValue start, EcmaValue length) {
       Guard.RequireObjectCoercible(value);
       string str = value.ToStringOrThrow();
-      int pos = start.ToInteger(-str.Length, str.Length);
-      if (pos < 0) {
-        pos = pos + str.Length;
-      }
-      int len = length.ToInteger(0, str.Length - pos);
+      int strLen = str.Length;
+      int pos = ArrayHelper.GetBoundIndex(start, strLen, 0);
+      int len = ArrayHelper.GetBoundIndexClamped(length, strLen - pos, 0);
       if (len <= 0) {
         return String.Empty;
       }
@@ -310,8 +310,9 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Substring([This] EcmaValue value, EcmaValue start, EcmaValue end) {
       Guard.RequireObjectCoercible(value);
       string str = value.ToStringOrThrow();
-      int spos = start.ToInteger(0, str.Length);
-      int epos = end == default ? str.Length : end.ToInteger(0, str.Length);
+      int strLen = str.Length;
+      int spos = ArrayHelper.GetBoundIndexClamped(start, strLen, 0);
+      int epos = ArrayHelper.GetBoundIndexClamped(end, strLen, strLen);
       if (epos < spos) {
         return str.Substring(epos, spos - epos);
       }
@@ -342,10 +343,9 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     public static EcmaValue Slice([This] EcmaValue value, EcmaValue start, EcmaValue end) {
       Guard.RequireObjectCoercible(value);
       string str = value.ToStringOrThrow();
-      int spos = start.ToInteger(-str.Length, str.Length);
-      int epos = end == default ? str.Length : end.ToInteger(-str.Length, str.Length);
-      spos = spos < 0 ? spos + str.Length : spos;
-      epos = epos < 0 ? epos + str.Length : epos;
+      int strLen = str.Length;
+      int spos = ArrayHelper.GetBoundIndex(start, strLen, 0);
+      int epos = ArrayHelper.GetBoundIndex(end, strLen, strLen);
       return str.Substring(spos, Math.Max(epos - spos, 0));
     }
 

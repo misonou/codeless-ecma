@@ -616,23 +616,19 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return new EcmaArrayIterator(thisValue, EcmaIteratorResultKind.Value);
     }
 
-    [IntrinsicMember(WellKnownSymbol.Unscopables, EcmaPropertyAttributes.Configurable, Getter = true)]
+    [IntrinsicMember(WellKnownSymbol.Unscopables, EcmaPropertyAttributes.Configurable | EcmaPropertyAttributes.LazyInitialize)]
     public static EcmaValue Unscopables() {
-      RuntimeObject unscopableList = RuntimeRealm.Current.Properties["ArrayPrototypeUnscopables"] as RuntimeObject;
-      if (unscopableList == null) {
-        unscopableList = RuntimeObject.Create(null);
-        unscopableList.CreateDataProperty("copyWithin", true);
-        unscopableList.CreateDataProperty("entries", true);
-        unscopableList.CreateDataProperty("fill", true);
-        unscopableList.CreateDataProperty("find", true);
-        unscopableList.CreateDataProperty("findIndex", true);
-        unscopableList.CreateDataProperty("flat", true);
-        unscopableList.CreateDataProperty("flatMap", true);
-        unscopableList.CreateDataProperty("includes", true);
-        unscopableList.CreateDataProperty("keys", true);
-        unscopableList.CreateDataProperty("values", true);
-        RuntimeRealm.Current.Properties["ArrayPrototypeUnscopables"] = unscopableList;
-      }
+      RuntimeObject unscopableList = RuntimeObject.Create(null);
+      unscopableList.CreateDataProperty("copyWithin", true);
+      unscopableList.CreateDataProperty("entries", true);
+      unscopableList.CreateDataProperty("fill", true);
+      unscopableList.CreateDataProperty("find", true);
+      unscopableList.CreateDataProperty("findIndex", true);
+      unscopableList.CreateDataProperty("flat", true);
+      unscopableList.CreateDataProperty("flatMap", true);
+      unscopableList.CreateDataProperty("includes", true);
+      unscopableList.CreateDataProperty("keys", true);
+      unscopableList.CreateDataProperty("values", true);
       return unscopableList;
     }
 

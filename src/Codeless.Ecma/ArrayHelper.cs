@@ -49,5 +49,13 @@ namespace Codeless.Ecma {
       index = index.ToInteger();
       return (index < 0 ? EcmaMath.Max(len + index, 0) : EcmaMath.Min(index, len)).ToInt32();
     }
+
+    public static int GetBoundIndexClamped(EcmaValue index, int len, int defaultValue) {
+      if (index == default) {
+        return defaultValue;
+      }
+      index = index.ToInteger();
+      return (index < 0 ? 0 : EcmaMath.Min(index, len)).ToInt32();
+    }
   }
 }

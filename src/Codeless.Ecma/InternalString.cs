@@ -51,6 +51,7 @@ namespace Codeless.Ecma {
       public const string AsyncGenerator = "AsyncGenerator";
       public const string AsyncGeneratorFunction = "AsyncGeneratorFunction";
       public const string BigInt = "BigInt";
+      public const string Proxy = "Proxy";
     }
 
     public static class Error {
@@ -82,6 +83,8 @@ namespace Codeless.Ecma {
       public const string InvalidDescriptor = "Invalid property descriptor. Cannot both specify accessors and a value or writable attribute";
       public const string GetterMustBeFunction = "Getter must be a function";
       public const string SetterMustBeFunction = "Setter must be a function";
+      public const string GetterMustHaveNoParam = "Getter must not have any formal parameters";
+      public const string SetterMustHaveOneParam = "Setter must have exactly one formal parameter";
       public const string InvalidArrayLength = "Invalid array length";
       public const string InvalidIndex = "Invalid index";
       public const string InvalidTimeValue = "Invalid time value";

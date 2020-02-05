@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Codeless.Ecma.Native {
+namespace Codeless.Ecma.InteropServices {
   internal class ReflectedNativeObject : RuntimeObject, INativeObjectWrapper {
     public ReflectedNativeObject(object target)
       : base(target) {

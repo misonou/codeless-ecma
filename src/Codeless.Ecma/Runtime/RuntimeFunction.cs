@@ -1,4 +1,3 @@
-﻿using Codeless.Ecma.Native;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +16,7 @@ namespace Codeless.Ecma.Runtime {
 
     public string Source { get; protected set; }
 
-    public bool ContainsUseStrict { get; protected set; }
+    public bool ContainsUseStrict { get; private set; }
 
     public RuntimeObject HomeObject { get; private set; }
 
@@ -27,8 +26,12 @@ namespace Codeless.Ecma.Runtime {
       get { return this.HomeObject != null && this.HomeObject != this; }
     }
 
+    public bool IsClassConstructor {
+      get { return this.HomeObject == this; }
+    }
+
     public bool IsDerivedConstructor {
-      get { return this.HomeObject == this && !this.GetPrototypeOf().IsWellknownObject(WellKnownObject.FunctionConstructor); }
+      get { return this.HomeObject == this && !this.GetPrototypeOf().IsWellknownObject(WellKnownObject.FunctionPrototype); }
     }
 
     protected override string ToStringTag => InternalString.ObjectTag.Function;
@@ -91,19 +94,20 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public RuntimeFunction AsDerivedClassConstructorOf(RuntimeObject super) {
-      Guard.ArgumentNotNull(super, "super");
       if (this is IntrinsicFunction) {
         throw new InvalidOperationException("Cannot modified HomeObject internal slot for intrinsic function");
-      }
-      if (!super.IsConstructor) {
-        throw new ArgumentException("Supplied object must be constructor", "super");
       }
       if (this.HomeObject != null) {
         throw new InvalidOperationException("Homed method cannot be invoked as class constructor");
       }
-      RuntimeObject proto = Create(GetPrototypeFromConstructor(super, WellKnownObject.ObjectPrototype));
-      SetPrototypeOf(super);
-      SetPrototypeInternal(proto);
+      if (super != null) {
+        if (!super.IsConstructor) {
+          throw new ArgumentException("Supplied object must be constructor", "super");
+        }
+        RuntimeObject proto = Create(GetPrototypeFromConstructor(super, WellKnownObject.ObjectPrototype));
+        SetPrototypeOf(super);
+        SetPrototypeInternal(proto);
+      }
       this.HomeObject = this;
       return this;
     }
@@ -113,11 +117,11 @@ namespace Codeless.Ecma.Runtime {
       if (this is IntrinsicFunction) {
         throw new InvalidOperationException("Cannot modified HomeObject internal slot for intrinsic function");
       }
-      if (homeObject == this) {
-        throw new ArgumentException("Supplied object cannot be object itself", "homeObject");
-      }
       if (this.HomeObject != null && this.HomeObject != homeObject) {
         throw new InvalidOperationException("HomeObject internal slot can only be modified once");
+      }
+      if (homeObject == this) {
+        throw new ArgumentException("Supplied object cannot be object itself", "homeObject");
       }
       this.HomeObject = homeObject;
       return this;
@@ -168,10 +172,28 @@ namespace Codeless.Ecma.Runtime {
       throw new EcmaTypeErrorException(InternalString.Error.IllegalInvocation);
     }
 
-    protected void InitProperty(string name, int length) {
+    public override EcmaPropertyDescriptor GetOwnProperty(EcmaPropertyKey propertyKey) {
+      EcmaPropertyDescriptor result = base.GetOwnProperty(propertyKey);
+      if (result != null) {
+        if (propertyKey == WellKnownProperty.Arguments) {
+          return new EcmaPropertyDescriptor(GetCurrentArguments(), EcmaPropertyAttributes.None);
+        }
+        if (propertyKey == WellKnownProperty.Caller) {
+          return new EcmaPropertyDescriptor(GetCurrentCallee(), EcmaPropertyAttributes.None);
+        }
+      }
+      return result;
+    }
+
+    protected void InitProperty(string name, int length, bool containsUseStrict) {
       Guard.ArgumentNotNull(name, "name");
+      this.ContainsUseStrict = containsUseStrict;
       DefineOwnPropertyNoChecked(WellKnownProperty.Length, new EcmaPropertyDescriptor(length, EcmaPropertyAttributes.Configurable));
       DefineOwnPropertyNoChecked(WellKnownProperty.Name, new EcmaPropertyDescriptor(name, EcmaPropertyAttributes.Configurable));
+      if (!containsUseStrict) {
+        DefineOwnPropertyNoChecked(WellKnownProperty.Arguments, new EcmaPropertyDescriptor(EcmaValue.Null, EcmaPropertyAttributes.None));
+        DefineOwnPropertyNoChecked(WellKnownProperty.Caller, new EcmaPropertyDescriptor(EcmaValue.Null, EcmaPropertyAttributes.None));
+      }
     }
 
     protected void SetPrototypeInternal(RuntimeObject proto) {
@@ -186,11 +208,35 @@ namespace Codeless.Ecma.Runtime {
           // the proxy trap will be invoked and hence thisValue will be obtained from returned value
           return true;
         }
-        if (cur is IntrinsicFunction && !cur.IsWellknownObject(WellKnownObject.FunctionConstructor)) {
+        if (cur is IntrinsicFunction) {
           return true;
         }
       }
       return false;
+    }
+
+    private EcmaValue GetCurrentArguments() {
+      RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
+      for (; invocation != null; invocation = invocation.Parent) {
+        if (invocation.FunctionObject == this) {
+          return invocation.Arguments;
+        }
+      }
+      return EcmaValue.Null;
+    }
+
+    private EcmaValue GetCurrentCallee() {
+      RuntimeFunctionInvocation invocation = RuntimeFunctionInvocation.Current;
+      bool returnCaller = false;
+      for (; invocation != null; invocation = invocation.Parent) {
+        if (returnCaller) {
+          return invocation.FunctionObject;
+        }
+        if (invocation.FunctionObject == this) {
+          returnCaller = true;
+        }
+      }
+      return EcmaValue.Null;
     }
 
     public static implicit operator RuntimeFunction(Delegate del) {

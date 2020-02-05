@@ -27,9 +27,12 @@ namespace Codeless.Ecma.Runtime {
     private RuntimeFunctionDelegate fn;
 
     public NativeRuntimeFunction(string name, MethodInfo method)
-      : this(name, method, WellKnownObject.FunctionPrototype) { }
+      : this(name, method, true) { }
 
-    public NativeRuntimeFunction(string name, MethodInfo method, WellKnownObject proto)
+    public NativeRuntimeFunction(string name, MethodInfo method, bool containUseStrict)
+      : this(name, method, containUseStrict, WellKnownObject.FunctionPrototype) { }
+
+    public NativeRuntimeFunction(string name, MethodInfo method, bool containUseStrict, WellKnownObject proto)
       : base(proto) {
       Guard.ArgumentNotNull(method, "method");
       this.method = method;
@@ -37,12 +40,14 @@ namespace Codeless.Ecma.Runtime {
       Type runtimeObjectType = null;
       if (method.HasAttribute(out IntrinsicConstructorAttribute attribute)) {
         constraint = attribute.Constraint;
+        containUseStrict = true;
         runtimeObjectType = attribute.ObjectType;
         if (attribute.Prototype != 0) {
           defaultProto = attribute.Prototype;
         }
       } else if (method.HasAttribute(out IntrinsicMemberAttribute a2)) {
         constraint = NativeRuntimeFunctionConstraint.DenyConstruct;
+        containUseStrict = true;
         if (name == null) {
           name = a2.Name;
         }
@@ -53,7 +58,7 @@ namespace Codeless.Ecma.Runtime {
         }
       }
       this.Source = "function " + name + "() { [native code] }";
-      InitProperty(name, GetFuncLength(method));
+      InitProperty(name, GetFuncLength(method), containUseStrict);
       constructThisValue = runtimeObjectType == null || runtimeObjectType == typeof(EcmaObject) ? createFromConstructorDefault : createFromConstructor.MakeGenericMethod(runtimeObjectType);
     }
 
