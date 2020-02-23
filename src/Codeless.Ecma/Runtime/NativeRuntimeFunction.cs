@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Text;
 
 namespace Codeless.Ecma.Runtime {
-  internal enum NativeRuntimeFunctionConstraint {
+  public enum NativeRuntimeFunctionConstraint {
     None,
     AlwaysConstruct,
     DenyCall,
@@ -21,7 +21,7 @@ namespace Codeless.Ecma.Runtime {
     private static readonly MethodInfo createFromConstructorDefault = createFromConstructor.MakeGenericMethod(typeof(EcmaObject));
 
     private readonly NativeRuntimeFunctionConstraint constraint;
-    private readonly WellKnownObject defaultProto = WellKnownObject.ObjectPrototype;
+    private readonly SharedObjectHandle defaultProto = SharedObjectHandle.ObjectPrototype;
     private readonly MethodInfo constructThisValue;
     private readonly MethodInfo method;
     private RuntimeFunctionDelegate fn;
@@ -42,8 +42,8 @@ namespace Codeless.Ecma.Runtime {
         constraint = attribute.Constraint;
         containUseStrict = true;
         runtimeObjectType = attribute.ObjectType;
-        if (attribute.Prototype != 0) {
-          defaultProto = attribute.Prototype;
+        if (attribute.Prototype is Enum protoEnum) {
+          defaultProto = RuntimeRealm.GetSharedObjectHandle(protoEnum);
         }
       } else if (method.HasAttribute(out IntrinsicMemberAttribute a2)) {
         constraint = NativeRuntimeFunctionConstraint.DenyConstruct;

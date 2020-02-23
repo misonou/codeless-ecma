@@ -121,7 +121,7 @@ namespace Codeless.Ecma.UnitTest.Harness {
 
     private EcmaValue StartWorker(WorkerStart script, List<EcmaValue> captures = null) {
       Worker workerObj = new Worker();
-      RuntimeObject worker = RuntimeRealm.Current.GetRuntimeObject(workerObj);
+      RuntimeObject worker = RuntimeRealm.Current.ResolveRuntimeObject(workerObj);
       EcmaValue postMessage = GetPostMessageCallback(worker, captures);
 
       RuntimeExecution execution = RuntimeExecution.CreateWorkerThread(hostRealm => {

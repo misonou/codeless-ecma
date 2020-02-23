@@ -31,7 +31,7 @@ namespace Codeless.Ecma.UnitTest.Constraints {
     }
 
     public ConstraintResult ApplyTo<TActual>(TActual actual) {
-      RuntimeObject obj = RuntimeRealm.Current.GetRuntimeObject(actual);
+      RuntimeObject obj = RuntimeRealm.Current.ResolveRuntimeObject(actual);
       EcmaPropertyDescriptor descriptor = obj.GetOwnProperty(name);
       if (descriptor == null) {
         return new ConstraintResult(this, null, false);

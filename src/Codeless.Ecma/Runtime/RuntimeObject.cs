@@ -35,24 +35,29 @@ namespace Codeless.Ecma.Runtime {
     [ThreadStatic]
     private static RuntimeRealm currentRealm;
 
-    private readonly WellKnownObject defaultProto;
+    private readonly SharedObjectHandle defaultProto;
     private Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> dictionary;
     private EcmaPropertyKeyCollection keys;
     private RuntimeObject prototype;
 
-    public RuntimeObject(WellKnownObject defaultProto) {
+    public RuntimeObject() {
+      this.defaultProto = SharedObjectHandle.ObjectPrototype;
+      this.Realm = currentRealm ?? RuntimeRealm.Current;
+    }
+
+    public RuntimeObject(SharedObjectHandle defaultProto) {
       this.defaultProto = defaultProto;
       this.Realm = currentRealm ?? RuntimeRealm.Current;
       this.prototype = this.Realm.GetRuntimeObject(defaultProto);
     }
 
-    public RuntimeObject(WellKnownObject defaultProto, RuntimeObject constructor) {
+    public RuntimeObject(SharedObjectHandle defaultProto, RuntimeObject constructor) {
       this.defaultProto = defaultProto;
       this.prototype = GetPrototypeFromConstructor(constructor, defaultProto);
       this.Realm = prototype != null ? prototype.Realm : RuntimeRealm.Current;
     }
 
-    protected RuntimeObject(WellKnownObject defaultProto, bool shared) {
+    protected RuntimeObject(SharedObjectHandle defaultProto, bool shared) {
       this.defaultProto = defaultProto;
       this.Realm = shared ? RuntimeRealm.SharedRealm : RuntimeRealm.Current;
       this.prototype = this.Realm.GetRuntimeObject(defaultProto);
@@ -60,7 +65,7 @@ namespace Codeless.Ecma.Runtime {
 
     protected RuntimeObject(object target)
       : base(target) {
-      this.defaultProto = WellKnownObject.ObjectPrototype;
+      this.defaultProto = SharedObjectHandle.ObjectPrototype;
       this.Realm = RuntimeRealm.Current;
     }
 
@@ -110,7 +115,7 @@ namespace Codeless.Ecma.Runtime {
     }
 
     [EcmaSpecification("OrdinaryCreateFromConstructor", EcmaSpecificationKind.AbstractOperations)]
-    public static T CreateFromConstructor<T>(RuntimeObject constructor, WellKnownObject defaultProto) where T : RuntimeObject, new() {
+    public static T CreateFromConstructor<T>(RuntimeObject constructor, SharedObjectHandle defaultProto) where T : RuntimeObject, new() {
       RuntimeObject proto = GetPrototypeFromConstructor(constructor, defaultProto);
       if (proto != null) {
         currentRealm = proto.Realm;
@@ -127,13 +132,13 @@ namespace Codeless.Ecma.Runtime {
 
     [EcmaSpecification("ObjectCreate", EcmaSpecificationKind.AbstractOperations)]
     public static RuntimeObject Create(RuntimeObject proto) {
-      RuntimeObject obj = new EcmaObject();
+      RuntimeObject obj = new RuntimeObject();
       obj.prototype = proto;
       return obj;
     }
 
     [EcmaSpecification("GetPrototypeFromConstructor", EcmaSpecificationKind.AbstractOperations)]
-    public static RuntimeObject GetPrototypeFromConstructor(RuntimeObject constructor, WellKnownObject defaultProto) {
+    public static RuntimeObject GetPrototypeFromConstructor(RuntimeObject constructor, SharedObjectHandle defaultProto) {
       Guard.ArgumentNotNull(constructor, "constructor");
       if (!constructor.IsCallable) {
         throw new EcmaTypeErrorException(InternalString.Error.NotFunction);
@@ -142,14 +147,14 @@ namespace Codeless.Ecma.Runtime {
       if (proto.Type == EcmaValueType.Object) {
         return proto.ToObject();
       }
-      if (defaultProto != 0) {
+      if (defaultProto != SharedObjectHandle.Null) {
         return constructor.Realm.GetRuntimeObject(defaultProto);
       }
       return null;
     }
 
     [EcmaSpecification("SpeciesConstructor", EcmaSpecificationKind.AbstractOperations)]
-    public static RuntimeObject GetSpeciesConstructor(RuntimeObject obj, WellKnownObject defaultConstructor) {
+    public static RuntimeObject GetSpeciesConstructor(RuntimeObject obj, SharedObjectHandle defaultConstructor) {
       Guard.ArgumentNotNull(obj, "source");
       EcmaValue constructor = obj.Get(WellKnownProperty.Constructor);
       if (constructor == default) {
@@ -410,7 +415,7 @@ namespace Codeless.Ecma.Runtime {
         clone.keys = new EcmaPropertyKeyCollection(clone.keys, true);
       }
       if (clone.prototype != null) {
-        clone.prototype = targetRealm.GetSharedObjectInRealm(clone.prototype);
+        clone.prototype = targetRealm.ResolveRuntimeObjectInRealm(clone.prototype);
       }
       return clone;
     }
@@ -611,7 +616,7 @@ namespace Codeless.Ecma.Runtime {
         if (sourceObj.Realm == targetRealm) {
           return sourceObj;
         }
-        if (targetRealm.TryGetSharedObjectInRealm(sourceObj, out clone)) {
+        if (targetRealm.TryResolveRuntimeObjectInRealm(sourceObj, out clone)) {
           return dict[sourceObj] = clone;
         }
         if (!sourceObj.IsCloneable(out CloneableAttribute attribute)) {

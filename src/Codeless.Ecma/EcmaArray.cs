@@ -39,6 +39,11 @@ namespace Codeless.Ecma {
       Init(values);
     }
 
+    internal EcmaArray(SharedObjectHandle proto)
+      : base(proto) {
+      SetLength(0);
+    }
+
     public long Length {
       get { return Get(WellKnownProperty.Length).ToLength(); }
       set { SetLength(value); }
@@ -1032,12 +1037,12 @@ namespace Codeless.Ecma {
           node.Value.Count = node.Value.Count - endOffset;
           node.Value.Offset = startNode.Value.Offset + startOffset;
           node = node.Previous;
-        } else {
+        } else if (node != null) {
           node.Value.Offset = startNode.Value.Offset + startOffset - endOffset;
           node = node.Previous;
         }
         if (startNode != null) {
-          while (startNode != node) {
+          while (startNode != node && startNode.Next != null) {
             chunks.Remove(startNode.Next);
           }
           chunks.Remove(startNode);

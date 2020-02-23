@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 
 namespace Codeless.Ecma {
+  [IntrinsicObjectEnum((int)MaxValue)]
   public enum WellKnownObject {
     Global = 1,
     ObjectConstructor,

@@ -298,12 +298,12 @@ namespace Codeless.Ecma.UnitTest.Tests {
     public void ObjectHosting() {
       It("should return different instances on different execution thread", () => {
         TestObject obj = new TestObject();
-        RuntimeObject v0 = RuntimeRealm.Current.GetRuntimeObject(obj);
+        RuntimeObject v0 = RuntimeRealm.Current.ResolveRuntimeObject(obj);
 
         RuntimeExecution.CreateWorkerThread(parentRealm => {
           Assume.That(parentRealm, Is.Not.EqualTo(RuntimeRealm.Current), "realm should be different");
 
-          RuntimeObject v1 = RuntimeRealm.Current.GetRuntimeObject(obj);
+          RuntimeObject v1 = RuntimeRealm.Current.ResolveRuntimeObject(obj);
           That(v0 != v1, "returned object should be different");
           That(v0.Realm, Is.EqualTo(parentRealm));
           That(v1.Realm, Is.EqualTo(RuntimeRealm.Current));
@@ -321,7 +321,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
 
       It("should return different instances on different realm of the same execution thread", () => {
         TestObject obj = new TestObject();
-        RuntimeObject v0 = RuntimeRealm.Current.GetRuntimeObject(obj);
+        RuntimeObject v0 = RuntimeRealm.Current.ResolveRuntimeObject(obj);
         RuntimeRealm parentRealm = RuntimeRealm.Current;
         RuntimeRealm other = new RuntimeRealm();
 
@@ -329,7 +329,7 @@ namespace Codeless.Ecma.UnitTest.Tests {
           Assume.That(RuntimeRealm.Current, Is.Not.EqualTo(parentRealm), "realm should be different");
           Assume.That(RuntimeRealm.Current, Is.EqualTo(other));
 
-          RuntimeObject v1 = RuntimeRealm.Current.GetRuntimeObject(obj);
+          RuntimeObject v1 = RuntimeRealm.Current.ResolveRuntimeObject(obj);
           That(v0 != v1, "returned object should be different");
           That(v0.Realm, Is.EqualTo(parentRealm));
           That(v1.Realm, Is.EqualTo(RuntimeRealm.Current));

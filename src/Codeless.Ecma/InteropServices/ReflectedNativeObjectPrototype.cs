@@ -10,7 +10,7 @@ namespace Codeless.Ecma.InteropServices {
   internal class ReflectedNativeObjectPrototype : RuntimeObject {
     private static readonly Hashtable hashtable = new Hashtable();
 
-    private ReflectedNativeObjectPrototype(RuntimeRealm.SharedObjectContainer container, Type type, bool defaultHideMembers)
+    private ReflectedNativeObjectPrototype(ISharedObjectContainer container, Type type, bool defaultHideMembers)
       : base(WellKnownObject.ObjectPrototype) {
       PropertyInfo[] properties = type.GetProperties();
       bool showAttributedOnly = defaultHideMembers || properties.Any(v => v.HasAttribute(out IntrinsicMemberAttribute _));
@@ -35,12 +35,12 @@ namespace Codeless.Ecma.InteropServices {
     }
 
     public static RuntimeObject FromType(Type type) {
-      RuntimeRealm.SharedObjectHandle sharedValue = default;
-      if (hashtable[type] is RuntimeRealm.SharedObjectHandle o) {
+      SharedObjectHandle sharedValue = default;
+      if (hashtable[type] is SharedObjectHandle o) {
         sharedValue = o;
       } else {
         lock (hashtable) {
-          if (hashtable[type] is RuntimeRealm.SharedObjectHandle o2) {
+          if (hashtable[type] is SharedObjectHandle o2) {
             sharedValue = o2;
           } else {
             using (RuntimeRealm.SharedObjectContainer container = new RuntimeRealm.SharedObjectContainer()) {
@@ -51,7 +51,7 @@ namespace Codeless.Ecma.InteropServices {
           }
         }
       }
-      return sharedValue.GetRuntimeObject(RuntimeRealm.Current);
+      return RuntimeRealm.Current.GetRuntimeObject(sharedValue);
     }
 
     private class Constructor : RuntimeFunction {

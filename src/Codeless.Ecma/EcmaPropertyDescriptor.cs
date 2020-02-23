@@ -231,17 +231,18 @@ namespace Codeless.Ecma {
     }
 
     internal EcmaPropertyDescriptor EnsureSharedValue(RuntimeRealm realm) {
+      Guard.ArgumentNotNull(realm, "realm");
       bool isGetterShared = getter.Type == SharedIntrinsicObjectBinder.SharedValue;
       bool isSetterShared = setter.Type == SharedIntrinsicObjectBinder.SharedValue;
       if (isGetterShared || isSetterShared) {
         EcmaPropertyDescriptor clone = Clone();
         if (isGetterShared) {
-          RuntimeRealm.SharedObjectHandle handle = RuntimeRealm.SharedObjectHandle.FromValue(getter);
-          clone.getter = handle.GetRuntimeObject(realm);
+          SharedObjectHandle handle = SharedObjectHandle.FromValue(getter);
+          clone.getter = realm.GetRuntimeObject(handle);
         }
         if (isSetterShared) {
-          RuntimeRealm.SharedObjectHandle handle = RuntimeRealm.SharedObjectHandle.FromValue(setter);
-          clone.setter = handle.GetRuntimeObject(realm);
+          SharedObjectHandle handle = SharedObjectHandle.FromValue(setter);
+          clone.setter = realm.GetRuntimeObject(handle);
         }
         return clone;
       }

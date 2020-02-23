@@ -7,17 +7,20 @@ using System.Threading.Tasks;
 namespace Codeless.Ecma.Runtime {
   [AttributeUsage(AttributeTargets.Method)]
   public class AliasOfAttribute : Attribute {
-    public AliasOfAttribute(WellKnownObject objectType, string name)  {
+    public AliasOfAttribute(object objectType, string name)  {
+      Guard.ArgumentNotNull(objectType, "objectType");
+      Guard.ArgumentNotNull(name, "name");
       this.ObjectType = objectType;
       this.Name = name;
     }
 
-    public AliasOfAttribute(WellKnownObject objectType, WellKnownSymbol symbol) {
+    public AliasOfAttribute(object objectType, WellKnownSymbol symbol) {
+      Guard.ArgumentNotNull(objectType, "objectType");
       this.ObjectType = objectType;
       this.Symbol = symbol;
     }
 
-    public WellKnownObject ObjectType { get; }
+    public object ObjectType { get; }
     public WellKnownSymbol Symbol { get; }
     public string Name { get; }
   }

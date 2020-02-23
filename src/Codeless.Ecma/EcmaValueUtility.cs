@@ -170,7 +170,7 @@ namespace Codeless.Ecma {
           case TypeCode.Double:
             return new EcmaValue(DoubleBinder.Default.ToHandle((double)target), DoubleBinder.Default);
         }
-        binder = RuntimeRealm.Current.GetRuntimeObject(target);
+        binder = RuntimeRealm.Current.ResolveRuntimeObject(target);
       }
       return new EcmaValue(binder.ToHandle(target), binder);
     }

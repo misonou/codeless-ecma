@@ -6,9 +6,7 @@ using System.Threading.Tasks;
 
 namespace Codeless.Ecma.Runtime {
   [AttributeUsage(AttributeTargets.Method)]
-  internal class IntrinsicConstructorAttribute : Attribute {
-    private WellKnownObject? superClass;
-
+  public class IntrinsicConstructorAttribute : Attribute {
     public IntrinsicConstructorAttribute() {
       this.Global = true;
     }
@@ -19,14 +17,10 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public NativeRuntimeFunctionConstraint Constraint { get; private set; }
-    public WellKnownObject Prototype { get; set; }
+    public object Prototype { get; set; }
+    public object SuperClass { get; set; }
     public Type ObjectType { get; set; }
     public string Name { get; set; }
     public bool Global { get; set; }
-
-    public WellKnownObject SuperClass {
-      get => superClass.GetValueOrDefault(WellKnownObject.FunctionPrototype);
-      set => superClass = value;
-    }
   }
 }

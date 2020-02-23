@@ -18,7 +18,7 @@ namespace Codeless.Ecma {
   }
 
   public abstract class EcmaException : Exception {
-    internal EcmaException(string message)
+    public EcmaException(string message)
       : base(message) {
       this.CallSite = RuntimeFunctionInvocation.Current;
     }
@@ -42,10 +42,10 @@ namespace Codeless.Ecma {
   }
 
   public class EcmaTypeErrorException : EcmaException {
-    internal EcmaTypeErrorException(string message)
+    public EcmaTypeErrorException(string message)
       : base(message) { }
 
-    internal EcmaTypeErrorException(string message, params object[] p)
+    public EcmaTypeErrorException(string message, params object[] p)
       : base(String.Format(message, p)) { }
 
     public override EcmaNativeErrorType ErrorType {
@@ -54,10 +54,10 @@ namespace Codeless.Ecma {
   }
 
   public class EcmaRangeErrorException : EcmaException {
-    internal EcmaRangeErrorException(string message)
+    public EcmaRangeErrorException(string message)
       : base(message) { }
 
-    internal EcmaRangeErrorException(string message, params object[] p)
+    public EcmaRangeErrorException(string message, params object[] p)
       : base(String.Format(message, p)) { }
 
     public override EcmaNativeErrorType ErrorType {
@@ -66,10 +66,10 @@ namespace Codeless.Ecma {
   }
 
   public class EcmaSyntaxErrorException : EcmaException {
-    internal EcmaSyntaxErrorException(string message)
+    public EcmaSyntaxErrorException(string message)
       : base(message) { }
 
-    internal EcmaSyntaxErrorException(string message, params object[] p)
+    public EcmaSyntaxErrorException(string message, params object[] p)
       : base(String.Format(message, p)) { }
 
     public override EcmaNativeErrorType ErrorType {
@@ -78,10 +78,10 @@ namespace Codeless.Ecma {
   }
 
   public class EcmaReferenceErrorException : EcmaException {
-    internal EcmaReferenceErrorException(string message)
+    public EcmaReferenceErrorException(string message)
       : base(message) { }
 
-    internal EcmaReferenceErrorException(string message, params object[] p)
+    public EcmaReferenceErrorException(string message, params object[] p)
       : base(String.Format(message, p)) { }
     
     public override EcmaNativeErrorType ErrorType {
@@ -90,10 +90,10 @@ namespace Codeless.Ecma {
   }
 
   public class EcmaEvalErrorException : EcmaException {
-    internal EcmaEvalErrorException(string message)
+    public EcmaEvalErrorException(string message)
       : base(message) { }
 
-    internal EcmaEvalErrorException(string message, params object[] p)
+    public EcmaEvalErrorException(string message, params object[] p)
       : base(String.Format(message, p)) { }
 
     public override EcmaNativeErrorType ErrorType {
@@ -102,10 +102,10 @@ namespace Codeless.Ecma {
   }
   
   public class EcmaUriErrorException : EcmaException {
-    internal EcmaUriErrorException(string message)
+    public EcmaUriErrorException(string message)
       : base(message) { }
 
-    internal EcmaUriErrorException(string message, params object[] p)
+    public EcmaUriErrorException(string message, params object[] p)
       : base(String.Format(message, p)) { }
 
     public override EcmaNativeErrorType ErrorType {
