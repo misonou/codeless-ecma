@@ -1,0 +1,1116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ldmlBCP47>
+  <keyword>
+    <key name="ca" valueType="incremental" alias="calendar">
+      <type name="buddhist" />
+      <type name="chinese" />
+      <type name="coptic" />
+      <type name="dangi" since="22.1" />
+      <type name="ethioaa" alias="ethiopic-amete-alem" />
+      <type name="ethiopic" />
+      <type name="gregory" alias="gregorian" />
+      <type name="hebrew" />
+      <type name="indian" />
+      <type name="islamic" />
+      <type name="islamic-umalqura" since="24" />
+      <type name="islamic-tbla" since="24" />
+      <type name="islamic-civil" since="24" />
+      <type name="islamic-rgsa" since="24" />
+      <type name="iso8601" since="2.0" />
+      <type name="japanese" />
+      <type name="persian" />
+      <type name="roc" />
+      <type name="islamicc" deprecated="true" preferred="islamic-civil" alias="islamic-civil" />
+    </key>
+    <key name="fw" since="28">
+      <type name="sun" since="28" />
+      <type name="mon" since="28" />
+      <type name="tue" since="28" />
+      <type name="wed" since="28" />
+      <type name="thu" since="28" />
+      <type name="fri" since="28" />
+      <type name="sat" since="28" />
+    </key>
+    <key name="hc" alias="hours" since="28">
+      <type name="h12" since="28" />
+      <type name="h23" since="28" />
+      <type name="h11" since="28" />
+      <type name="h24" since="28" />
+    </key>
+    <key name="co" alias="collation">
+      <type name="big5han" />
+      <type name="compat" since="26" />
+      <type name="dict" alias="dictionary" />
+      <type name="direct" deprecated="true" />
+      <type name="ducet" since="2.0.1" />
+      <type name="emoji" since="27" />
+      <type name="eor" since="24" />
+      <type name="gb2312" alias="gb2312han" />
+      <type name="phonebk" alias="phonebook" />
+      <type name="phonetic" />
+      <type name="pinyin" />
+      <type name="reformed" />
+      <type name="search" since="1.9" />
+      <type name="searchjl" since="2.0.1" />
+      <type name="standard" />
+      <type name="stroke" />
+      <type name="trad" alias="traditional" />
+      <type name="unihan" />
+      <type name="zhuyin" since="22" />
+    </key>
+    <key name="ka" alias="colAlternate">
+      <type name="noignore" alias="non-ignorable" />
+      <type name="shifted" />
+    </key>
+    <key name="kb" alias="colBackwards">
+      <type name="true" alias="yes" />
+      <type name="false" alias="no" />
+    </key>
+    <key name="kc" alias="colCaseLevel">
+      <type name="true" alias="yes" />
+      <type name="false" alias="no" />
+    </key>
+    <key name="kf" alias="colCaseFirst">
+      <type name="upper" />
+      <type name="lower" />
+      <type name="false" alias="no" />
+    </key>
+    <key name="kh" deprecated="true" alias="colHiraganaQuaternary">
+      <type name="true" alias="yes" />
+      <type name="false" alias="no" />
+    </key>
+    <key name="kk" alias="colNormalization">
+      <type name="true" alias="yes" />
+      <type name="false" alias="no" />
+    </key>
+    <key name="kn" alias="colNumeric">
+      <type name="true" alias="yes" />
+      <type name="false" alias="no" />
+    </key>
+    <key name="kr" valueType="multiple" alias="colReorder" since="21">
+      <type name="space" since="21" />
+      <type name="punct" since="21" />
+      <type name="symbol" since="21" />
+      <type name="currency" since="21" />
+      <type name="digit" since="21" />
+      <type name="REORDER_CODE" since="21" />
+    </key>
+    <key name="ks" alias="colStrength">
+      <type name="level1" alias="primary" />
+      <type name="level2" alias="secondary" />
+      <type name="level3" alias="tertiary" />
+      <type name="level4" alias="quaternary quarternary" />
+      <type name="identic" alias="identical" />
+    </key>
+    <key name="kv" since="25">
+      <type name="space" since="25" />
+      <type name="punct" since="25" />
+      <type name="symbol" since="25" />
+      <type name="currency" since="25" />
+    </key>
+    <key name="vt" deprecated="true" valueType="multiple" alias="variableTop">
+      <type name="CODEPOINTS" />
+    </key>
+    <key name="cf" since="28">
+      <type name="standard" since="28" />
+      <type name="account" since="28" />
+    </key>
+    <key name="cu" alias="currency">
+      <type name="adp" since="1.9" />
+      <type name="aed" since="1.9" />
+      <type name="afa" since="1.9" />
+      <type name="afn" />
+      <type name="alk" since="1.9" />
+      <type name="all" since="1.9" />
+      <type name="amd" since="1.9" />
+      <type name="ang" />
+      <type name="aoa" />
+      <type name="aok" since="1.9" />
+      <type name="aon" since="1.9" />
+      <type name="aor" since="1.9" />
+      <type name="ara" />
+      <type name="arl" />
+      <type name="arm" />
+      <type name="arp" since="1.9" />
+      <type name="ars" />
+      <type name="ats" since="1.9" />
+      <type name="aud" />
+      <type name="awg" />
+      <type name="azm" since="1.9" />
+      <type name="azn" />
+      <type name="bad" since="1.9" />
+      <type name="bam" />
+      <type name="ban" since="1.9" />
+      <type name="bbd" />
+      <type name="bdt" />
+      <type name="bec" since="1.9" />
+      <type name="bef" />
+      <type name="bel" since="1.9" />
+      <type name="bgl" since="1.9" />
+      <type name="bgm" since="1.9" />
+      <type name="bgn" since="1.9" />
+      <type name="bgo" since="1.9" />
+      <type name="bhd" />
+      <type name="bif" />
+      <type name="bmd" />
+      <type name="bnd" />
+      <type name="bob" />
+      <type name="bol" since="1.9" />
+      <type name="bop" />
+      <type name="bov" since="1.9" />
+      <type name="brb" since="1.9" />
+      <type name="brc" since="1.9" />
+      <type name="bre" since="1.9" />
+      <type name="brl" />
+      <type name="brn" since="1.9" />
+      <type name="brr" since="1.9" />
+      <type name="brz" since="1.9" />
+      <type name="bsd" />
+      <type name="btn" />
+      <type name="buk" since="1.9" />
+      <type name="bwp" />
+      <type name="byb" since="1.9" />
+      <type name="byn" since="31" />
+      <type name="byr" since="1.9" />
+      <type name="bzd" />
+      <type name="cad" />
+      <type name="cdf" />
+      <type name="che" since="1.9" />
+      <type name="chf" />
+      <type name="chw" since="1.9" />
+      <type name="cle" />
+      <type name="clf" since="1.9" />
+      <type name="clp" />
+      <type name="cnh" since="32" />
+      <type name="cnx" since="1.9" />
+      <type name="cny" />
+      <type name="cop" />
+      <type name="cou" since="1.9" />
+      <type name="crc" />
+      <type name="csd" since="1.9" />
+      <type name="csk" since="1.9" />
+      <type name="cuc" />
+      <type name="cup" />
+      <type name="cve" />
+      <type name="cyp" />
+      <type name="czk" />
+      <type name="ddm" since="1.9" />
+      <type name="dem" />
+      <type name="djf" />
+      <type name="dkk" />
+      <type name="dop" />
+      <type name="dzd" />
+      <type name="ecs" since="1.9" />
+      <type name="ecv" since="1.9" />
+      <type name="eek" />
+      <type name="egp" />
+      <type name="ern" />
+      <type name="esa" since="1.9" />
+      <type name="esb" since="1.9" />
+      <type name="esp" />
+      <type name="etb" />
+      <type name="eur" />
+      <type name="fim" />
+      <type name="fjd" />
+      <type name="fkp" />
+      <type name="frf" />
+      <type name="gbp" />
+      <type name="gek" since="1.9" />
+      <type name="gel" since="1.9" />
+      <type name="ghc" />
+      <type name="ghs" />
+      <type name="gip" />
+      <type name="gmd" />
+      <type name="gnf" />
+      <type name="gns" since="1.9" />
+      <type name="gqe" since="1.9" />
+      <type name="grd" />
+      <type name="gtq" />
+      <type name="gwe" since="1.9" />
+      <type name="gwp" since="1.9" />
+      <type name="gyd" />
+      <type name="hkd" />
+      <type name="hnl" />
+      <type name="hrd" since="1.9" />
+      <type name="hrk" />
+      <type name="htg" />
+      <type name="huf" />
+      <type name="idr" />
+      <type name="iep" />
+      <type name="ilp" />
+      <type name="ilr" since="1.9" />
+      <type name="ils" />
+      <type name="inr" />
+      <type name="iqd" since="1.9" />
+      <type name="irr" since="1.9" />
+      <type name="isj" since="1.9" />
+      <type name="isk" />
+      <type name="itl" />
+      <type name="jmd" />
+      <type name="jod" />
+      <type name="jpy" />
+      <type name="kes" />
+      <type name="kgs" since="1.9" />
+      <type name="khr" since="1.9" />
+      <type name="kmf" />
+      <type name="kpw" since="1.9" />
+      <type name="krh" since="1.9" />
+      <type name="kro" since="1.9" />
+      <type name="krw" />
+      <type name="kwd" />
+      <type name="kyd" />
+      <type name="kzt" since="1.9" />
+      <type name="lak" />
+      <type name="lbp" />
+      <type name="lkr" />
+      <type name="lrd" />
+      <type name="lsl" />
+      <type name="ltl" />
+      <type name="ltt" since="1.9" />
+      <type name="luc" since="1.9" />
+      <type name="luf" since="1.9" />
+      <type name="lul" since="1.9" />
+      <type name="lvl" />
+      <type name="lvr" since="1.9" />
+      <type name="lyd" />
+      <type name="mad" since="1.9" />
+      <type name="maf" since="1.9" />
+      <type name="mcf" since="1.9" />
+      <type name="mdc" since="1.9" />
+      <type name="mdl" since="1.9" />
+      <type name="mga" since="1.9" />
+      <type name="mgf" since="1.9" />
+      <type name="mkd" since="1.9" />
+      <type name="mkn" since="1.9" />
+      <type name="mlf" since="1.9" />
+      <type name="mmk" />
+      <type name="mnt" />
+      <type name="mop" />
+      <type name="mro" />
+      <type name="mru" since="33" />
+      <type name="mtl" />
+      <type name="mtp" />
+      <type name="mur" />
+      <type name="mvp" since="1.9" />
+      <type name="mvr" since="1.9" />
+      <type name="mwk" since="1.9" />
+      <type name="mxn" since="1.9" />
+      <type name="mxp" />
+      <type name="mxv" since="1.9" />
+      <type name="myr" />
+      <type name="mze" since="1.9" />
+      <type name="mzm" />
+      <type name="mzn" />
+      <type name="nad" />
+      <type name="ngn" />
+      <type name="nic" since="1.9" />
+      <type name="nio" />
+      <type name="nlg" />
+      <type name="nok" />
+      <type name="npr" />
+      <type name="nzd" />
+      <type name="omr" since="1.9" />
+      <type name="pab" />
+      <type name="pei" />
+      <type name="pen" />
+      <type name="pes" since="1.9" />
+      <type name="pgk" />
+      <type name="php" />
+      <type name="pkr" />
+      <type name="pln" />
+      <type name="plz" since="1.9" />
+      <type name="pte" />
+      <type name="pyg" />
+      <type name="qar" />
+      <type name="rhd" />
+      <type name="rol" since="1.9" />
+      <type name="ron" />
+      <type name="rsd" />
+      <type name="rub" since="1.9" />
+      <type name="rur" since="1.9" />
+      <type name="rwf" since="1.9" />
+      <type name="sar" />
+      <type name="sbd" />
+      <type name="scr" />
+      <type name="sdd" />
+      <type name="sdg" since="1.9" />
+      <type name="sdp" since="1.9" />
+      <type name="sek" />
+      <type name="sgd" />
+      <type name="shp" />
+      <type name="sit" since="1.9" />
+      <type name="skk" />
+      <type name="sll" />
+      <type name="sos" />
+      <type name="srd" />
+      <type name="srg" />
+      <type name="ssp" since="21" />
+      <type name="std" />
+      <type name="stn" since="32" />
+      <type name="sur" since="1.9" />
+      <type name="svc" />
+      <type name="syp" />
+      <type name="szl" />
+      <type name="thb" />
+      <type name="tjr" since="1.9" />
+      <type name="tjs" since="1.9" />
+      <type name="tmm" />
+      <type name="tmt" since="1.9" />
+      <type name="tnd" />
+      <type name="top" />
+      <type name="tpe" since="1.9" />
+      <type name="trl" />
+      <type name="try" />
+      <type name="ttd" />
+      <type name="twd" />
+      <type name="tzs" />
+      <type name="uah" />
+      <type name="uak" since="1.9" />
+      <type name="ugs" since="1.9" />
+      <type name="ugx" />
+      <type name="usd" />
+      <type name="usn" since="1.9" />
+      <type name="uss" since="1.9" />
+      <type name="uyi" since="1.9" />
+      <type name="uyp" since="1.9" />
+      <type name="uyu" />
+      <type name="uyw" since="34" />
+      <type name="uzs" since="1.9" />
+      <type name="veb" since="1.9" />
+      <type name="vef" />
+      <type name="ves" since="34" />
+      <type name="vnd" />
+      <type name="vnn" since="1.9" />
+      <type name="vuv" />
+      <type name="wst" />
+      <type name="xaf" />
+      <type name="xag" since="1.9" />
+      <type name="xau" since="1.9" />
+      <type name="xba" since="1.9" />
+      <type name="xbb" since="1.9" />
+      <type name="xbc" since="1.9" />
+      <type name="xbd" since="1.9" />
+      <type name="xcd" />
+      <type name="xdr" since="1.9" />
+      <type name="xeu" since="1.9" />
+      <type name="xfo" since="1.9" />
+      <type name="xfu" since="1.9" />
+      <type name="xof" />
+      <type name="xpd" since="1.9" />
+      <type name="xpf" />
+      <type name="xpt" since="1.9" />
+      <type name="xre" since="1.9" />
+      <type name="xsu" since="21" />
+      <type name="xts" since="1.9" />
+      <type name="xua" since="21" />
+      <type name="xxx" since="1.9" />
+      <type name="ydd" since="1.9" />
+      <type name="yer" />
+      <type name="yud" since="1.9" />
+      <type name="yum" since="1.9" />
+      <type name="yun" since="1.9" />
+      <type name="yur" since="1.9" />
+      <type name="zal" since="1.9" />
+      <type name="zar" />
+      <type name="zmk" />
+      <type name="zmw" since="23" />
+      <type name="zrn" />
+      <type name="zrz" />
+      <type name="zwd" />
+      <type name="zwl" since="1.9" />
+      <type name="zwr" since="1.9" />
+    </key>
+    <key name="ms" alias="measure" since="28">
+      <type name="metric" since="28" />
+      <type name="ussystem" since="28" />
+      <type name="uksystem" alias="imperial" since="28" />
+    </key>
+    <key name="nu" alias="numbers">
+      <type name="adlm" since="30" />
+      <type name="ahom" since="28" />
+      <type name="arab" />
+      <type name="arabext" />
+      <type name="armn" />
+      <type name="armnlow" />
+      <type name="bali" since="21" />
+      <type name="beng" />
+      <type name="bhks" since="30" />
+      <type name="brah" since="21" />
+      <type name="cakm" since="21" />
+      <type name="cham" since="21" />
+      <type name="cyrl" since="28" />
+      <type name="deva" />
+      <type name="diak" since="36.1" />
+      <type name="ethi" />
+      <type name="finance" since="21" />
+      <type name="fullwide" />
+      <type name="geor" />
+      <type name="gong" since="33.1" />
+      <type name="gonm" since="32" />
+      <type name="grek" />
+      <type name="greklow" />
+      <type name="gujr" />
+      <type name="guru" />
+      <type name="hanidays" since="25" />
+      <type name="hanidec" since="1.9" />
+      <type name="hans" />
+      <type name="hansfin" />
+      <type name="hant" />
+      <type name="hantfin" />
+      <type name="hebr" />
+      <type name="hmng" since="28" />
+      <type name="hmnp" since="35" />
+      <type name="java" since="21" />
+      <type name="jpan" />
+      <type name="jpanfin" />
+      <type name="jpanyear" since="35" />
+      <type name="kali" since="21" />
+      <type name="khmr" />
+      <type name="knda" />
+      <type name="lana" since="21" />
+      <type name="lanatham" since="21" />
+      <type name="laoo" />
+      <type name="latn" />
+      <type name="lepc" since="21" />
+      <type name="limb" since="21" />
+      <type name="mathbold" since="28" />
+      <type name="mathdbl" since="28" />
+      <type name="mathmono" since="28" />
+      <type name="mathsanb" since="28" />
+      <type name="mathsans" since="28" />
+      <type name="mlym" />
+      <type name="modi" since="28" />
+      <type name="mong" />
+      <type name="mroo" since="28" />
+      <type name="mtei" since="21" />
+      <type name="mymr" />
+      <type name="mymrshan" since="21" />
+      <type name="mymrtlng" since="28" />
+      <type name="native" since="21" />
+      <type name="newa" since="30" />
+      <type name="nkoo" since="21" />
+      <type name="olck" since="21" />
+      <type name="orya" />
+      <type name="osma" since="21" />
+      <type name="rohg" since="33.1" />
+      <type name="roman" />
+      <type name="romanlow" />
+      <type name="saur" since="21" />
+      <type name="shrd" since="21" />
+      <type name="sind" since="28" />
+      <type name="sinh" since="28" />
+      <type name="sora" since="21" />
+      <type name="sund" since="21" />
+      <type name="takr" since="21" />
+      <type name="talu" since="21" />
+      <type name="taml" />
+      <type name="tamldec" since="2.0.1" />
+      <type name="telu" />
+      <type name="thai" />
+      <type name="tirh" since="28" />
+      <type name="tibt" />
+      <type name="traditio" alias="traditional" since="21" />
+      <type name="vaii" since="21" />
+      <type name="wara" since="28" />
+      <type name="wcho" since="35" />
+    </key>
+    <key name="lb" since="27">
+      <type name="strict" />
+      <type name="normal" />
+      <type name="loose" />
+    </key>
+    <key name="lw" since="28">
+      <type name="normal" />
+      <type name="breakall" />
+      <type name="keepall" />
+    </key>
+    <key name="ss" since="28">
+      <type name="none" />
+      <type name="standard" />
+    </key>
+    <key name="tz" alias="timezone">
+      <type name="adalv" alias="Europe/Andorra" />
+      <type name="aedxb" alias="Asia/Dubai" />
+      <type name="afkbl" alias="Asia/Kabul" />
+      <type name="aganu" alias="America/Antigua" />
+      <type name="aiaxa" alias="America/Anguilla" />
+      <type name="altia" alias="Europe/Tirane" />
+      <type name="amevn" alias="Asia/Yerevan" />
+      <type name="ancur" alias="America/Curacao" />
+      <type name="aolad" alias="Africa/Luanda" />
+      <type name="aqams" deprecated="true" preferred="nzakl" />
+      <type name="aqcas" alias="Antarctica/Casey" />
+      <type name="aqdav" alias="Antarctica/Davis" />
+      <type name="aqddu" alias="Antarctica/DumontDUrville" />
+      <type name="aqmaw" alias="Antarctica/Mawson" />
+      <type name="aqmcm" alias="Antarctica/McMurdo" />
+      <type name="aqplm" alias="Antarctica/Palmer" />
+      <type name="aqrot" alias="Antarctica/Rothera" />
+      <type name="aqsyw" alias="Antarctica/Syowa" />
+      <type name="aqtrl" alias="Antarctica/Troll" since="26" />
+      <type name="aqvos" alias="Antarctica/Vostok" />
+      <type name="arbue" alias="America/Buenos_Aires America/Argentina/Buenos_Aires" />
+      <type name="arcor" alias="America/Cordoba America/Argentina/Cordoba America/Rosario" />
+      <type name="arctc" alias="America/Catamarca America/Argentina/Catamarca America/Argentina/ComodRivadavia" />
+      <type name="arirj" alias="America/Argentina/La_Rioja" />
+      <type name="arjuj" alias="America/Jujuy America/Argentina/Jujuy" />
+      <type name="arluq" alias="America/Argentina/San_Luis" />
+      <type name="armdz" alias="America/Mendoza America/Argentina/Mendoza" />
+      <type name="arrgl" alias="America/Argentina/Rio_Gallegos" />
+      <type name="arsla" alias="America/Argentina/Salta" />
+      <type name="artuc" alias="America/Argentina/Tucuman" />
+      <type name="aruaq" alias="America/Argentina/San_Juan" />
+      <type name="arush" alias="America/Argentina/Ushuaia" />
+      <type name="asppg" alias="Pacific/Pago_Pago Pacific/Samoa US/Samoa" />
+      <type name="atvie" alias="Europe/Vienna" />
+      <type name="auadl" alias="Australia/Adelaide Australia/South" />
+      <type name="aubhq" alias="Australia/Broken_Hill Australia/Yancowinna" />
+      <type name="aubne" alias="Australia/Brisbane Australia/Queensland" />
+      <type name="audrw" alias="Australia/Darwin Australia/North" />
+      <type name="aueuc" alias="Australia/Eucla" />
+      <type name="auhba" alias="Australia/Hobart Australia/Tasmania" />
+      <type name="aukns" alias="Australia/Currie" />
+      <type name="auldc" alias="Australia/Lindeman" />
+      <type name="auldh" alias="Australia/Lord_Howe Australia/LHI" />
+      <type name="aumel" alias="Australia/Melbourne Australia/Victoria" />
+      <type name="aumqi" alias="Antarctica/Macquarie" since="1.8.1" />
+      <type name="auper" alias="Australia/Perth Australia/West" />
+      <type name="ausyd" alias="Australia/Sydney Australia/ACT Australia/Canberra Australia/NSW" />
+      <type name="awaua" alias="America/Aruba" />
+      <type name="azbak" alias="Asia/Baku" />
+      <type name="basjj" alias="Europe/Sarajevo" />
+      <type name="bbbgi" alias="America/Barbados" />
+      <type name="bddac" alias="Asia/Dhaka Asia/Dacca" />
+      <type name="bebru" alias="Europe/Brussels" />
+      <type name="bfoua" alias="Africa/Ouagadougou" />
+      <type name="bgsof" alias="Europe/Sofia" />
+      <type name="bhbah" alias="Asia/Bahrain" />
+      <type name="bibjm" alias="Africa/Bujumbura" />
+      <type name="bjptn" alias="Africa/Porto-Novo" />
+      <type name="bmbda" alias="Atlantic/Bermuda" />
+      <type name="bnbwn" alias="Asia/Brunei" />
+      <type name="bolpb" alias="America/La_Paz" />
+      <type name="bqkra" alias="America/Kralendijk" since="21" />
+      <type name="braux" alias="America/Araguaina" />
+      <type name="brbel" alias="America/Belem" />
+      <type name="brbvb" alias="America/Boa_Vista" />
+      <type name="brcgb" alias="America/Cuiaba" />
+      <type name="brcgr" alias="America/Campo_Grande" />
+      <type name="brern" alias="America/Eirunepe" />
+      <type name="brfen" alias="America/Noronha Brazil/DeNoronha" />
+      <type name="brfor" alias="America/Fortaleza" />
+      <type name="brmao" alias="America/Manaus Brazil/West" />
+      <type name="brmcz" alias="America/Maceio" />
+      <type name="brpvh" alias="America/Porto_Velho" />
+      <type name="brrbr" alias="America/Rio_Branco America/Porto_Acre Brazil/Acre" />
+      <type name="brrec" alias="America/Recife" />
+      <type name="brsao" alias="America/Sao_Paulo Brazil/East" />
+      <type name="brssa" alias="America/Bahia" />
+      <type name="brstm" alias="America/Santarem" />
+      <type name="bsnas" alias="America/Nassau" />
+      <type name="btthi" alias="Asia/Thimphu Asia/Thimbu" />
+      <type name="bwgbe" alias="Africa/Gaborone" />
+      <type name="bymsq" alias="Europe/Minsk" />
+      <type name="bzbze" alias="America/Belize" />
+      <type name="cacfq" alias="America/Creston" since="21.0.1" />
+      <type name="caedm" alias="America/Edmonton Canada/Mountain" />
+      <type name="caffs" alias="America/Rainy_River" />
+      <type name="cafne" alias="America/Fort_Nelson" />
+      <type name="caglb" alias="America/Glace_Bay" />
+      <type name="cagoo" alias="America/Goose_Bay" />
+      <type name="cahal" alias="America/Halifax Canada/Atlantic" />
+      <type name="caiql" alias="America/Iqaluit" />
+      <type name="camon" alias="America/Moncton" />
+      <type name="camtr" deprecated="true" alias="America/Montreal" />
+      <type name="capnt" alias="America/Pangnirtung" />
+      <type name="careb" alias="America/Resolute" />
+      <type name="careg" alias="America/Regina Canada/East-Saskatchewan Canada/Saskatchewan" />
+      <type name="casjf" alias="America/St_Johns Canada/Newfoundland" />
+      <type name="canpg" alias="America/Nipigon" />
+      <type name="cathu" alias="America/Thunder_Bay" />
+      <type name="cator" alias="America/Toronto Canada/Eastern" />
+      <type name="cavan" alias="America/Vancouver Canada/Pacific" />
+      <type name="cawnp" alias="America/Winnipeg Canada/Central" />
+      <type name="caybx" alias="America/Blanc-Sablon" />
+      <type name="caycb" alias="America/Cambridge_Bay" />
+      <type name="cayda" alias="America/Dawson" />
+      <type name="caydq" alias="America/Dawson_Creek" />
+      <type name="cayek" alias="America/Rankin_Inlet" />
+      <type name="cayev" alias="America/Inuvik" />
+      <type name="cayxy" alias="America/Whitehorse Canada/Yukon" />
+      <type name="cayyn" alias="America/Swift_Current" />
+      <type name="cayzf" alias="America/Yellowknife" />
+      <type name="cayzs" alias="America/Coral_Harbour America/Atikokan" />
+      <type name="cccck" alias="Indian/Cocos" />
+      <type name="cdfbm" alias="Africa/Lubumbashi" />
+      <type name="cdfih" alias="Africa/Kinshasa" />
+      <type name="cfbgf" alias="Africa/Bangui" />
+      <type name="cgbzv" alias="Africa/Brazzaville" />
+      <type name="chzrh" alias="Europe/Zurich" />
+      <type name="ciabj" alias="Africa/Abidjan" />
+      <type name="ckrar" alias="Pacific/Rarotonga" />
+      <type name="clipc" alias="Pacific/Easter Chile/EasterIsland" />
+      <type name="clpuq" alias="America/Punta_Arenas" since="31" />
+      <type name="clscl" alias="America/Santiago Chile/Continental" />
+      <type name="cmdla" alias="Africa/Douala" />
+      <type name="cnckg" deprecated="true" preferred="cnsha" />
+      <type name="cnhrb" deprecated="true" preferred="cnsha" />
+      <type name="cnkhg" deprecated="true" preferred="cnurc" />
+      <type name="cnsha" alias="Asia/Shanghai Asia/Chongqing Asia/Chungking Asia/Harbin PRC" />
+      <type name="cnurc" alias="Asia/Urumqi Asia/Kashgar" />
+      <type name="cobog" alias="America/Bogota" />
+      <type name="crsjo" alias="America/Costa_Rica" />
+      <type name="cst6cdt" alias="CST6CDT" since="1.8" />
+      <type name="cuhav" alias="America/Havana Cuba" />
+      <type name="cvrai" alias="Atlantic/Cape_Verde" />
+      <type name="cxxch" alias="Indian/Christmas" />
+      <type name="cyfmg" alias="Asia/Famagusta" since="31" />
+      <type name="cynic" alias="Asia/Nicosia Europe/Nicosia" />
+      <type name="czprg" alias="Europe/Prague" />
+      <type name="deber" alias="Europe/Berlin" />
+      <type name="debsngn" alias="Europe/Busingen" since="23" />
+      <type name="djjib" alias="Africa/Djibouti" />
+      <type name="dkcph" alias="Europe/Copenhagen" />
+      <type name="dmdom" alias="America/Dominica" />
+      <type name="dosdq" alias="America/Santo_Domingo" />
+      <type name="dzalg" alias="Africa/Algiers" />
+      <type name="ecgps" alias="Pacific/Galapagos" />
+      <type name="ecgye" alias="America/Guayaquil" />
+      <type name="eetll" alias="Europe/Tallinn" />
+      <type name="egcai" alias="Africa/Cairo Egypt" />
+      <type name="eheai" alias="Africa/El_Aaiun" />
+      <type name="erasm" alias="Africa/Asmera Africa/Asmara" />
+      <type name="esceu" alias="Africa/Ceuta" />
+      <type name="eslpa" alias="Atlantic/Canary" />
+      <type name="esmad" alias="Europe/Madrid" />
+      <type name="est5edt" alias="EST5EDT" since="1.8" />
+      <type name="etadd" alias="Africa/Addis_Ababa" />
+      <type name="fihel" alias="Europe/Helsinki" />
+      <type name="fimhq" alias="Europe/Mariehamn" />
+      <type name="fjsuv" alias="Pacific/Fiji" />
+      <type name="fkpsy" alias="Atlantic/Stanley" />
+      <type name="fmksa" alias="Pacific/Kosrae" />
+      <type name="fmpni" alias="Pacific/Ponape Pacific/Pohnpei" />
+      <type name="fmtkk" alias="Pacific/Truk Pacific/Chuuk Pacific/Yap" />
+      <type name="fotho" alias="Atlantic/Faeroe Atlantic/Faroe" />
+      <type name="frpar" alias="Europe/Paris" />
+      <type name="galbv" alias="Africa/Libreville" />
+      <type name="gaza" alias="Asia/Gaza" />
+      <type name="gblon" alias="Europe/London Europe/Belfast GB GB-Eire" />
+      <type name="gdgnd" alias="America/Grenada" />
+      <type name="getbs" alias="Asia/Tbilisi" />
+      <type name="gfcay" alias="America/Cayenne" />
+      <type name="gggci" alias="Europe/Guernsey" />
+      <type name="ghacc" alias="Africa/Accra" />
+      <type name="gigib" alias="Europe/Gibraltar" />
+      <type name="gldkshvn" alias="America/Danmarkshavn" />
+      <type name="glgoh" alias="America/Godthab" />
+      <type name="globy" alias="America/Scoresbysund" />
+      <type name="glthu" alias="America/Thule" />
+      <type name="gmbjl" alias="Africa/Banjul" />
+      <type name="gmt" alias="Etc/GMT Etc/GMT+0 Etc/GMT-0 Etc/GMT0 Etc/Greenwich GMT GMT+0 GMT-0 GMT0 Greenwich" />
+      <type name="gncky" alias="Africa/Conakry" />
+      <type name="gpbbr" alias="America/Guadeloupe" />
+      <type name="gpmsb" alias="America/Marigot" />
+      <type name="gpsbh" alias="America/St_Barthelemy" />
+      <type name="gqssg" alias="Africa/Malabo" />
+      <type name="grath" alias="Europe/Athens" />
+      <type name="gsgrv" alias="Atlantic/South_Georgia" />
+      <type name="gtgua" alias="America/Guatemala" />
+      <type name="gugum" alias="Pacific/Guam" />
+      <type name="gwoxb" alias="Africa/Bissau" />
+      <type name="gygeo" alias="America/Guyana" />
+      <type name="hebron" alias="Asia/Hebron" since="21" />
+      <type name="hkhkg" alias="Asia/Hong_Kong Hongkong" />
+      <type name="hntgu" alias="America/Tegucigalpa" />
+      <type name="hrzag" alias="Europe/Zagreb" />
+      <type name="htpap" alias="America/Port-au-Prince" />
+      <type name="hubud" alias="Europe/Budapest" />
+      <type name="iddjj" alias="Asia/Jayapura" />
+      <type name="idjkt" alias="Asia/Jakarta" />
+      <type name="idmak" alias="Asia/Makassar Asia/Ujung_Pandang" />
+      <type name="idpnk" alias="Asia/Pontianak" />
+      <type name="iedub" alias="Europe/Dublin Eire" />
+      <type name="imdgs" alias="Europe/Isle_of_Man" />
+      <type name="inccu" alias="Asia/Calcutta Asia/Kolkata" />
+      <type name="iodga" alias="Indian/Chagos" />
+      <type name="iqbgw" alias="Asia/Baghdad" />
+      <type name="irthr" alias="Asia/Tehran Iran" />
+      <type name="isrey" alias="Atlantic/Reykjavik Iceland" />
+      <type name="itrom" alias="Europe/Rome" />
+      <type name="jeruslm" alias="Asia/Jerusalem Asia/Tel_Aviv Israel" />
+      <type name="jesth" alias="Europe/Jersey" />
+      <type name="jmkin" alias="America/Jamaica Jamaica" />
+      <type name="joamm" alias="Asia/Amman" />
+      <type name="jptyo" alias="Asia/Tokyo Japan" />
+      <type name="kenbo" alias="Africa/Nairobi" />
+      <type name="kgfru" alias="Asia/Bishkek" />
+      <type name="khpnh" alias="Asia/Phnom_Penh" />
+      <type name="kicxi" alias="Pacific/Kiritimati" />
+      <type name="kipho" alias="Pacific/Enderbury" />
+      <type name="kitrw" alias="Pacific/Tarawa" />
+      <type name="kmyva" alias="Indian/Comoro" />
+      <type name="knbas" alias="America/St_Kitts" />
+      <type name="kpfnj" alias="Asia/Pyongyang" />
+      <type name="krsel" alias="Asia/Seoul ROK" />
+      <type name="kwkwi" alias="Asia/Kuwait" />
+      <type name="kygec" alias="America/Cayman" />
+      <type name="kzaau" alias="Asia/Aqtau" />
+      <type name="kzakx" alias="Asia/Aqtobe" />
+      <type name="kzala" alias="Asia/Almaty" />
+      <type name="kzguw" alias="Asia/Atyrau" since="31" />
+      <type name="kzksn" alias="Asia/Qostanay" since="35" />
+      <type name="kzkzo" alias="Asia/Qyzylorda" />
+      <type name="kzura" alias="Asia/Oral" />
+      <type name="lavte" alias="Asia/Vientiane" />
+      <type name="lbbey" alias="Asia/Beirut" />
+      <type name="lccas" alias="America/St_Lucia" />
+      <type name="livdz" alias="Europe/Vaduz" />
+      <type name="lkcmb" alias="Asia/Colombo" />
+      <type name="lrmlw" alias="Africa/Monrovia" />
+      <type name="lsmsu" alias="Africa/Maseru" />
+      <type name="ltvno" alias="Europe/Vilnius" />
+      <type name="lulux" alias="Europe/Luxembourg" />
+      <type name="lvrix" alias="Europe/Riga" />
+      <type name="lytip" alias="Africa/Tripoli Libya" />
+      <type name="macas" alias="Africa/Casablanca" />
+      <type name="mcmon" alias="Europe/Monaco" />
+      <type name="mdkiv" alias="Europe/Chisinau Europe/Tiraspol" />
+      <type name="metgd" alias="Europe/Podgorica" />
+      <type name="mgtnr" alias="Indian/Antananarivo" />
+      <type name="mhkwa" alias="Pacific/Kwajalein Kwajalein" />
+      <type name="mhmaj" alias="Pacific/Majuro" />
+      <type name="mkskp" alias="Europe/Skopje" />
+      <type name="mlbko" alias="Africa/Bamako Africa/Timbuktu" />
+      <type name="mmrgn" alias="Asia/Rangoon Asia/Yangon" />
+      <type name="mncoq" alias="Asia/Choibalsan" />
+      <type name="mnhvd" alias="Asia/Hovd" />
+      <type name="mnuln" alias="Asia/Ulaanbaatar Asia/Ulan_Bator" />
+      <type name="momfm" alias="Asia/Macau Asia/Macao" />
+      <type name="mpspn" alias="Pacific/Saipan" />
+      <type name="mqfdf" alias="America/Martinique" />
+      <type name="mrnkc" alias="Africa/Nouakchott" />
+      <type name="msmni" alias="America/Montserrat" />
+      <type name="mst7mdt" alias="MST7MDT" since="1.8" />
+      <type name="mtmla" alias="Europe/Malta" />
+      <type name="muplu" alias="Indian/Mauritius" />
+      <type name="mvmle" alias="Indian/Maldives" />
+      <type name="mwblz" alias="Africa/Blantyre" />
+      <type name="mxchi" alias="America/Chihuahua" />
+      <type name="mxcun" alias="America/Cancun" />
+      <type name="mxhmo" alias="America/Hermosillo" />
+      <type name="mxmam" alias="America/Matamoros" />
+      <type name="mxmex" alias="America/Mexico_City Mexico/General" />
+      <type name="mxmid" alias="America/Merida" />
+      <type name="mxmty" alias="America/Monterrey" />
+      <type name="mxmzt" alias="America/Mazatlan Mexico/BajaSur" />
+      <type name="mxoji" alias="America/Ojinaga" />
+      <type name="mxpvr" alias="America/Bahia_Banderas" since="1.9" />
+      <type name="mxstis" alias="America/Santa_Isabel" />
+      <type name="mxtij" alias="America/Tijuana America/Ensenada Mexico/BajaNorte" />
+      <type name="mykch" alias="Asia/Kuching" />
+      <type name="mykul" alias="Asia/Kuala_Lumpur" />
+      <type name="mzmpm" alias="Africa/Maputo" />
+      <type name="nawdh" alias="Africa/Windhoek" />
+      <type name="ncnou" alias="Pacific/Noumea" />
+      <type name="nenim" alias="Africa/Niamey" />
+      <type name="nfnlk" alias="Pacific/Norfolk" />
+      <type name="nglos" alias="Africa/Lagos" />
+      <type name="nimga" alias="America/Managua" />
+      <type name="nlams" alias="Europe/Amsterdam" />
+      <type name="noosl" alias="Europe/Oslo" />
+      <type name="npktm" alias="Asia/Katmandu Asia/Kathmandu" />
+      <type name="nrinu" alias="Pacific/Nauru" />
+      <type name="nuiue" alias="Pacific/Niue" />
+      <type name="nzakl" alias="Pacific/Auckland Antarctica/South_Pole NZ" />
+      <type name="nzcht" alias="Pacific/Chatham NZ-CHAT" />
+      <type name="ommct" alias="Asia/Muscat" />
+      <type name="papty" alias="America/Panama" />
+      <type name="pelim" alias="America/Lima" />
+      <type name="pfgmr" alias="Pacific/Gambier" />
+      <type name="pfnhv" alias="Pacific/Marquesas" />
+      <type name="pfppt" alias="Pacific/Tahiti" />
+      <type name="pgpom" alias="Pacific/Port_Moresby" />
+      <type name="pgraw" alias="Pacific/Bougainville" since="27" />
+      <type name="phmnl" alias="Asia/Manila" />
+      <type name="pkkhi" alias="Asia/Karachi" />
+      <type name="plwaw" alias="Europe/Warsaw Poland" />
+      <type name="pmmqc" alias="America/Miquelon" />
+      <type name="pnpcn" alias="Pacific/Pitcairn" />
+      <type name="prsju" alias="America/Puerto_Rico" />
+      <type name="pst8pdt" alias="PST8PDT" since="1.8" />
+      <type name="ptfnc" alias="Atlantic/Madeira" />
+      <type name="ptlis" alias="Europe/Lisbon Portugal" />
+      <type name="ptpdl" alias="Atlantic/Azores" />
+      <type name="pwror" alias="Pacific/Palau" />
+      <type name="pyasu" alias="America/Asuncion" />
+      <type name="qadoh" alias="Asia/Qatar" />
+      <type name="rereu" alias="Indian/Reunion" />
+      <type name="robuh" alias="Europe/Bucharest" />
+      <type name="rsbeg" alias="Europe/Belgrade" />
+      <type name="ruasf" alias="Europe/Astrakhan" since="30" />
+      <type name="rubax" alias="Asia/Barnaul" since="30" />
+      <type name="ruchita" alias="Asia/Chita" since="26" />
+      <type name="rudyr" alias="Asia/Anadyr" />
+      <type name="rugdx" alias="Asia/Magadan" />
+      <type name="ruikt" alias="Asia/Irkutsk" />
+      <type name="rukgd" alias="Europe/Kaliningrad" />
+      <type name="rukhndg" alias="Asia/Khandyga" since="23" />
+      <type name="rukra" alias="Asia/Krasnoyarsk" />
+      <type name="rukuf" alias="Europe/Samara" />
+      <type name="rukvx" alias="Europe/Kirov" since="30" />
+      <type name="rumow" alias="Europe/Moscow W-SU" />
+      <type name="runoz" alias="Asia/Novokuznetsk" />
+      <type name="ruoms" alias="Asia/Omsk" />
+      <type name="ruovb" alias="Asia/Novosibirsk" />
+      <type name="rupkc" alias="Asia/Kamchatka" />
+      <type name="rurtw" alias="Europe/Saratov" since="31" />
+      <type name="rusred" alias="Asia/Srednekolymsk" since="26" />
+      <type name="rutof" alias="Asia/Tomsk" since="30" />
+      <type name="ruuly" alias="Europe/Ulyanovsk" since="30" />
+      <type name="ruunera" alias="Asia/Ust-Nera" since="23" />
+      <type name="ruuus" alias="Asia/Sakhalin" />
+      <type name="ruvog" alias="Europe/Volgograd" />
+      <type name="ruvvo" alias="Asia/Vladivostok" />
+      <type name="ruyek" alias="Asia/Yekaterinburg" />
+      <type name="ruyks" alias="Asia/Yakutsk" />
+      <type name="rwkgl" alias="Africa/Kigali" />
+      <type name="saruh" alias="Asia/Riyadh" />
+      <type name="sbhir" alias="Pacific/Guadalcanal" />
+      <type name="scmaw" alias="Indian/Mahe" />
+      <type name="sdkrt" alias="Africa/Khartoum" />
+      <type name="sesto" alias="Europe/Stockholm" />
+      <type name="sgsin" alias="Asia/Singapore Singapore" />
+      <type name="shshn" alias="Atlantic/St_Helena" />
+      <type name="silju" alias="Europe/Ljubljana" />
+      <type name="sjlyr" alias="Arctic/Longyearbyen Atlantic/Jan_Mayen" />
+      <type name="skbts" alias="Europe/Bratislava" />
+      <type name="slfna" alias="Africa/Freetown" />
+      <type name="smsai" alias="Europe/San_Marino" />
+      <type name="sndkr" alias="Africa/Dakar" />
+      <type name="somgq" alias="Africa/Mogadishu" />
+      <type name="srpbm" alias="America/Paramaribo" />
+      <type name="ssjub" alias="Africa/Juba" since="21" />
+      <type name="sttms" alias="Africa/Sao_Tome" />
+      <type name="svsal" alias="America/El_Salvador" />
+      <type name="sxphi" alias="America/Lower_Princes" since="21" />
+      <type name="sydam" alias="Asia/Damascus" />
+      <type name="szqmn" alias="Africa/Mbabane" />
+      <type name="tcgdt" alias="America/Grand_Turk" />
+      <type name="tdndj" alias="Africa/Ndjamena" />
+      <type name="tfpfr" alias="Indian/Kerguelen" />
+      <type name="tglfw" alias="Africa/Lome" />
+      <type name="thbkk" alias="Asia/Bangkok" />
+      <type name="tjdyu" alias="Asia/Dushanbe" />
+      <type name="tkfko" alias="Pacific/Fakaofo" />
+      <type name="tldil" alias="Asia/Dili" />
+      <type name="tmasb" alias="Asia/Ashgabat Asia/Ashkhabad" />
+      <type name="tntun" alias="Africa/Tunis" />
+      <type name="totbu" alias="Pacific/Tongatapu" />
+      <type name="trist" alias="Europe/Istanbul Asia/Istanbul Turkey" />
+      <type name="ttpos" alias="America/Port_of_Spain" />
+      <type name="tvfun" alias="Pacific/Funafuti" />
+      <type name="twtpe" alias="Asia/Taipei ROC" />
+      <type name="tzdar" alias="Africa/Dar_es_Salaam" />
+      <type name="uaiev" alias="Europe/Kiev" />
+      <type name="uaozh" alias="Europe/Zaporozhye" />
+      <type name="uasip" alias="Europe/Simferopol" />
+      <type name="uauzh" alias="Europe/Uzhgorod" />
+      <type name="ugkla" alias="Africa/Kampala" />
+      <type name="umawk" alias="Pacific/Wake" />
+      <type name="umjon" alias="Pacific/Johnston" />
+      <type name="ummdy" alias="Pacific/Midway" />
+      <type name="unk" alias="Etc/Unknown" />
+      <type name="usadk" alias="America/Adak America/Atka US/Aleutian" />
+      <type name="usaeg" alias="America/Indiana/Marengo" />
+      <type name="usanc" alias="America/Anchorage US/Alaska" />
+      <type name="usboi" alias="America/Boise" />
+      <type name="uschi" alias="America/Chicago US/Central" />
+      <type name="usden" alias="America/Denver America/Shiprock Navajo US/Mountain" />
+      <type name="usdet" alias="America/Detroit US/Michigan" />
+      <type name="ushnl" alias="Pacific/Honolulu US/Hawaii" />
+      <type name="usind" alias="America/Indianapolis America/Fort_Wayne America/Indiana/Indianapolis US/East-Indiana" />
+      <type name="usinvev" alias="America/Indiana/Vevay" />
+      <type name="usjnu" alias="America/Juneau" />
+      <type name="usknx" alias="America/Indiana/Knox America/Knox_IN US/Indiana-Starke" />
+      <type name="uslax" alias="America/Los_Angeles US/Pacific US/Pacific-New" />
+      <type name="uslui" alias="America/Louisville America/Kentucky/Louisville" />
+      <type name="usmnm" alias="America/Menominee" />
+      <type name="usmtm" alias="America/Metlakatla" since="1.9.1" />
+      <type name="usmoc" alias="America/Kentucky/Monticello" />
+      <type name="usnavajo" deprecated="true" preferred="usden" />
+      <type name="usndcnt" alias="America/North_Dakota/Center" />
+      <type name="usndnsl" alias="America/North_Dakota/New_Salem" />
+      <type name="usnyc" alias="America/New_York US/Eastern" />
+      <type name="usoea" alias="America/Indiana/Vincennes" />
+      <type name="usome" alias="America/Nome" />
+      <type name="usphx" alias="America/Phoenix US/Arizona" />
+      <type name="ussit" alias="America/Sitka" since="1.9.1" />
+      <type name="ustel" alias="America/Indiana/Tell_City" />
+      <type name="uswlz" alias="America/Indiana/Winamac" />
+      <type name="uswsq" alias="America/Indiana/Petersburg" />
+      <type name="usxul" alias="America/North_Dakota/Beulah" since="1.9.1" />
+      <type name="usyak" alias="America/Yakutat" />
+      <type name="utc" alias="Etc/UTC Etc/UCT Etc/Universal Etc/Zulu UCT UTC Universal Zulu" />
+      <type name="utce01" alias="Etc/GMT-1" />
+      <type name="utce02" alias="Etc/GMT-2" />
+      <type name="utce03" alias="Etc/GMT-3" />
+      <type name="utce04" alias="Etc/GMT-4" />
+      <type name="utce05" alias="Etc/GMT-5" />
+      <type name="utce06" alias="Etc/GMT-6" />
+      <type name="utce07" alias="Etc/GMT-7" />
+      <type name="utce08" alias="Etc/GMT-8" />
+      <type name="utce09" alias="Etc/GMT-9" />
+      <type name="utce10" alias="Etc/GMT-10" />
+      <type name="utce11" alias="Etc/GMT-11" />
+      <type name="utce12" alias="Etc/GMT-12" />
+      <type name="utce13" alias="Etc/GMT-13" />
+      <type name="utce14" alias="Etc/GMT-14" />
+      <type name="utcw01" alias="Etc/GMT+1" />
+      <type name="utcw02" alias="Etc/GMT+2" />
+      <type name="utcw03" alias="Etc/GMT+3" />
+      <type name="utcw04" alias="Etc/GMT+4" />
+      <type name="utcw05" alias="Etc/GMT+5 EST" />
+      <type name="utcw06" alias="Etc/GMT+6" />
+      <type name="utcw07" alias="Etc/GMT+7 MST" />
+      <type name="utcw08" alias="Etc/GMT+8" />
+      <type name="utcw09" alias="Etc/GMT+9" />
+      <type name="utcw10" alias="Etc/GMT+10 HST" />
+      <type name="utcw11" alias="Etc/GMT+11" />
+      <type name="utcw12" alias="Etc/GMT+12" />
+      <type name="uymvd" alias="America/Montevideo" />
+      <type name="uzskd" alias="Asia/Samarkand" />
+      <type name="uztas" alias="Asia/Tashkent" />
+      <type name="vavat" alias="Europe/Vatican" />
+      <type name="vcsvd" alias="America/St_Vincent" />
+      <type name="veccs" alias="America/Caracas" />
+      <type name="vgtov" alias="America/Tortola" />
+      <type name="vistt" alias="America/St_Thomas America/Virgin" />
+      <type name="vnsgn" alias="Asia/Saigon Asia/Ho_Chi_Minh" />
+      <type name="vuvli" alias="Pacific/Efate" />
+      <type name="wfmau" alias="Pacific/Wallis" />
+      <type name="wsapw" alias="Pacific/Apia" />
+      <type name="yeade" alias="Asia/Aden" />
+      <type name="ytmam" alias="Indian/Mayotte" />
+      <type name="zajnb" alias="Africa/Johannesburg" />
+      <type name="zmlun" alias="Africa/Lusaka" />
+      <type name="zwhre" alias="Africa/Harare" />
+    </key>
+    <key extension="t" name="d0" since="29">
+      <type name="ascii" since="29" />
+      <type name="accents" since="29" />
+      <type name="publish" since="29" alias="publishing" />
+      <type name="casefold" since="29" />
+      <type name="lower" since="29" />
+      <type name="upper" since="29" />
+      <type name="title" since="29" />
+      <type name="digit" since="29" />
+      <type name="fwidth" since="29" alias="fullwidth" />
+      <type name="hwidth" since="29" alias="halfwidth" />
+      <type name="hex" since="29" />
+      <type name="nfc" since="29" />
+      <type name="nfd" since="29" />
+      <type name="nfkc" since="29" />
+      <type name="nfkd" since="29" />
+      <type name="fcd" since="29" />
+      <type name="fcc" since="29" />
+      <type name="charname" since="29" alias="name" />
+      <type name="npinyin" since="29" alias="numericPinyin" />
+      <type name="null" since="29" />
+      <type name="remove" since="29" />
+      <type name="zawgyi" since="34" />
+    </key>
+    <key extension="t" name="s0" since="29">
+      <type name="accents" since="29" />
+      <type name="ascii" since="29" />
+      <type name="publish" since="29" alias="publishing" />
+      <type name="hex" since="29" />
+      <type name="npinyin" since="29" alias="numericPinyin" />
+      <type name="zawgyi" since="30" />
+    </key>
+    <key extension="t" name="m0" since="21">
+      <type name="alaloc" since="21" />
+      <type name="bgn" since="21" />
+      <type name="buckwalt" since="22.1" />
+      <type name="din" since="21" />
+      <type name="gost" since="21" />
+      <type name="iso" since="21" />
+      <type name="mcst" since="21" />
+      <type name="mns" since="29" />
+      <type name="satts" since="22.1" />
+      <type name="ungegn" since="21" />
+      <type name="c11" since="29" alias="c" />
+      <type name="css" since="29" />
+      <type name="java" since="29" />
+      <type name="percent" since="29" />
+      <type name="perl" since="29" />
+      <type name="plain" since="29" />
+      <type name="unicode" since="29" />
+      <type name="xml" since="29" />
+      <type name="xml10" since="29" />
+      <type name="prprname" since="29" alias="names" />
+      <type name="iast" since="35" />
+      <type name="ewts" since="35" />
+    </key>
+    <key extension="t" name="h0" valueType="single" since="31">
+      <type name="hybrid" since="31" />
+    </key>
+    <key extension="t" name="i0" since="21.0.2">
+      <type name="handwrit" since="21.0.2" />
+      <type name="pinyin" since="21.0.2" />
+      <type name="wubi" since="21.0.2" />
+      <type name="und" since="21.0.2" />
+    </key>
+    <key extension="t" name="k0" since="21.0.2">
+      <type name="osx" since="21.0.2" />
+      <type name="windows" since="21.0.2" />
+      <type name="chromeos" since="21.0.2" />
+      <type name="android" since="21.0.2" />
+      <type name="googlevk" since="21.0.2" />
+      <type name="101key" since="21.0.2" />
+      <type name="102key" since="21.0.2" />
+      <type name="dvorak" since="21.0.2" />
+      <type name="dvorakl" since="21.0.2" />
+      <type name="dvorakr" since="21.0.2" />
+      <type name="el220" since="21.0.2" />
+      <type name="el319" since="21.0.2" />
+      <type name="extended" since="21.0.2" />
+      <type name="isiri" since="21.0.2" />
+      <type name="nutaaq" since="21.0.2" />
+      <type name="legacy" since="21.0.2" />
+      <type name="lt1205" since="21.0.2" />
+      <type name="lt1582" since="21.0.2" />
+      <type name="patta" since="21.0.2" />
+      <type name="qwerty" since="21.0.2" />
+      <type name="qwertz" since="21.0.2" />
+      <type name="var" since="21.0.2" />
+      <type name="viqr" since="21.0.2" />
+      <type name="ta99" since="21.0.2" />
+      <type name="colemak" since="21.0.2" />
+      <type name="600dpi" since="21.0.2" />
+      <type name="768dpi" since="21.0.2" />
+      <type name="azerty" since="21.0.2" />
+      <type name="und" since="21.0.2" />
+    </key>
+    <key extension="t" name="t0" since="21.0.2">
+      <type name="und" since="21.0.2" />
+    </key>
+    <key extension="t" name="x0" valueType="any" since="21.0.2">
+      <type name="PRIVATE_USE" since="21.0.2" />
+    </key>
+    <key name="em" since="29">
+      <type name="emoji" />
+      <type name="text" />
+      <type name="default" />
+    </key>
+    <key name="rg" since="29">
+      <type name="RG_KEY_VALUE" />
+    </key>
+    <key name="sd" since="28">
+      <type name="SUBDIVISION_CODE" />
+    </key>
+    <key name="va">
+      <type name="posix" />
+    </key>
+  </keyword>
+</ldmlBCP47>

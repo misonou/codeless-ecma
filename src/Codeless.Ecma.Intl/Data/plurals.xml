@@ -1,0 +1,160 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<supplementalData>
+  <version number="$Revision$" />
+  <plurals type="cardinal">
+    <pluralRules locales="bm bo dz id ig ii id ja jbo jv jv kde kea km ko lkt lo ms my nqo osa root sah ses sg su th to vi wo yo yue zh"></pluralRules>
+    <pluralRules locales="am as bn fa gu hi kn pcm zu">
+      <pluralRule count="one">i = 0 or n = 1</pluralRule>
+    </pluralRules>
+    <pluralRules locales="ff fr hy kab">
+      <pluralRule count="one">i = 0,1</pluralRule>
+    </pluralRules>
+    <pluralRules locales="pt">
+      <pluralRule count="one">i = 0..1</pluralRule>
+    </pluralRules>
+    <pluralRules locales="ast ca de en et fi fy gl ia io it yi nl pt-PT sc scn sv sw ur yi">
+      <pluralRule count="one">i = 1 and v = 0</pluralRule>
+    </pluralRules>
+    <pluralRules locales="si">
+      <pluralRule count="one">n = 0,1 or i = 0 and f = 1</pluralRule>
+    </pluralRules>
+    <pluralRules locales="ak bho guw ln mg nso pa ti wa">
+      <pluralRule count="one">n = 0..1</pluralRule>
+    </pluralRules>
+    <pluralRules locales="tzm">
+      <pluralRule count="one">n = 0..1 or n = 11..99</pluralRule>
+    </pluralRules>
+    <pluralRules locales="af an asa az bem bez bg brx ce cgg chr ckb dv ee el eo es eu fo fur gsw ha haw hu jgo jmc ka kaj kcg kk kkj kl ks ksb ku ky lb lg mas mgo ml mn mr nah nb nd ne nn nnh nb nr ny nyn om or os pap ps rm rof rwk saq sd sdh seh sn so sq ss ssy st syr ta te teo tig tk tn tr ts ug uz ve vo vun wae xh xog">
+      <pluralRule count="one">n = 1</pluralRule>
+    </pluralRules>
+    <pluralRules locales="da">
+      <pluralRule count="one">n = 1 or t != 0 and i = 0,1</pluralRule>
+    </pluralRules>
+    <pluralRules locales="is">
+      <pluralRule count="one">t = 0 and i % 10 = 1 and i % 100 != 11 or t != 0</pluralRule>
+    </pluralRules>
+    <pluralRules locales="mk">
+      <pluralRule count="one">v = 0 and i % 10 = 1 and i % 100 != 11 or f % 10 = 1 and f % 100 != 11</pluralRule>
+    </pluralRules>
+    <pluralRules locales="ceb fil fil">
+      <pluralRule count="one">v = 0 and i = 1,2,3 or v = 0 and i % 10 != 4,6,9 or v != 0 and f % 10 != 4,6,9</pluralRule>
+    </pluralRules>
+    <pluralRules locales="lv prg">
+      <pluralRule count="zero">n % 10 = 0 or n % 100 = 11..19 or v = 2 and f % 100 = 11..19</pluralRule>
+      <pluralRule count="one">n % 10 = 1 and n % 100 != 11 or v = 2 and f % 10 = 1 and f % 100 != 11 or v != 2 and f % 10 = 1</pluralRule>
+    </pluralRules>
+    <pluralRules locales="lag">
+      <pluralRule count="zero">n = 0</pluralRule>
+      <pluralRule count="one">i = 0,1 and n != 0</pluralRule>
+    </pluralRules>
+    <pluralRules locales="ksh">
+      <pluralRule count="zero">n = 0</pluralRule>
+      <pluralRule count="one">n = 1</pluralRule>
+    </pluralRules>
+    <pluralRules locales="iu naq sat se sma smi smj smn sms">
+      <pluralRule count="one">n = 1</pluralRule>
+      <pluralRule count="two">n = 2</pluralRule>
+    </pluralRules>
+    <pluralRules locales="shi">
+      <pluralRule count="one">i = 0 or n = 1</pluralRule>
+      <pluralRule count="few">n = 2..10</pluralRule>
+    </pluralRules>
+    <pluralRules locales="ro ro">
+      <pluralRule count="one">i = 1 and v = 0</pluralRule>
+      <pluralRule count="few">v != 0 or n = 0 or n % 100 = 2..19</pluralRule>
+    </pluralRules>
+    <pluralRules locales="bs hr sr-Latn sr">
+      <pluralRule count="one">v = 0 and i % 10 = 1 and i % 100 != 11 or f % 10 = 1 and f % 100 != 11</pluralRule>
+      <pluralRule count="few">v = 0 and i % 10 = 2..4 and i % 100 != 12..14 or f % 10 = 2..4 and f % 100 != 12..14</pluralRule>
+    </pluralRules>
+    <pluralRules locales="gd">
+      <pluralRule count="one">n = 1,11</pluralRule>
+      <pluralRule count="two">n = 2,12</pluralRule>
+      <pluralRule count="few">n = 3..10,13..19</pluralRule>
+    </pluralRules>
+    <pluralRules locales="sl">
+      <pluralRule count="one">v = 0 and i % 100 = 1</pluralRule>
+      <pluralRule count="two">v = 0 and i % 100 = 2</pluralRule>
+      <pluralRule count="few">v = 0 and i % 100 = 3..4 or v != 0</pluralRule>
+    </pluralRules>
+    <pluralRules locales="dsb hsb">
+      <pluralRule count="one">v = 0 and i % 100 = 1 or f % 100 = 1</pluralRule>
+      <pluralRule count="two">v = 0 and i % 100 = 2 or f % 100 = 2</pluralRule>
+      <pluralRule count="few">v = 0 and i % 100 = 3..4 or f % 100 = 3..4</pluralRule>
+    </pluralRules>
+    <pluralRules locales="he he">
+      <pluralRule count="one">i = 1 and v = 0</pluralRule>
+      <pluralRule count="two">i = 2 and v = 0</pluralRule>
+      <pluralRule count="many">v = 0 and n != 0..10 and n % 10 = 0</pluralRule>
+    </pluralRules>
+    <pluralRules locales="cs sk">
+      <pluralRule count="one">i = 1 and v = 0</pluralRule>
+      <pluralRule count="few">i = 2..4 and v = 0</pluralRule>
+      <pluralRule count="many">v != 0</pluralRule>
+    </pluralRules>
+    <pluralRules locales="pl">
+      <pluralRule count="one">i = 1 and v = 0</pluralRule>
+      <pluralRule count="few">v = 0 and i % 10 = 2..4 and i % 100 != 12..14</pluralRule>
+      <pluralRule count="many">v = 0 and i != 1 and i % 10 = 0..1 or v = 0 and i % 10 = 5..9 or v = 0 and i % 100 = 12..14</pluralRule>
+    </pluralRules>
+    <pluralRules locales="be">
+      <pluralRule count="one">n % 10 = 1 and n % 100 != 11</pluralRule>
+      <pluralRule count="few">n % 10 = 2..4 and n % 100 != 12..14</pluralRule>
+      <pluralRule count="many">n % 10 = 0 or n % 10 = 5..9 or n % 100 = 11..14</pluralRule>
+    </pluralRules>
+    <pluralRules locales="lt">
+      <pluralRule count="one">n % 10 = 1 and n % 100 != 11..19</pluralRule>
+      <pluralRule count="few">n % 10 = 2..9 and n % 100 != 11..19</pluralRule>
+      <pluralRule count="many">f != 0</pluralRule>
+    </pluralRules>
+    <pluralRules locales="mt">
+      <pluralRule count="one">n = 1</pluralRule>
+      <pluralRule count="few">n = 0 or n % 100 = 2..10</pluralRule>
+      <pluralRule count="many">n % 100 = 11..19</pluralRule>
+    </pluralRules>
+    <pluralRules locales="ru uk">
+      <pluralRule count="one">v = 0 and i % 10 = 1 and i % 100 != 11</pluralRule>
+      <pluralRule count="few">v = 0 and i % 10 = 2..4 and i % 100 != 12..14</pluralRule>
+      <pluralRule count="many">v = 0 and i % 10 = 0 or v = 0 and i % 10 = 5..9 or v = 0 and i % 100 = 11..14</pluralRule>
+    </pluralRules>
+    <pluralRules locales="br">
+      <pluralRule count="one">n % 10 = 1 and n % 100 != 11,71,91</pluralRule>
+      <pluralRule count="two">n % 10 = 2 and n % 100 != 12,72,92</pluralRule>
+      <pluralRule count="few">n % 10 = 3..4,9 and n % 100 != 10..19,70..79,90..99</pluralRule>
+      <pluralRule count="many">n != 0 and n % 1000000 = 0</pluralRule>
+    </pluralRules>
+    <pluralRules locales="ga">
+      <pluralRule count="one">n = 1</pluralRule>
+      <pluralRule count="two">n = 2</pluralRule>
+      <pluralRule count="few">n = 3..6</pluralRule>
+      <pluralRule count="many">n = 7..10</pluralRule>
+    </pluralRules>
+    <pluralRules locales="gv">
+      <pluralRule count="one">v = 0 and i % 10 = 1</pluralRule>
+      <pluralRule count="two">v = 0 and i % 10 = 2</pluralRule>
+      <pluralRule count="few">v = 0 and i % 100 = 0,20,40,60,80</pluralRule>
+      <pluralRule count="many">v != 0</pluralRule>
+    </pluralRules>
+    <pluralRules locales="kw">
+      <pluralRule count="zero">n = 0</pluralRule>
+      <pluralRule count="one">n = 1</pluralRule>
+      <pluralRule count="two">n % 100 = 2,22,42,62,82 or n % 1000 = 0 and n % 100000 = 1000..20000,40000,60000,80000 or n != 0 and n % 1000000 = 100000</pluralRule>
+      <pluralRule count="few">n % 100 = 3,23,43,63,83</pluralRule>
+      <pluralRule count="many">n != 1 and n % 100 = 1,21,41,61,81</pluralRule>
+    </pluralRules>
+    <pluralRules locales="ar ars">
+      <pluralRule count="zero">n = 0</pluralRule>
+      <pluralRule count="one">n = 1</pluralRule>
+      <pluralRule count="two">n = 2</pluralRule>
+      <pluralRule count="few">n % 100 = 3..10</pluralRule>
+      <pluralRule count="many">n % 100 = 11..99</pluralRule>
+    </pluralRules>
+    <pluralRules locales="cy">
+      <pluralRule count="zero">n = 0</pluralRule>
+      <pluralRule count="one">n = 1</pluralRule>
+      <pluralRule count="two">n = 2</pluralRule>
+      <pluralRule count="few">n = 3</pluralRule>
+      <pluralRule count="many">n = 6</pluralRule>
+    </pluralRules>
+  </plurals>
+</supplementalData>

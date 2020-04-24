@@ -1,0 +1,84 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks Condition="'$(LibraryFrameworks)'==''">net45;net40;net35;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(LibraryFrameworks)'!=''">$(LibraryFrameworks)</TargetFrameworks>
+    <SignAssembly>true</SignAssembly>
+    <LangVersion>7.3</LangVersion>
+    <AssemblyVersion>1.0.1.4</AssemblyVersion>
+    <AssemblyFileVersion>1.0.0.0</AssemblyFileVersion>
+    <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>
+    <Platform Condition="'$(Platform)'==''">AnyCPU</Platform>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Codeless.Ecma.Intl</RootNamespace>
+    <AssemblyName>Codeless.Ecma.Intl</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+    <FileVersion>1.0.1.4</FileVersion>
+    <Version>0.1.4</Version>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)'=='net45'">
+    <DefineConstants>NET45;DYNAMIC;BIGINTEGER;ASYNC</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
+    <DefineConstants>NET40;DYNAMIC;BIGINTEGER</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)'=='net35'">
+    <DefineConstants>NET35</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
+    <DefineConstants>NETSTANDARD20;DYNAMIC;BIGINTEGER;ASYNC</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TargetFramework)'=='net35'">
+    <PackageReference Include="System.Threading.dll" Version="1.0.2856" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Data\bcp47.xml.gz" />
+    <None Remove="Data\calendars.xml.gz" />
+    <None Remove="Data\dateFields.xml.gz" />
+    <None Remove="Data\likelySubtags.xml.gz" />
+    <None Remove="Data\listPatterns.xml.gz" />
+    <None Remove="Data\metaZones.xml.gz" />
+    <None Remove="Data\numbers.xml.gz" />
+    <None Remove="Data\ordinals.xml.gz" />
+    <None Remove="Data\plurals.xml.gz" />
+    <None Remove="Data\supplementalData.xml.gz" />
+    <None Remove="Data\supplementalMetadata.xml.gz" />
+    <None Remove="Data\timeZoneNames.xml.gz" />
+    <None Remove="Data\units.xml.gz" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="key.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="TimeZoneConverter" Version="3.2.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Codeless.Ecma\Codeless.Ecma.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Data\bcp47.xml.gz" />
+    <EmbeddedResource Include="Data\calendars.xml.gz" />
+    <EmbeddedResource Include="Data\dateFields.xml.gz" />
+    <EmbeddedResource Include="Data\likelySubtags.xml.gz" />
+    <EmbeddedResource Include="Data\listPatterns.xml.gz" />
+    <EmbeddedResource Include="Data\metaZones.xml.gz" />
+    <EmbeddedResource Include="Data\numbers.xml.gz" />
+    <EmbeddedResource Include="Data\ordinals.xml.gz" />
+    <EmbeddedResource Include="Data\plurals.xml.gz" />
+    <EmbeddedResource Include="Data\supplementalData.xml.gz" />
+    <EmbeddedResource Include="Data\supplementalMetadata.xml.gz" />
+    <EmbeddedResource Include="Data\timeZoneNames.xml.gz" />
+    <EmbeddedResource Include="Data\units.xml.gz" />
+  </ItemGroup>
+</Project>
