@@ -10,7 +10,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
     [IntrinsicMember(WellKnownSymbol.ToStringTag, EcmaPropertyAttributes.Configurable)]
     public const string ToStringTag = InternalString.ObjectTag.BigInt;
 
-    [IntrinsicMember]
+    [IntrinsicMember(Overridable = true)]
     public static EcmaValue ToLocaleString([This] EcmaValue thisValue) {
       EcmaValue bigInt = thisValue.GetIntrinsicPrimitiveValue(EcmaValueType.BigInt);
       return bigInt.ToString();

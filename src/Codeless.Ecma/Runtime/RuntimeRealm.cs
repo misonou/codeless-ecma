@@ -72,6 +72,10 @@ namespace Codeless.Ecma.Runtime {
       }
     }
 
+    public static RuntimeModule IntrinsicModule {
+      get { return enumTypes[typeof(WellKnownObject)]; }
+    }
+
     public static RuntimeRealm Current {
       get {
         if (useSharedRealm) {
@@ -291,7 +295,7 @@ namespace Codeless.Ecma.Runtime {
         return new SharedObjectHandle(this.ID, sharedIndex + initialLength);
       }
 
-      public IList<RuntimeObject> FlushObjects() {
+      public RuntimeObject[] FlushObjects() {
         if (!flushed) {
           flushed = true;
           Array.Resize(ref sharedObjects[this.ID], initialLength + definedObj.Count);

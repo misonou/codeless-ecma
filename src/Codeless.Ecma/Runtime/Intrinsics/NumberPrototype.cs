@@ -46,7 +46,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return b == 0 ? number.ToString() : number.ToString() + "." + new String('0', (int)b);
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(Overridable = true)]
     public static EcmaValue ToLocaleString([This] EcmaValue thisValue) {
       return ToString(thisValue, 10);
     }

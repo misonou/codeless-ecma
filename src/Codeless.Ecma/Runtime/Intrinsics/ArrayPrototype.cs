@@ -14,7 +14,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return thisValue.Invoke("join", EcmaValue.Undefined);
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(Overridable = true)]
     public static EcmaValue ToLocaleString([This] EcmaValue thisValue) {
       RuntimeObject obj = thisValue.ToObject();
       long length = obj.Get(WellKnownProperty.Length).ToLength();

@@ -230,19 +230,19 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return dt.ToTimeString(DateTimeFormatInfo.InvariantInfo);
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(Overridable = true)]
     public static string ToLocaleString([This] EcmaValue value) {
       EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return dt.ToString(DateTimeFormatInfo.CurrentInfo);
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(Overridable = true)]
     public static string ToLocaleDateString([This] EcmaValue value) {
       EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return dt.ToDateString(DateTimeFormatInfo.CurrentInfo);
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(Overridable = true)]
     public static string ToLocaleTimeString([This] EcmaValue value) {
       EcmaTimestamp dt = value.GetUnderlyingObject<EcmaDate>().Timestamp;
       return dt.ToTimeString(DateTimeFormatInfo.CurrentInfo);

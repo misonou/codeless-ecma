@@ -95,7 +95,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return searchString == "" ? index : str.LastIndexOf(searchString, index);
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(Overridable = true)]
     public static EcmaValue LocaleCompare([This] EcmaValue value, EcmaValue comparand) {
       Guard.RequireObjectCoercible(value);
       return String.Compare(value.ToStringOrThrow().Normalize(), comparand.ToStringOrThrow().Normalize());
@@ -136,7 +136,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return sb.ToString();
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(Overridable = true)]
     public static EcmaValue ToLocaleLowerCase([This] EcmaValue value) {
       return ToLowerCase(value);
     }
@@ -158,7 +158,7 @@ namespace Codeless.Ecma.Runtime.Intrinsics {
       return sb.ToString();
     }
 
-    [IntrinsicMember]
+    [IntrinsicMember(Overridable = true)]
     public static EcmaValue ToLocaleUpperCase([This] EcmaValue value) {
       return ToUpperCase(value);
     }

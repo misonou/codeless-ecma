@@ -9,7 +9,7 @@ namespace Codeless.Ecma.Runtime {
     private readonly object target;
 
     public DelegateRuntimeFunction(Delegate callback)
-      : this(String.Empty, callback) { }
+      : this(null, callback) { }
 
     public DelegateRuntimeFunction(string name, Delegate callback)
       : this(name, callback, WellKnownObject.FunctionPrototype) { }

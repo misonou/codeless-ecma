@@ -1,4 +1,4 @@
-﻿using Codeless.Ecma.Runtime.Intrinsics;
+using Codeless.Ecma.Runtime.Intrinsics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,30 +11,46 @@ using System.Threading.Tasks;
 
 namespace Codeless.Ecma.Runtime {
   public abstract class RuntimeModule {
-    private HashSet<Type> visitedTypes = new HashSet<Type>();
-    private Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> globals = new Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>();
+    private readonly HashSet<Type> visitedTypes = new HashSet<Type>();
+    private readonly Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor> globals = new Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>();
+    private readonly Dictionary<SharedObjectKey, int> overridables = new Dictionary<SharedObjectKey, int>();
     private Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>[] properties;
     private RuntimeObject[] runtimeObjects;
     private int objectCount;
 
-    public abstract Type EnumType { get; }
+    protected internal abstract Type EnumType { get; }
 
-    public RuntimeRealm Realm { get; private set; }
+    protected RuntimeRealm Realm { get; private set; }
 
-    public ISharedObjectContainer Container { get; private set; }
+    protected ISharedObjectContainer Container { get; private set; }
 
     public SharedObjectHandle GetSharedObjectHandle(Enum value) {
       Guard.ArgumentNotNull(value, "value");
       if (value.GetType() != this.EnumType) {
-        throw new ArgumentException(String.Format("Value must be of type {0}", this.EnumType.FullName));
+        throw new ArgumentException(String.Format("Value must be of type {0}", this.EnumType.FullName), "value");
       }
       ThrowIfNotInitialized();
       return new SharedObjectHandle(this.Container.ID, (int)(object)value);
     }
 
+    public void OverrideProperty(Enum objectType, EcmaPropertyKey propertyKey, RuntimeObject obj) {
+      Guard.ArgumentNotNull(objectType, "objectType");
+      Guard.ArgumentNotNull(obj, "obj");
+      if (objectType.GetType() != this.EnumType) {
+        throw new ArgumentException(String.Format("Value must be of type {0}", this.EnumType.FullName), "objectType");
+      }
+      if (obj.Realm != this.Realm) {
+        throw new ArgumentException("Object must be created in the shared realm", "obj");
+      }
+      if (!overridables.TryGetValue(new SharedObjectKey(objectType, propertyKey), out int index)) {
+        throw new InvalidOperationException(String.Format("Property {0} is not overridable", propertyKey));
+      }
+      runtimeObjects[index] = obj;
+    }
+
     internal void Init(RuntimeRealm.SharedObjectContainer container, RuntimeObject[] moduleObjects) {
       this.Container = container;
-      this.Realm = RuntimeRealm.Current;
+      this.Realm = RuntimeRealm.SharedRealm;
       this.runtimeObjects = moduleObjects;
       this.objectCount = moduleObjects.Length;
       this.properties = new Dictionary<EcmaPropertyKey, EcmaPropertyDescriptor>[objectCount];
@@ -47,7 +63,8 @@ namespace Codeless.Ecma.Runtime {
         DefineAllProperties(EnsureObject(i), properties[i]);
       }
       DefineAllProperties(this.Realm.GetRuntimeObject(WellKnownObject.Global), globals);
-      OnAfterInitializing(new ReadOnlyCollection<RuntimeObject>(container.FlushObjects()));
+      this.runtimeObjects = container.FlushObjects();
+      OnAfterInitializing(new ReadOnlyCollection<RuntimeObject>(runtimeObjects));
     }
 
     protected virtual void OnBeforeInitializing(IList<RuntimeObject> runtimeObject) {
@@ -129,6 +146,9 @@ namespace Codeless.Ecma.Runtime {
                 EcmaPropertyKey name = GetNameFromMember(propAttr, member);
                 string runtimeName = (propAttr.Getter ? "get " : propAttr.Setter ? "set " : "") + (name.IsSymbol ? "[" + name.Symbol.Description + "]" : name.Name);
                 sharedValue = this.Container.Add(CreateIntrinsicFunction(runtimeName, (MethodInfo)member, null, typeAttr.ObjectType as Enum, name)).ToValue();
+                if (propAttr.Overridable) {
+                  overridables.Add(new SharedObjectKey(typeAttr.ObjectType, name), sharedValue.ToInt32() & 0xFFFF);
+                }
                 break;
               case MemberTypes.Field:
                 object fieldValue = ((FieldInfo)member).GetValue(null);
@@ -235,10 +255,34 @@ namespace Codeless.Ecma.Runtime {
       }
       return new EcmaPropertyKey(propAttr.Name ?? Regex.Replace(member.Name, "^[A-Z](?=[a-z])", v => v.Value.ToLower()));
     }
+
+    private class SharedObjectKey : IEquatable<SharedObjectKey> {
+      public SharedObjectKey(object objectType, EcmaPropertyKey name) {
+        Guard.ArgumentNotNull(objectType, "objectType");
+        this.ObjectType = objectType;
+        this.Name = name;
+      }
+
+      public object ObjectType { get; }
+      public EcmaPropertyKey Name { get; }
+
+      public override bool Equals(object obj) {
+        return obj is SharedObjectKey other && ((IEquatable<SharedObjectKey>)this).Equals(other);
+      }
+
+      public override int GetHashCode() {
+        return this.ObjectType.GetHashCode() ^ this.Name.GetHashCode();
+      }
+
+      bool IEquatable<SharedObjectKey>.Equals(SharedObjectKey other) {
+        Guard.ArgumentNotNull(other, "other");
+        return this.ObjectType.Equals(other.ObjectType) && this.Name == other.Name;
+      }
+    }
   }
 
   public abstract class RuntimeModule<T> : RuntimeModule where T : struct, Enum {
-    public override Type EnumType => typeof(T);
+    protected internal override Type EnumType => typeof(T);
 
     public SharedObjectHandle GetSharedObjectHandle(T value) {
       ThrowIfNotInitialized();

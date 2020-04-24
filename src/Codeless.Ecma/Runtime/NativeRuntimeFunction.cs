@@ -53,9 +53,9 @@ namespace Codeless.Ecma.Runtime {
         }
       } else {
         SetPrototypeInternal(new EcmaObject());
-        if (name == null) {
-          name = "";
-        }
+      }
+      if (name == null) {
+        name = "";
       }
       this.Source = "function " + name + "() { [native code] }";
       InitProperty(name, GetFuncLength(method), containUseStrict);

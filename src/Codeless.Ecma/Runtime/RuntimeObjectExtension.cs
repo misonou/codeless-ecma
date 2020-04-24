@@ -109,7 +109,15 @@ namespace Codeless.Ecma.Runtime {
     }
 
     public static bool IsIntrinsicFunction(this RuntimeObject obj, WellKnownObject type, EcmaPropertyKey name) {
-      return obj is IntrinsicFunction fn && fn.IsIntrinsicFunction(type, name);
+      if (obj is IntrinsicFunction fn) {
+        return fn.IsIntrinsicFunction(type, name);
+      }
+      Guard.ArgumentNotNull(obj, "obj");
+      if (!obj.IsCallable) {
+        return false;
+      }
+      RuntimeObject sourceObj = RuntimeRealm.SharedRealm.GetRuntimeObject(type).GetMethod(name);
+      return obj.Realm.ResolveRuntimeObjectInRealm(sourceObj) == obj;
     }
 
     public static IEnumerable<EcmaPropertyKey> GetEnumerablePropertyKeys(this RuntimeObject obj) {

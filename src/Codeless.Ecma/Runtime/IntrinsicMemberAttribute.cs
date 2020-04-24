@@ -43,5 +43,6 @@ namespace Codeless.Ecma.Runtime {
     public bool Getter { get; set; }
     public bool Setter { get; set; }
     public bool Global { get; set; }
+    public bool Overridable { get; set; }
   }
 }
